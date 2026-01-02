@@ -32,6 +32,7 @@
 <body>
 
 <h2>☕ SGMC Admin Panel</h2>
+<button onclick="clearOrders()">Clear All Orders</button>
 
 <div id="orders"></div>
 
@@ -64,7 +65,11 @@ function nextStatus(i){
   localStorage.setItem("orders", JSON.stringify(orders));
   location.reload();
 }
-</script>
+</script>function clearOrders(){
+  localStorage.removeItem("orders");
+  location.reload();
+}
+
 
 </body>
 </html>
