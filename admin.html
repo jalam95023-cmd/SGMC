@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SGMC Admin Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{
+      font-family: Arial;
+      background:#f2f2f2;
+      padding:15px;
+    }
+    h2{
+      text-align:center;
+      color:#6f4e37;
+    }
+    .order{
+      background:white;
+      padding:15px;
+      border-radius:8px;
+      margin-bottom:10px;
+    }
+    button{
+      background:#6f4e37;
+      color:white;
+      border:none;
+      padding:6px 10px;
+      border-radius:5px;
+      margin-top:8px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>☕ SGMC Admin Panel</h2>
+
+<div id="orders"></div>
+
+<script>
+let orders = JSON.parse(localStorage.getItem("orders")) || [];
+let box = document.getElementById("orders");
+
+if(orders.length === 0){
+  box.innerHTML = "<p>No orders yet</p>";
+}
+
+orders.forEach((o, i) => {
+  box.innerHTML += `
+    <div class="order">
+      <b>Chai:</b> ${o.chai}<br>
+      <b>Qty:</b> ${o.qty}<br>
+      <b>Total:</b> ₹${o.total}<br>
+      <b>Address:</b> ${o.address}<br>
+      <b>Status:</b> ${o.status}<br>
+      <button onclick="nextStatus(${i})">Next Status</button>
+    </div>
+  `;
+});
+
+function nextStatus(i){
+  if(orders[i].status === "Placed") orders[i].status = "Ban rahi hai";
+  else if(orders[i].status === "Ban rahi hai") orders[i].status = "Ready";
+  else if(orders[i].status === "Ready") orders[i].status = "Delivered";
+
+  localStorage.setItem("orders", JSON.stringify(orders));
+  location.reload();
+}
+</script>
+
+</body>
+</html>
