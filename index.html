@@ -52,8 +52,40 @@
   <label>Delivery Address</label>
   <input type="text" placeholder="Market / Shop number">
 
-  <button>Order Now</button>
+  <button onclick="placeOrder()">Order Now</button>
 </div>
+<script>
+function placeOrder() {
+  let chai = document.querySelector("select").value;
+  let qty = document.querySelector('input[type="number"]').value;
+  let address = document.querySelector('input[type="text"]').value;
+
+  if(qty === "" || qty <= 0){
+    alert("Quantity sahi daal bhai 😄");
+    return;
+  }
+
+  if(address === ""){
+    alert("Delivery address likhna zaruri hai");
+    return;
+  }
+
+  let price = 0;
+  if(chai.includes("₹10")) price = 10;
+  if(chai.includes("₹15")) price = 15;
+  if(chai.includes("₹20")) price = 20;
+
+  let total = price * qty;
+
+  alert(
+    "☕ SGMC Order Confirmed!\n\n" +
+    "Chai: " + chai + "\n" +
+    "Quantity: " + qty + "\n" +
+    "Total: ₹" + total + "\n\n" +
+    "Delivery Address:\n" + address
+  );
+}
+</script>
 
 </body>
 </html>
