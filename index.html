@@ -11,123 +11,156 @@
 
 <style>
 body{font-family:Arial;background:#f5f5f5;margin:0}
-header{background:#6f1d1b;color:#fff;padding:15px;text-align:center;font-size:22px}
+header{background:#7a1e1e;color:#fff;padding:15px;text-align:center;font-size:22px}
 .card{background:#fff;margin:10px;padding:15px;border-radius:10px}
-.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.qty button{width:30px;height:30px;font-size:18px}
-input{width:100%;padding:10px;margin:6px 0}
-button.main{background:green;color:#fff;padding:15px;border:none;width:100%;font-size:18px;border-radius:8px}
-.status{font-weight:bold}
-.green{color:green}
-.red{color:red}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+button{padding:6px 10px;font-size:16px}
+input{width:100%;padding:10px;margin-top:8px}
+.main{background:green;color:#fff;border:none;padding:15px;width:100%;font-size:18px;border-radius:8px}
+.green{color:green;font-weight:bold}
+.red{color:red;font-weight:bold}
+
+/* popup */
+#popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,.5);align-items:center;justify-content:center}
+#popup div{background:#fff;padding:25px;border-radius:10px;text-align:center}
 </style>
 </head>
 
 <body>
 
-<header>
-<img src="./logo.png" height="35" style="vertical-align:middle">
-<span> SGMC – Chai Order</span>
-</header>
+<header>☕ SGMC – Chai Order</header>
 
 <div class="card" id="items"></div>
 
 <div class="card">
-<input id="name" placeholder="Your Name">
-<input id="phone" placeholder="Phone Number">
-<input id="address" placeholder="Delivery Address">
-<h3>Total: ₹<span id="total">0</span></h3>
-<button class="main" onclick="placeOrder()">Place Order (COD)</button>
+  <input id="name" placeholder="Your Name">
+  <input id="phone" placeholder="Phone Number">
+  <input id="address" placeholder="Delivery Address">
+  <h3>Total: ₹<span id="total">0</span></h3>
+  <button class="main" onclick="placeOrder()">Place Order (COD)</button>
 </div>
 
 <div class="card">
-<h3>Your Current Order</h3>
-<div id="currentOrder">No active order</div>
+  <h3>Your Current Order</h3>
+  <div id="currentOrder">No active order</div>
 </div>
 
 <!-- POPUP -->
-<div id="popup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
-<div style="background:#fff;padding:20px;border-radius:10px;text-align:center">
-<h3>✅ Order Placed</h3>
-<button onclick="closePopup()">OK</button>
-</div>
+<div id="popup">
+  <div>
+    <h3>✅ Order Placed</h3>
+    <button onclick="closePopup()">OK</button>
+  </div>
 </div>
 
 <script>
-const firebaseConfig={
-  apiKey:"AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
-  authDomain:"sgmc-16568.firebaseapp.com",
-  projectId:"sgmc-16568"
+/* 🔥 Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+  authDomain: "sgmc-16568.firebaseapp.com",
+  projectId: "sgmc-16568"
 };
 firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
+const db = firebase.firestore();
 firebase.auth().signInAnonymously();
 
+/* PRODUCTS */
 const products=[
-{name:"Normal Chai",price:10,qty:0},
-{name:"Adrak Chai",price:15,qty:0},
-{name:"Masala Chai",price:20,qty:0},
-{name:"Biscuit",price:10,qty:0},
-{name:"Cigarette",price:20,qty:0},
-{name:"Mathhi",price:5,qty:0}
+ {name:"Normal Chai",price:10,qty:0},
+ {name:"Adrak Chai",price:15,qty:0},
+ {name:"Masala Chai",price:20,qty:0},
+ {name:"Biscuit",price:10,qty:0},
+ {name:"Cigarette",price:20,qty:0},
+ {name:"Mathhi",price:5,qty:0}
 ];
 
+const itemsDiv=document.getElementById("items");
+const totalEl=document.getElementById("total");
+const currentOrder=document.getElementById("currentOrder");
+
 function render(){
-let html="";
-products.forEach((p,i)=>{
-html+=`
-<div class="row">
-<b>${p.name} ₹${p.price}</b>
-<div class="qty">
-<button onclick="chg(${i},-1)">-</button>
-<span>${p.qty}</span>
-<button onclick="chg(${i},1)">+</button>
-</div>
-</div>`;
-});
-document.getElementById("items").innerHTML=html;
-calc();
+  let html="";
+  products.forEach((p,i)=>{
+    html+=`
+    <div class="row">
+      <b>${p.name} ₹${p.price}</b>
+      <div>
+        <button onclick="chg(${i},-1)">-</button>
+        ${p.qty}
+        <button onclick="chg(${i},1)">+</button>
+      </div>
+    </div>`;
+  });
+  itemsDiv.innerHTML=html;
+  calc();
 }
-function chg(i,v){products[i].qty=Math.max(0,products[i].qty+v);render();}
+function chg(i,v){
+  products[i].qty=Math.max(0,products[i].qty+v);
+  render();
+}
 function calc(){
-let t=0;products.forEach(p=>t+=p.qty*p.price);
-document.getElementById("total").innerText=t;
+  let t=0;
+  products.forEach(p=>t+=p.price*p.qty);
+  totalEl.innerText=t;
 }
-function showPopup(){document.getElementById("popup").style.display="flex";}
-function closePopup(){document.getElementById("popup").style.display="none";}
 
+/* POPUP */
+function showPopup(){popup.style.display="flex"}
+function closePopup(){popup.style.display="none"}
+
+/* 🔔 LIVE STATUS LISTENER */
+function listen(phone){
+  db.collection("orders")
+   .where("phone","==",phone)
+   .orderBy("createdAt","desc")
+   .limit(1)
+   .onSnapshot(snap=>{
+     if(snap.empty){
+       currentOrder.innerText="No active order";
+       return;
+     }
+     snap.forEach(d=>{
+       const o=d.data();
+       let color=o.status==="DELIVERED"?"green":o.status==="REJECTED"?"red":"green";
+       currentOrder.innerHTML=`₹${o.total} – <span class="${color}">${o.status}</span>`;
+     });
+   });
+}
+
+/* 🚀 PLACE ORDER */
 function placeOrder(){
-const name=nameEl.value,phone=phoneEl.value,address=addressEl.value;
-const items=products.filter(p=>p.qty>0);
-if(!name||!phone||!address||items.length==0){alert("Fill all");return;}
+  const name=nameEl.value.trim();
+  const phone=phoneEl.value.trim();
+  const address=addressEl.value.trim();
+  const items=products.filter(p=>p.qty>0);
+  const total=Number(totalEl.innerText);
 
-db.collection("orders").add({
-name,phone,address,
-items,total:document.getElementById("total").innerText,
-status:"NEW",
-createdAt:firebase.firestore.FieldValue.serverTimestamp()
-}).then(()=>{
-showPopup();
-products.forEach(p=>p.qty=0);
-render();
-});
+  if(!name||!phone||!address||items.length===0){
+    alert("Fill all details");
+    return;
+  }
+
+  db.collection("orders").add({
+    name,phone,address,items,total,
+    status:"NEW",
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    showPopup();
+    listen(phone);
+    products.forEach(p=>p.qty=0);
+    render();
+  });
 }
 
+/* INPUT ELEMENTS */
 const nameEl=document.getElementById("name");
 const phoneEl=document.getElementById("phone");
 const addressEl=document.getElementById("address");
 
-db.collection("orders")
-.where("phone","==",phoneEl.value)
-.orderBy("createdAt","desc")
-.onSnapshot(s=>{
-s.forEach(d=>{
-document.getElementById("currentOrder").innerHTML=
-`₹${d.data().total} – <span class="status green">${d.data().status}</span>`;
-});
-});
-
+/* LOAD */
 render();
 </script>
+
 </body>
 </html>
