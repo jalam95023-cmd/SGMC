@@ -1,75 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SGMC Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body{
-      font-family: Arial;
-      background:#f2f2f2;
-      padding:15px;
-    }
-    h2{
-      text-align:center;
-      color:#6f4e37;
-    }
-    .order{
-      background:white;
-      padding:15px;
-      border-radius:8px;
-      margin-bottom:10px;
-    }
-    button{
-      background:#6f4e37;
-      color:white;
-      border:none;
-      padding:6px 10px;
-      border-radius:5px;
-      margin-top:8px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>SGMC – Admin Panel</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:Arial;background:#eee;margin:0}
+header{background:#2d6a4f;color:#fff;padding:15px;text-align:center;font-size:22px}
+.card{background:#fff;margin:10px;padding:15px;border-radius:10px}
+button{margin:4px;padding:8px}
+</style>
 </head>
+
 <body>
 
-<h2>☕ SGMC Admin Panel</h2>
-<button onclick="clearOrders()">Clear All Orders</button>
+<header>
+<img src="./logo.png" height="35" style="vertical-align:middle">
+<span> SGMC – Admin Panel</span>
+</header>
+
+<div class="card">
+<h2>Today’s Total Sale: ₹<span id="sale">0</span></h2>
+</div>
 
 <div id="orders"></div>
 
 <script>
-let orders = JSON.parse(localStorage.getItem("orders")) || [];
-let box = document.getElementById("orders");
+const firebaseConfig={
+  apiKey:"AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+  authDomain:"sgmc-16568.firebaseapp.com",
+  projectId:"sgmc-16568"
+};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
 
-if(orders.length === 0){
-  box.innerHTML = "<p>No orders yet</p>";
-}
-
-orders.forEach((o, i) => {
-  box.innerHTML += `
-    <div class="order">
-      <b>Chai:</b> ${o.chai}<br>
-      <b>Qty:</b> ${o.qty}<br>
-      <b>Total:</b> ₹${o.total}<br>
-      <b>Address:</b> ${o.address}<br>
-      <b>Status:</b> ${o.status}<br>
-      <button onclick="nextStatus(${i})">Next Status</button>
-    </div>
-  `;
+db.collection("orders").orderBy("createdAt","desc").onSnapshot(s=>{
+let html="",sale=0;
+s.forEach(doc=>{
+const d=doc.data();
+if(d.status==="DELIVERED") sale+=Number(d.total);
+html+=`
+<div class="card">
+<b>${d.name} (${d.phone})</b><br>
+${d.address}<br>
+${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
+<h3>Total: ₹${d.total}</h3>
+<b>Status: ${d.status}</b><br>
+<button onclick="upd('${doc.id}','ACCEPTED')">Accept</button>
+<button onclick="upd('${doc.id}','REJECTED')">Reject</button>
+<button onclick="upd('${doc.id}','DELIVERED')">Delivered</button>
+<button onclick="del('${doc.id}')">🗑 Delete</button>
+</div>`;
+});
+document.getElementById("orders").innerHTML=html;
+document.getElementById("sale").innerText=sale;
 });
 
-function nextStatus(i){
-  if(orders[i].status === "Placed") orders[i].status = "Ban rahi hai";
-  else if(orders[i].status === "Ban rahi hai") orders[i].status = "Ready";
-  else if(orders[i].status === "Ready") orders[i].status = "Delivered";
-
-  localStorage.setItem("orders", JSON.stringify(orders));
-  location.reload();
+function upd(id,s){
+db.collection("orders").doc(id).update({status:s});
 }
-function clearOrders(){
-  localStorage.removeItem("orders");
-  location.reload();
-  </script>
-
-  
+function del(id){
+if(confirm("Delete order?"))
+db.collection("orders").doc(id).delete();
+}
+</script>
 </body>
 </html>
+
