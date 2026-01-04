@@ -1,134 +1,148 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>SGMC – Chai Order</title>
+  <title>SGMC – Chai Order</title>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-<style>
-body{font-family:Arial;background:#f5f5f5;margin:0}
-header{background:#6f1d1b;color:#fff;padding:15px;text-align:center;font-size:22px}
-.card{background:#fff;margin:10px;padding:15px;border-radius:10px}
-.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.qty button{width:30px;height:30px;font-size:18px}
-input{width:100%;padding:10px;margin:6px 0}
-button.main{background:green;color:#fff;padding:15px;border:none;width:100%;font-size:18px;border-radius:8px}
-.status{font-weight:bold}
-.green{color:green}
-.red{color:red}
-</style>
+  <style>
+    body { font-family: Arial; background:#f5f5f5; margin:0 }
+    header { background:#7b1f1f; color:#fff; padding:15px; font-size:20px }
+    .box { background:#fff; margin:15px; padding:15px; border-radius:10px }
+    .row { display:flex; justify-content:space-between; margin:8px 0 }
+    button { padding:6px 12px; font-size:16px }
+    input { width:100%; padding:10px; margin:6px 0 }
+    .green { color:green; font-weight:bold }
+    .blue { color:blue; font-weight:bold }
+    .red { color:red; font-weight:bold }
+  </style>
 </head>
 
 <body>
 
-<header>
-<img src="./logo.png" height="35" style="vertical-align:middle">
-<span> SGMC – Chai Order</span>
-</header>
+<header>☕ SGMC – Chai Order</header>
 
-<div class="card" id="items"></div>
+<div class="box" id="items"></div>
 
-<div class="card">
-<input id="name" placeholder="Your Name">
-<input id="phone" placeholder="Phone Number">
-<input id="address" placeholder="Delivery Address">
-<h3>Total: ₹<span id="total">0</span></h3>
-<button class="main" onclick="placeOrder()">Place Order (COD)</button>
+<div class="box">
+  <input id="name" placeholder="Your Name">
+  <input id="phone" placeholder="Phone Number">
+  <input id="address" placeholder="Delivery Address">
+  <h3>Total: ₹<span id="total">0</span></h3>
+  <button style="width:100%;background:green;color:white"
+    onclick="placeOrder()">Place Order (COD)</button>
 </div>
 
-<div class="card">
-<h3>Your Current Order</h3>
-<div id="currentOrder">No active order</div>
-</div>
-
-<!-- POPUP -->
-<div id="popup" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
-<div style="background:#fff;padding:20px;border-radius:10px;text-align:center">
-<h3>✅ Order Placed</h3>
-<button onclick="closePopup()">OK</button>
-</div>
+<div class="box">
+  <h3>Your Current Order</h3>
+  <div id="statusText">No active order</div>
 </div>
 
 <script>
-const firebaseConfig={
-  apiKey:"AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
-  authDomain:"sgmc-16568.firebaseapp.com",
-  projectId:"sgmc-16568"
+/* 🔥 FIREBASE CONFIG */
+const firebaseConfig = {
+  apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+  authDomain: "sgmc-16568.firebaseapp.com",
+  projectId: "sgmc-16568"
 };
 firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
+const db = firebase.firestore();
 firebase.auth().signInAnonymously();
 
-const products=[
-{name:"Normal Chai",price:10,qty:0},
-{name:"Adrak Chai",price:15,qty:0},
-{name:"Masala Chai",price:20,qty:0},
-{name:"Biscuit",price:10,qty:0},
-{name:"Cigarette",price:20,qty:0},
-{name:"Mathhi",price:5,qty:0}
+/* PRODUCTS */
+const products = [
+  {name:"Normal Chai", price:10, qty:0},
+  {name:"Adrak Chai", price:15, qty:0},
+  {name:"Masala Chai", price:20, qty:0},
+  {name:"Biscuit", price:10, qty:0},
+  {name:"Cigarette", price:20, qty:0},
+  {name:"Mathhi", price:5, qty:0}
 ];
 
-function render(){
-let html="";
-products.forEach((p,i)=>{
-html+=`
-<div class="row">
-<b>${p.name} ₹${p.price}</b>
-<div class="qty">
-<button onclick="chg(${i},-1)">-</button>
-<span>${p.qty}</span>
-<button onclick="chg(${i},1)">+</button>
-</div>
-</div>`;
-});
-document.getElementById("items").innerHTML=html;
-calc();
-}
-function chg(i,v){products[i].qty=Math.max(0,products[i].qty+v);render();}
-function calc(){
-let t=0;products.forEach(p=>t+=p.qty*p.price);
-document.getElementById("total").innerText=t;
-}
-function showPopup(){document.getElementById("popup").style.display="flex";}
-function closePopup(){document.getElementById("popup").style.display="none";}
+const itemsDiv = document.getElementById("items");
 
+/* RENDER ITEMS */
+function renderItems(){
+  itemsDiv.innerHTML = "";
+  products.forEach((p,i)=>{
+    itemsDiv.innerHTML += `
+      <div class="row">
+        <b>${p.name} ₹${p.price}</b>
+        <div>
+          <button onclick="qty(${i},-1)">-</button>
+          ${p.qty}
+          <button onclick="qty(${i},1)">+</button>
+        </div>
+      </div>`;
+  });
+  updateTotal();
+}
+renderItems();
+
+function qty(i,v){
+  products[i].qty += v;
+  if(products[i].qty < 0) products[i].qty = 0;
+  renderItems();
+}
+
+function updateTotal(){
+  let t = 0;
+  products.forEach(p=> t += p.price*p.qty);
+  document.getElementById("total").innerText = t;
+}
+
+/* PLACE ORDER */
 function placeOrder(){
-const name=nameEl.value,phone=phoneEl.value,address=addressEl.value;
-const items=products.filter(p=>p.qty>0);
-if(!name||!phone||!address||items.length==0){alert("Fill all");return;}
+  const name = name.value.trim();
+  const phone = phone.value.trim();
+  const address = address.value.trim();
+  const items = products.filter(p=>p.qty>0);
+  const total = Number(document.getElementById("total").innerText);
 
-db.collection("orders").add({
-name,phone,address,
-items,total:document.getElementById("total").innerText,
-status:"NEW",
-createdAt:firebase.firestore.FieldValue.serverTimestamp()
-}).then(()=>{
-showPopup();
-products.forEach(p=>p.qty=0);
-render();
-});
+  if(!name || !phone || !address || items.length==0){
+    alert("Fill all fields");
+    return;
+  }
+
+  db.collection("orders").add({
+    name, phone, address, items, total,
+    status:"NEW",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    alert("✅ Order placed");
+    listenStatus(phone);
+  });
 }
 
-const nameEl=document.getElementById("name");
-const phoneEl=document.getElementById("phone");
-const addressEl=document.getElementById("address");
+/* 🔥 LIVE STATUS LISTENER (THIS FIXES YOUR ISSUE) */
+function listenStatus(phone){
+  db.collection("orders")
+    .where("phone","==",phone)
+    .orderBy("createdAt","desc")
+    .limit(1)
+    .onSnapshot(snap=>{
+      if(snap.empty){
+        statusText.innerText = "No active order";
+        return;
+      }
 
-db.collection("orders")
-.where("phone","==",phoneEl.value)
-.orderBy("createdAt","desc")
-.onSnapshot(s=>{
-s.forEach(d=>{
-document.getElementById("currentOrder").innerHTML=
-`₹${d.data().total} – <span class="status green">${d.data().status}</span>`;
-});
-});
+      snap.forEach(doc=>{
+        const o = doc.data();
+        let cls="";
+        if(o.status==="ACCEPTED") cls="blue";
+        if(o.status==="DELIVERED") cls="green";
+        if(o.status==="REJECTED") cls="red";
 
-render();
+        statusText.innerHTML =
+          `₹${o.total} – <span class="${cls}">${o.status}</span>`;
+      });
+    });
+}
 </script>
+
 </body>
 </html>
 
