@@ -1,118 +1,153 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>SGMC – Chai Order</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SGMC – Chai Order</title>
 
-  <style>
-    body { font-family: Arial; background:#f5f5f5; margin:0 }
-    header { background:#7b1e1e; color:white; padding:12px; text-align:center }
-    .box { background:white; margin:12px; padding:12px; border-radius:6px }
-    .item { display:flex; justify-content:space-between; margin:6px 0 }
-    button { padding:6px 10px }
-    .green { background:green; color:white; border:none; padding:12px; width:100%; font-size:16px }
-    input { width:100%; padding:8px; margin:6px 0 }
-  </style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<!-- Google Maps -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAP_KEY&libraries=places"></script>
+
+<style>
+body{font-family:Arial;background:#f4f4f4;margin:0}
+header{background:#7b1e1e;color:#fff;padding:15px;text-align:center;font-size:22px}
+.box{background:#fff;margin:10px;padding:15px;border-radius:10px}
+.item{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+button{padding:6px 12px}
+input{width:100%;padding:10px;margin-top:8px}
+.btn{background:green;color:#fff;padding:15px;border:none;width:100%;font-size:18px;border-radius:8px}
+.NEW{color:blue}
+.ACCEPTED{color:orange}
+.ONTHEWAY{color:purple}
+.DELIVERED{color:green}
+</style>
 </head>
 
 <body>
 
 <header>☕ SGMC – Chai Order</header>
 
-<div class="box" id="menu"></div>
+<div class="box" id="items"></div>
 
 <div class="box">
-  <input id="name" placeholder="Your Name">
-  <input id="phone" placeholder="Phone Number">
-  <input id="address" placeholder="Delivery Address">
-  <h3>Total: ₹<span id="total">0</span></h3>
-  <button class="green" onclick="placeOrder()">Place Order (COD)</button>
+<input id="name" placeholder="Your Name">
+<input id="phone" placeholder="Phone Number">
+<input id="address" placeholder="Delivery Address">
+<div id="map" style="height:200px;margin-top:10px"></div>
+
+<h3>Total ₹<span id="total">0</span></h3>
+<button class="btn" onclick="placeOrder()">Place Order (COD)</button>
 </div>
 
-<script type="module">
-  // 🔥 Firebase
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } 
-    from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+<div class="box">
+<h3>Your Current Order</h3>
+<div id="current">No order</div>
+</div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyCcUPgsZYqNZyZAUwOhBYpn5_tWeDuRrUg",
-    authDomain: "sgmc-chai-app.firebaseapp.com",
-    projectId: "sgmc-chai-app",
-    storageBucket: "sgmc-chai-app.appspot.com",
-    messagingSenderId: "526306668928",
-    appId: "1:526306668928:web:79b73a6dbf9b6de75fd165"
-  };
+<script>
+/* 🔥 FIREBASE */
+firebase.initializeApp({
+ apiKey: "AIzaSyCcUPgsZYqNZyZAUwOhBYpn5_tWeDuRrUg",
+ authDomain: "sgmc-chai-app.firebaseapp.com",
+ projectId: "sgmc-chai-app"
+});
+const db=firebase.firestore();
+firebase.auth().signInAnonymously();
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+/* PRODUCTS */
+const products=[
+{name:"Normal Chai",price:10,qty:0},
+{name:"Adrak Chai",price:15,qty:0},
+{name:"Masala Chai",price:20,qty:0},
+{name:"Biscuit",price:10,qty:0},
+{name:"Cigarette",price:20,qty:0},
+{name:"Mathhi",price:5,qty:0}
+];
 
-  // 🍵 Menu
-  const items = [
-    {name:"Normal Chai", price:10},
-    {name:"Adrak Chai", price:15},
-    {name:"Masala Chai", price:20},
-    {name:"Biscuit", price:10},
-    {name:"Cigarette", price:20},
-    {name:"Mathhi", price:5}
-  ];
+let lat=null,lng=null,map,marker;
 
-  let cart = {};
-  let total = 0;
+function initMap(){
+ map=new google.maps.Map(document.getElementById("map"),{
+  center:{lat:28.6139,lng:77.2090},zoom:14
+ });
+ const ac=new google.maps.places.Autocomplete(document.getElementById("address"));
+ ac.addListener("place_changed",()=>{
+  const p=ac.getPlace();
+  if(!p.geometry) return;
+  lat=p.geometry.location.lat();
+  lng=p.geometry.location.lng();
+  if(marker) marker.setMap(null);
+  marker=new google.maps.Marker({map,position:{lat,lng}});
+  map.setCenter({lat,lng});
+ });
+}
 
-  const menu = document.getElementById("menu");
-  items.forEach(i=>{
-    cart[i.name]=0;
-    menu.innerHTML += `
-      <div class="item">
-        ${i.name} ₹${i.price}
-        <span>
-          <button onclick="add('${i.name}',${i.price})">+</button>
-          <span id="${i.name}">0</span>
-          <button onclick="sub('${i.name}',${i.price})">-</button>
-        </span>
-      </div>
-    `;
-  });
+function render(){
+ let html="",t=0;
+ products.forEach((p,i)=>{
+  t+=p.price*p.qty;
+  html+=`
+   <div class="item">
+    <b>${p.name} ₹${p.price}</b>
+    <div>
+     <button onclick="chg(${i},-1)">-</button>
+     ${p.qty}
+     <button onclick="chg(${i},1)">+</button>
+    </div>
+   </div>`;
+ });
+ items.innerHTML=html;
+ total.innerText=t;
+}
+function chg(i,v){products[i].qty=Math.max(0,products[i].qty+v);render();}
 
-  window.add = (n,p)=>{
-    cart[n]++; total+=p;
-    document.getElementById(n).innerText=cart[n];
-    document.getElementById("total").innerText=total;
-  }
+function placeOrder(){
+ const name=nameEl.value.trim();
+ const phone=phoneEl.value.trim();
+ const addr=address.value.trim();
+ const itemsSel=products.filter(p=>p.qty>0);
+ const tot=Number(total.innerText);
 
-  window.sub = (n,p)=>{
-    if(cart[n]>0){ cart[n]--; total-=p; }
-    document.getElementById(n).innerText=cart[n];
-    document.getElementById("total").innerText=total;
-  }
+ if(!name||!phone||!addr||!lat||itemsSel.length==0){
+  alert("Sab details bharo aur map select karo");
+  return;
+ }
 
-  // 🚀 PLACE ORDER
-  window.placeOrder = async ()=>{
-    const name = name.value;
-    const phone = phone.value;
-    const address = address.value;
+ db.collection("orders").add({
+  name,phone,address:addr,
+  items:itemsSel,
+  total:tot,
+  lat,lng,
+  status:"NEW",
+  createdAt:firebase.firestore.FieldValue.serverTimestamp()
+ }).then(ref=>{
+  alert("✅ Order Placed!");
+  watch(ref.id);
+  products.forEach(p=>p.qty=0);
+  render();
+ });
+}
 
-    if(total===0 || !address){
-      alert("Add items & address");
-      return;
-    }
+function watch(id){
+ db.collection("orders").doc(id).onSnapshot(d=>{
+  if(!d.exists) return;
+  const o=d.data();
+  current.innerHTML=`₹${o.total} – <span class="${o.status}">${o.status}</span>`;
+ });
+}
 
-    await addDoc(collection(db,"Orders"),{
-      name,
-      phone,
-      address,
-      items: cart,
-      total,
-      status: "Placed",
-      createdAt: serverTimestamp()
-    });
+const items=document.getElementById("items");
+const total=document.getElementById("total");
+const nameEl=document.getElementById("name");
+const phoneEl=document.getElementById("phone");
 
-    alert("☕ Order Placed Successfully!");
-    location.reload();
-  }
+window.onload=()=>{initMap();render();}
 </script>
 
 </body>
 </html>
+
 
