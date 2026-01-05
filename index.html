@@ -21,8 +21,10 @@ input{width:100%;padding:10px;margin-top:8px}
 .red{color:red;font-weight:bold}
 
 /* popup */
-#popup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,.5);align-items:center;justify-content:center}
+#popup{
+  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,.5);align-items:center;justify-content:center
+}
 #popup div{background:#fff;padding:25px;border-radius:10px;text-align:center}
 </style>
 </head>
@@ -65,6 +67,15 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 firebase.auth().signInAnonymously();
 
+/* INPUTS */
+const nameInput=document.getElementById("name");
+const phoneInput=document.getElementById("phone");
+const addressInput=document.getElementById("address");
+const itemsDiv=document.getElementById("items");
+const totalEl=document.getElementById("total");
+const currentOrder=document.getElementById("currentOrder");
+const popup=document.getElementById("popup");
+
 /* PRODUCTS */
 const products=[
  {name:"Normal Chai",price:10,qty:0},
@@ -74,10 +85,6 @@ const products=[
  {name:"Cigarette",price:20,qty:0},
  {name:"Mathhi",price:5,qty:0}
 ];
-
-const itemsDiv=document.getElementById("items");
-const totalEl=document.getElementById("total");
-const currentOrder=document.getElementById("currentOrder");
 
 function render(){
   let html="";
@@ -95,10 +102,12 @@ function render(){
   itemsDiv.innerHTML=html;
   calc();
 }
+
 function chg(i,v){
   products[i].qty=Math.max(0,products[i].qty+v);
   render();
 }
+
 function calc(){
   let t=0;
   products.forEach(p=>t+=p.price*p.qty);
@@ -106,10 +115,42 @@ function calc(){
 }
 
 /* POPUP */
-function showPopup(){popup.style.display="flex"}
-function closePopup(){popup.style.display="none"}
+function showPopup(){ popup.style.display="flex"; }
+function closePopup(){ popup.style.display="none"; }
 
-/* 🔔 LIVE STATUS LISTENER */
+/* PLACE ORDER */
+function placeOrder(){
+  const name=nameInput.value;
+  const phone=phoneInput.value;
+  const address=addressInput.value;
+
+  if(!name||!phone||!address){
+    alert("Fill all details");
+    return;
+  }
+
+  const selected=products.filter(p=>p.qty>0);
+  if(selected.length===0){
+    alert("Select at least one item");
+    return;
+  }
+
+  db.collection("orders").add({
+    name, phone, address,
+    items: selected,
+    total: totalEl.innerText,
+    status: "PLACED",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    showPopup();
+    listen(phone);
+
+    products.forEach(p=>p.qty=0);
+    render();
+  });
+}
+
+/* 🔔 LIVE STATUS */
 function listen(phone){
   db.collection("orders")
    .where("phone","==",phone)
@@ -120,45 +161,26 @@ function listen(phone){
        currentOrder.innerText="No active order";
        return;
      }
-     snap.forEach(d=>{
-       const o=d.data();
-       let color=o.status==="DELIVERED"?"green":o.status==="REJECTED"?"red":"green";
-       currentOrder.innerHTML=`₹${o.total} – <span class="${color}">${o.status}</span>`;
+
+     snap.forEach(doc=>{
+       const d=doc.data();
+       let cls="";
+
+       if(d.status==="DELIVERED") cls="green";
+       if(d.status==="REJECTED") cls="red";
+       if(d.status==="ACCEPTED") cls="green";
+       if(d.status==="PLACED") cls="";
+
+       currentOrder.innerHTML=`
+         <b>Status:</b>
+         <span class="${cls}">${d.status}</span><br><br>
+         ${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
+         <h4>Total: ₹${d.total}</h4>
+       `;
      });
    });
 }
 
-/* 🚀 PLACE ORDER */
-function placeOrder(){
-  const name=nameEl.value.trim();
-  const phone=phoneEl.value.trim();
-  const address=addressEl.value.trim();
-  const items=products.filter(p=>p.qty>0);
-  const total=Number(totalEl.innerText);
-
-  if(!name||!phone||!address||items.length===0){
-    alert("Fill all details");
-    return;
-  }
-
-  db.collection("orders").add({
-    name,phone,address,items,total,
-    status:"NEW",
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=>{
-    showPopup();
-    listen(phone);
-    products.forEach(p=>p.qty=0);
-    render();
-  });
-}
-
-/* INPUT ELEMENTS */
-const nameEl=document.getElementById("name");
-const phoneEl=document.getElementById("phone");
-const addressEl=document.getElementById("address");
-
-/* LOAD */
 render();
 </script>
 
