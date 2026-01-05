@@ -16,13 +16,13 @@ header{background:#7a1e1e;color:#fff;padding:15px;text-align:center;font-size:22
 button{padding:6px 10px;font-size:16px}
 input{width:100%;padding:10px;margin-top:8px}
 .main{background:green;color:#fff;border:none;padding:15px;width:100%;font-size:18px;border-radius:8px}
+
 .status{font-weight:bold}
 .PLACED{color:orange}
 .ACCEPTED{color:blue}
 .DELIVERED{color:green}
 .REJECTED{color:red}
 
-/* popup */
 #popup{
  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
  background:rgba(0,0,0,.5);align-items:center;justify-content:center
@@ -50,29 +50,27 @@ input{width:100%;padding:10px;margin-top:8px}
   <div id="orders">No orders yet</div>
 </div>
 
-<!-- POPUP -->
 <div id="popup">
   <div>
     <h3>✅ Order Placed</h3>
-    <button onclick="closePopup()">OK</button>
+    <button onclick="popup.style.display='none'">OK</button>
   </div>
 </div>
 
 <script>
 /* 🔥 Firebase */
-const firebaseConfig={
+firebase.initializeApp({
   apiKey:"AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
   authDomain:"sgmc-16568.firebaseapp.com",
   projectId:"sgmc-16568"
-};
-firebase.initializeApp(firebaseConfig);
+});
 const db=firebase.firestore();
 firebase.auth().signInAnonymously();
 
-/* ELEMENTS */
-const nameInput=name;
-const phoneInput=phone;
-const addressInput=address;
+/* ELEMENTS (FIXED) */
+const nameInput=document.getElementById("name");
+const phoneInput=document.getElementById("phone");
+const addressInput=document.getElementById("address");
 const itemsDiv=document.getElementById("items");
 const totalEl=document.getElementById("total");
 const ordersDiv=document.getElementById("orders");
@@ -89,98 +87,88 @@ const products=[
 ];
 
 function render(){
-  let html="";
-  products.forEach((p,i)=>{
-    html+=`
-    <div class="row">
-      <b>${p.name} ₹${p.price}</b>
-      <div>
-        <button onclick="chg(${i},-1)">-</button>
-        ${p.qty}
-        <button onclick="chg(${i},1)">+</button>
-      </div>
-    </div>`;
-  });
-  itemsDiv.innerHTML=html;
-  calc();
+ let h="";
+ products.forEach((p,i)=>{
+  h+=`
+  <div class="row">
+   <b>${p.name} ₹${p.price}</b>
+   <div>
+    <button onclick="chg(${i},-1)">-</button>
+    ${p.qty}
+    <button onclick="chg(${i},1)">+</button>
+   </div>
+  </div>`;
+ });
+ itemsDiv.innerHTML=h;
+ calc();
 }
-function chg(i,v){
-  products[i].qty=Math.max(0,products[i].qty+v);
-  render();
-}
+function chg(i,v){products[i].qty=Math.max(0,products[i].qty+v);render();}
 function calc(){
-  let t=0;
-  products.forEach(p=>t+=p.price*p.qty);
-  totalEl.innerText=t;
+ let t=0;products.forEach(p=>t+=p.price*p.qty);
+ totalEl.innerText=t;
 }
-
-/* POPUP */
-function showPopup(){popup.style.display="flex"}
-function closePopup(){popup.style.display="none"}
 
 /* PLACE ORDER */
 function placeOrder(){
-  const nameV=nameInput.value;
-  const phoneV=phoneInput.value;
-  const addressV=addressInput.value;
+ const name=nameInput.value.trim();
+ const phone=phoneInput.value.trim();
+ const address=addressInput.value.trim();
 
-  if(!nameV||!phoneV||!addressV)
-    return alert("Fill all details");
+ if(!name||!phone||!address){
+  alert("Fill all details");
+  return;
+ }
 
-  const selected=products.filter(p=>p.qty>0);
-  if(!selected.length)
-    return alert("Select items");
+ const selected=products.filter(p=>p.qty>0);
+ if(!selected.length){
+  alert("Select items");
+  return;
+ }
 
-  localStorage.setItem("sgmc_phone", phoneV);
+ localStorage.setItem("sgmc_phone",phone);
 
-  db.collection("orders").add({
-    name:nameV,
-    phone:phoneV,
-    address:addressV,
-    items:selected,
-    total:totalEl.innerText,
-    status:"PLACED",
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=>{
-    showPopup();
-    products.forEach(p=>p.qty=0);
-    render();
-  });
+ db.collection("orders").add({
+  name,phone,address,
+  items:selected,
+  total:totalEl.innerText,
+  status:"PLACED",
+  createdAt:firebase.firestore.FieldValue.serverTimestamp()
+ }).then(()=>{
+  popup.style.display="flex";
+  products.forEach(p=>p.qty=0);
+  render();
+ });
 }
 
-/* 🔔 ORDER HISTORY + LIVE STATUS */
+/* ORDER HISTORY + LIVE STATUS */
 function loadOrders(){
-  const phoneV=localStorage.getItem("sgmc_phone");
-  if(!phoneV) return;
+ const phone=localStorage.getItem("sgmc_phone");
+ if(!phone) return;
 
-  phoneInput.value=phoneV;
+ phoneInput.value=phone;
 
-  db.collection("orders")
-   .where("phone","==",phoneV)
-   .orderBy("createdAt","desc")
-   .onSnapshot(snapshot=>{
-     if(snapshot.empty){
-       ordersDiv.innerHTML="No orders found";
-       return;
-     }
-
-     let html="";
-     snapshot.forEach(doc=>{
-       const d=doc.data();
-       html+=`
-       <div class="card">
-         <b>Status:
-           <span class="status ${d.status}">
-             ${d.status}
-           </span>
-         </b><br><br>
-
-         ${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
-         <h4>Total: ₹${d.total}</h4>
-       </div>`;
-     });
-     ordersDiv.innerHTML=html;
-   });
+ db.collection("orders")
+ .where("phone","==",phone)
+ .orderBy("createdAt","desc")
+ .onSnapshot(snap=>{
+  if(snap.empty){
+   ordersDiv.innerHTML="No orders found";
+   return;
+  }
+  let h="";
+  snap.forEach(doc=>{
+   const d=doc.data();
+   h+=`
+   <div class="card">
+    <b>Status:
+     <span class="status ${d.status}">${d.status}</span>
+    </b><br><br>
+    ${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
+    <h4>Total: ₹${d.total}</h4>
+   </div>`;
+  });
+  ordersDiv.innerHTML=h;
+ });
 }
 
 render();
