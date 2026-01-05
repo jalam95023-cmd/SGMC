@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>SGMC – Chai Order</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -17,13 +16,16 @@ header{background:#7a1e1e;color:#fff;padding:15px;text-align:center;font-size:22
 button{padding:6px 10px;font-size:16px}
 input{width:100%;padding:10px;margin-top:8px}
 .main{background:green;color:#fff;border:none;padding:15px;width:100%;font-size:18px;border-radius:8px}
-.green{color:green;font-weight:bold}
-.red{color:red;font-weight:bold}
+.status{font-weight:bold}
+.PLACED{color:orange}
+.ACCEPTED{color:blue}
+.DELIVERED{color:green}
+.REJECTED{color:red}
 
 /* popup */
 #popup{
-  display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-  background:rgba(0,0,0,.5);align-items:center;justify-content:center
+ display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+ background:rgba(0,0,0,.5);align-items:center;justify-content:center
 }
 #popup div{background:#fff;padding:25px;border-radius:10px;text-align:center}
 </style>
@@ -44,8 +46,8 @@ input{width:100%;padding:10px;margin-top:8px}
 </div>
 
 <div class="card">
-  <h3>Your Current Order</h3>
-  <div id="currentOrder">No active order</div>
+  <h3>📜 Your Orders</h3>
+  <div id="orders">No orders yet</div>
 </div>
 
 <!-- POPUP -->
@@ -57,23 +59,23 @@ input{width:100%;padding:10px;margin-top:8px}
 </div>
 
 <script>
-/* 🔥 Firebase Config */
-const firebaseConfig = {
-  apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
-  authDomain: "sgmc-16568.firebaseapp.com",
-  projectId: "sgmc-16568"
+/* 🔥 Firebase */
+const firebaseConfig={
+  apiKey:"AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+  authDomain:"sgmc-16568.firebaseapp.com",
+  projectId:"sgmc-16568"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db=firebase.firestore();
 firebase.auth().signInAnonymously();
 
-/* INPUTS */
-const nameInput=document.getElementById("name");
-const phoneInput=document.getElementById("phone");
-const addressInput=document.getElementById("address");
+/* ELEMENTS */
+const nameInput=name;
+const phoneInput=phone;
+const addressInput=address;
 const itemsDiv=document.getElementById("items");
 const totalEl=document.getElementById("total");
-const currentOrder=document.getElementById("currentOrder");
+const ordersDiv=document.getElementById("orders");
 const popup=document.getElementById("popup");
 
 /* PRODUCTS */
@@ -102,12 +104,10 @@ function render(){
   itemsDiv.innerHTML=html;
   calc();
 }
-
 function chg(i,v){
   products[i].qty=Math.max(0,products[i].qty+v);
   render();
 }
-
 function calc(){
   let t=0;
   products.forEach(p=>t+=p.price*p.qty);
@@ -115,74 +115,78 @@ function calc(){
 }
 
 /* POPUP */
-function showPopup(){ popup.style.display="flex"; }
-function closePopup(){ popup.style.display="none"; }
+function showPopup(){popup.style.display="flex"}
+function closePopup(){popup.style.display="none"}
 
 /* PLACE ORDER */
 function placeOrder(){
-  const name=nameInput.value;
-  const phone=phoneInput.value;
-  const address=addressInput.value;
+  const nameV=nameInput.value;
+  const phoneV=phoneInput.value;
+  const addressV=addressInput.value;
 
-  if(!name||!phone||!address){
-    alert("Fill all details");
-    return;
-  }
+  if(!nameV||!phoneV||!addressV)
+    return alert("Fill all details");
 
   const selected=products.filter(p=>p.qty>0);
-  if(selected.length===0){
-    alert("Select at least one item");
-    return;
-  }
+  if(!selected.length)
+    return alert("Select items");
+
+  localStorage.setItem("sgmc_phone", phoneV);
 
   db.collection("orders").add({
-    name, phone, address,
-    items: selected,
-    total: totalEl.innerText,
-    status: "PLACED",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    name:nameV,
+    phone:phoneV,
+    address:addressV,
+    items:selected,
+    total:totalEl.innerText,
+    status:"PLACED",
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
   }).then(()=>{
     showPopup();
-    listen(phone);
-
     products.forEach(p=>p.qty=0);
     render();
   });
 }
 
-/* 🔔 LIVE STATUS */
-function listen(phone){
+/* 🔔 ORDER HISTORY + LIVE STATUS */
+function loadOrders(){
+  const phoneV=localStorage.getItem("sgmc_phone");
+  if(!phoneV) return;
+
+  phoneInput.value=phoneV;
+
   db.collection("orders")
-   .where("phone","==",phone)
+   .where("phone","==",phoneV)
    .orderBy("createdAt","desc")
-   .limit(1)
-   .onSnapshot(snap=>{
-     if(snap.empty){
-       currentOrder.innerText="No active order";
+   .onSnapshot(snapshot=>{
+     if(snapshot.empty){
+       ordersDiv.innerHTML="No orders found";
        return;
      }
 
-     snap.forEach(doc=>{
+     let html="";
+     snapshot.forEach(doc=>{
        const d=doc.data();
-       let cls="";
+       html+=`
+       <div class="card">
+         <b>Status:
+           <span class="status ${d.status}">
+             ${d.status}
+           </span>
+         </b><br><br>
 
-       if(d.status==="DELIVERED") cls="green";
-       if(d.status==="REJECTED") cls="red";
-       if(d.status==="ACCEPTED") cls="green";
-       if(d.status==="PLACED") cls="";
-
-       currentOrder.innerHTML=`
-         <b>Status:</b>
-         <span class="${cls}">${d.status}</span><br><br>
          ${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
          <h4>Total: ₹${d.total}</h4>
-       `;
+       </div>`;
      });
+     ordersDiv.innerHTML=html;
    });
 }
 
 render();
+loadOrders();
 </script>
 
 </body>
 </html>
+
