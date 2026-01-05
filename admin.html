@@ -11,16 +11,22 @@
 body{font-family:Arial;background:#eee;margin:0}
 header{background:#2d6a4f;color:#fff;padding:15px;text-align:center;font-size:22px}
 .card{background:#fff;margin:10px;padding:15px;border-radius:10px}
-button{margin:4px;padding:8px}
+button{margin:4px;padding:8px 12px;border:none;border-radius:5px;cursor:pointer}
+.accept{background:#0077b6;color:#fff}
+.reject{background:#d00000;color:#fff}
+.delivered{background:#2d6a4f;color:#fff}
+.delete{background:#555;color:#fff}
+.status{font-weight:bold}
+.PLACED{color:#ff8800}
+.ACCEPTED{color:#0077b6}
+.REJECTED{color:#d00000}
+.DELIVERED{color:#2d6a4f}
 </style>
 </head>
 
 <body>
 
-<header>
-<img src="./logo.png" height="35" style="vertical-align:middle">
-<span> SGMC – Admin Panel</span>
-</header>
+<header>☕ SGMC – Admin Panel</header>
 
 <div class="card">
 <h2>Today’s Total Sale: ₹<span id="sale">0</span></h2>
@@ -37,36 +43,67 @@ const firebaseConfig={
 firebase.initializeApp(firebaseConfig);
 const db=firebase.firestore();
 
-db.collection("orders").orderBy("createdAt","desc").onSnapshot(s=>{
-let html="",sale=0;
-s.forEach(doc=>{
-const d=doc.data();
-if(d.status==="DELIVERED") sale+=Number(d.total);
-html+=`
-<div class="card">
-<b>${d.name} (${d.phone})</b><br>
-${d.address}<br>
-${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
-<h3>Total: ₹${d.total}</h3>
-<b>Status: ${d.status}</b><br>
-<button onclick="upd('${doc.id}','ACCEPTED')">Accept</button>
-<button onclick="upd('${doc.id}','REJECTED')">Reject</button>
-<button onclick="upd('${doc.id}','DELIVERED')">Delivered</button>
-<button onclick="del('${doc.id}')">🗑 Delete</button>
-</div>`;
-});
-document.getElementById("orders").innerHTML=html;
-document.getElementById("sale").innerText=sale;
+db.collection("orders")
+.orderBy("createdAt","desc")
+.onSnapshot(snapshot=>{
+  let html="", sale=0;
+
+  snapshot.forEach(doc=>{
+    const d=doc.data();
+    let btns="";
+
+    if(d.status==="DELIVERED") sale+=Number(d.total);
+
+    // 🔘 BUTTON LOGIC
+    if(d.status==="PLACED"){
+      btns=`
+        <button class="accept" onclick="updateStatus('${doc.id}','ACCEPTED')">Accept</button>
+        <button class="reject" onclick="updateStatus('${doc.id}','REJECTED')">Reject</button>
+      `;
+    }
+
+    if(d.status==="ACCEPTED"){
+      btns=`
+        <button class="delivered" onclick="updateStatus('${doc.id}','DELIVERED')">Delivered</button>
+      `;
+    }
+
+    if(d.status==="REJECTED" || d.status==="DELIVERED"){
+      btns=`
+        <button class="delete" onclick="deleteOrder('${doc.id}')">🗑 Delete</button>
+      `;
+    }
+
+    html+=`
+    <div class="card">
+      <b>${d.name} (${d.phone})</b><br>
+      ${d.address}<br><br>
+
+      ${d.items.map(i=>`${i.name} × ${i.qty}`).join("<br>")}
+      <h3>Total: ₹${d.total}</h3>
+
+      <div class="status ${d.status}">
+        Status: ${d.status}
+      </div><br>
+
+      ${btns}
+    </div>`;
+  });
+
+  document.getElementById("orders").innerHTML=html;
+  document.getElementById("sale").innerText=sale;
 });
 
-function upd(id,s){
-db.collection("orders").doc(id).update({status:s});
+function updateStatus(id,status){
+  db.collection("orders").doc(id).update({status});
 }
-function del(id){
-if(confirm("Delete order?"))
-db.collection("orders").doc(id).delete();
+
+function deleteOrder(id){
+  if(confirm("Delete this order?")){
+    db.collection("orders").doc(id).delete();
+  }
 }
 </script>
+
 </body>
 </html>
-
