@@ -1,65 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>SGMC Admin Panel</title>
-
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAP_KEY"></script>
-
-<style>
-body{font-family:Arial;background:#f4f4f4}
-h2{text-align:center}
-.order{background:#fff;margin:10px;padding:10px;border-radius:10px}
-button{margin:5px}
-</style>
+  <title>SGMC – Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body{font-family:Arial;background:#f4f4f4;margin:0;padding:10px}
+    h2{text-align:center}
+    .order{background:#fff;padding:10px;margin-bottom:10px;border-radius:8px}
+    button{padding:6px 10px;margin:3px;border:none;border-radius:5px;color:#fff}
+    .accept{background:#007bff}
+    .reject{background:#dc3545}
+    .prep{background:#ffc107;color:#000}
+    .ready{background:#28a745}
+  </style>
 </head>
-
 <body>
 
-<h2>☕ SGMC Admin Panel</h2>
+<h2>🧑‍🍳 SGMC – Admin Panel</h2>
+
 <div id="orders"></div>
 
+<script src="firebase.js"></script>
+
 <script>
-firebase.initializeApp({
- apiKey:"AIzaSyCcUPgsZYqNZyZAUwOhBYpn5_tWeDuRrUg",
- authDomain:"sgmc-chai-app.firebaseapp.com",
- projectId:"sgmc-chai-app"
-});
-const db=firebase.firestore();
-
-db.collection("orders")
-.orderBy("createdAt","desc")
+db.collection("orders").orderBy("time","desc")
 .onSnapshot(snap=>{
- orders.innerHTML="";
- snap.forEach(doc=>{
-  const o=doc.data();
-  orders.innerHTML+=`
-   <div class="order">
-    <b>${o.name}</b><br>
-    ₹${o.total} – ${o.status}<br>
-    ${o.address}
-    <div id="map_${doc.id}" style="height:200px"></div>
-    <button onclick="update('${doc.id}','ACCEPTED')">Accept</button>
-    <button onclick="update('${doc.id}','ONTHEWAY')">On the way</button>
-    <button onclick="update('${doc.id}','DELIVERED')">Delivered</button>
-   </div>`;
-  setTimeout(()=>showMap(doc.id,o.lat,o.lng),200);
- });
+  orders.innerHTML="";
+  snap.forEach(doc=>{
+    const o=doc.data();
+    orders.innerHTML+=`
+      <div class="order">
+        <b>${o.name}</b> (${o.phone})<br>
+        Items: ${o.items.map(i=>i.name).join(", ")}<br>
+        Total: ₹${o.total}<br>
+        Status: <b>${o.status}</b><br><br>
+
+        <button class="accept" onclick="update('${doc.id}','Accepted')">Accept</button>
+        <button class="reject" onclick="update('${doc.id}','Rejected')">Reject</button><br>
+        <button class="prep" onclick="update('${doc.id}','Preparing')">Preparing</button>
+        <button class="ready" onclick="update('${doc.id}','Ready')">Ready</button>
+      </div>
+    `;
+  });
 });
 
-function update(id,s){
- db.collection("orders").doc(id).update({status:s});
-}
-
-function showMap(id,lat,lng){
- new google.maps.Map(
-  document.getElementById("map_"+id),
-  {center:{lat,lng},zoom:15}
- );
- new google.maps.Marker({position:{lat,lng},map});
+function update(id,status){
+  db.collection("orders").doc(id).update({status});
 }
 </script>
 
 </body>
 </html>
+
