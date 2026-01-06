@@ -1,110 +1,71 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>SGMC – Chai Order</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGMC – Order Chai</title>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<!-- Google Maps -->
-<script src="https://maps.googleapis.com/maps/api/js?key=.AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA&libraries=places"></script>
+  <!-- Google Maps (APNI MAP KEY DALNA) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAP_KEY&callback=initMap" async defer></script>
 
-<style>
-body{
-  margin:0;
-  font-family:system-ui,Arial;
-  background:#f2f2f2;
-}
-header{
-  background:#7b1e1e;
-  color:#fff;
-  padding:14px;
-  text-align:center;
-  font-size:20px;
-}
-.card{
-  background:#fff;
-  margin:12px;
-  padding:14px;
-  border-radius:12px;
-}
-.item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
-.qty button{
-  width:32px;
-  height:32px;
-  font-size:18px;
-}
-input{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  font-size:16px;
-}
-#map{
-  height:220px;
-  margin-top:12px;
-  border-radius:10px;
-}
-.total{
-  font-size:20px;
-  margin-top:10px;
-}
-.btn{
-  background:#0a8f08;
-  color:#fff;
-  border:none;
-  width:100%;
-  padding:16px;
-  font-size:18px;
-  border-radius:10px;
-  margin-top:12px;
-}
-.status span{
-  font-weight:bold;
-}
-.NEW{color:#0066ff}
-.ACCEPTED{color:#ff9800}
-.PREPARING{color:#9c27b0}
-.READY{color:#2196f3}
-.DELIVERED{color:#2e7d32}
-</style>
+  <style>
+    body { font-family: Arial; background:#f4f4f4; margin:0 }
+    header { background:#6f1d1b; color:white; padding:15px; text-align:center; font-size:22px }
+    .box { background:white; margin:10px; padding:15px; border-radius:10px }
+    input, select, button {
+      width:100%; padding:10px; margin-top:8px;
+      border-radius:6px; border:1px solid #ccc;
+    }
+    button { background:#6f1d1b; color:white; font-size:16px; border:none }
+    #map { height:250px; margin-top:10px; border-radius:10px }
+    .success {
+      background:#d4edda; color:#155724;
+      padding:10px; margin:10px; border-radius:6px; display:none;
+    }
+  </style>
 </head>
 
 <body>
 
 <header>☕ SGMC – Chai Order</header>
 
-<div class="card" id="items"></div>
+<div class="box">
+  <label>📍 Delivery Address</label>
+  <input type="text" id="address" placeholder="Address auto detect hoga..." />
 
-<div class="card">
-  <input id="name" placeholder="Your Name">
-  <input id="phone" placeholder="Phone Number">
-  <input id="address" placeholder="Delivery Address">
+  <button onclick="detectLocation()">📡 Detect Live Location</button>
   <div id="map"></div>
-
-  <div class="total">Total ₹<span id="total">0</span></div>
-  <button class="btn" onclick="placeOrder()">Place Order (COD)</button>
 </div>
 
-<div class="card status">
-  <h3>Your Current Order</h3>
-  <div id="current">No order</div>
+<div class="box">
+  <label>☕ Select Item</label>
+  <select id="item">
+    <option>Normal Chai</option>
+    <option>Adrak Chai</option>
+    <option>Masala Chai</option>
+    <option>Biscuit</option>
+  </select>
+
+  <label>🔢 Quantity</label>
+  <input type="number" id="qty" value="1" min="1" />
+
+  <label>💳 Payment</label>
+  <select id="payment">
+    <option>Cash on Delivery</option>
+    <option>UPI</option>
+  </select>
+
+  <button onclick="placeOrder()">✅ Place Order</button>
+</div>
+
+<div class="success" id="successMsg">
+  ✅ Order placed successfully!
 </div>
 
 <script>
-/* 🔥 FIREBASE CONFIG */
-firebase.initializeApp({
-  apiKey.// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+/* ================= FIREBASE ================= */
 const firebaseConfig = {
   apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
   authDomain: "sgmc-16568.firebaseapp.com",
@@ -113,130 +74,69 @@ const firebaseConfig = {
   messagingSenderId: "339041646158",
   appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
   measurementId: "G-4996NPF55N"
-}; ",
-  authDomain: "sgmc-16568.firebaseapp.com",
-  projectId: "sgmc-16568"
-});
+};
 
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-firebase.auth().signInAnonymously();
 
-/* 🧃 ITEMS */
-const products = [
-  {name:"Normal Chai", price:10, qty:0},
-  {name:"Adrak Chai", price:15, qty:0},
-  {name:"Masala Chai", price:20, qty:0},
-  {name:"Biscuit", price:10, qty:0},
-  {name:"Cigarette", price:20, qty:0},
-  {name:"Mathhi", price:5, qty:0}
-];
+/* ================= MAP ================= */
+let map, marker;
+let userLat = null, userLng = null;
 
-let map, marker, lat=null, lng=null;
-
-/* 🗺️ MAP INIT */
-function initMap(){
-  map = new google.maps.Map(document.getElementById("map"),{
-    center:{lat:28.6139,lng:77.2090},
-    zoom:14
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 28.6139, lng: 77.2090 },
+    zoom: 14
   });
+}
 
-  // Auto current location
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-      map.setCenter({lat,lng});
-      marker = new google.maps.Marker({map,position:{lat,lng}});
-    });
+function detectLocation() {
+  if (!navigator.geolocation) {
+    alert("Location not supported");
+    return;
   }
 
-  // Address autocomplete
-  const ac = new google.maps.places.Autocomplete(
-    document.getElementById("address")
-  );
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
 
-  ac.addListener("place_changed",()=>{
-    const p = ac.getPlace();
-    if(!p.geometry) return;
-    lat = p.geometry.location.lat();
-    lng = p.geometry.location.lng();
-    if(marker) marker.setMap(null);
-    marker = new google.maps.Marker({map,position:{lat,lng}});
-    map.setCenter({lat,lng});
-    map.setZoom(16);
+    const location = { lat: userLat, lng: userLng };
+    map.setCenter(location);
+
+    if (marker) marker.setMap(null);
+    marker = new google.maps.Marker({ position: location, map: map });
+
+    document.getElementById("address").value =
+      `Lat: ${userLat.toFixed(5)}, Lng: ${userLng.toFixed(5)}`;
   });
 }
 
-/* 🧮 RENDER ITEMS */
-function render(){
-  let html="", t=0;
-  products.forEach((p,i)=>{
-    t += p.qty * p.price;
-    html += `
-      <div class="item">
-        <b>${p.name} ₹${p.price}</b>
-        <div class="qty">
-          <button onclick="chg(${i},-1)">−</button>
-          ${p.qty}
-          <button onclick="chg(${i},1)">+</button>
-        </div>
-      </div>`;
-  });
-  items.innerHTML = html;
-  total.innerText = t;
-}
-function chg(i,v){
-  products[i].qty = Math.max(0, products[i].qty + v);
-  render();
-}
+/* ================= ORDER ================= */
+function placeOrder() {
+  const address = document.getElementById("address").value;
+  const item = document.getElementById("item").value;
+  const qty = document.getElementById("qty").value;
+  const payment = document.getElementById("payment").value;
 
-/* 📦 PLACE ORDER */
-function placeOrder(){
-  const nm = name.value.trim();
-  const ph = phone.value.trim();
-  const ad = address.value.trim();
-  const selected = products.filter(p=>p.qty>0);
-  const tot = Number(total.innerText);
-
-  if(!nm || !ph || !ad || !lat || selected.length===0){
-    alert("Sab details bharo aur item select karo");
+  if (!address) {
+    alert("Address required");
     return;
   }
 
   db.collection("orders").add({
-    name:nm,
-    phone:ph,
-    address:ad,
-    items:selected,
-    total:tot,
-    lat,lng,
-    status:"NEW",
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  }).then(ref=>{
-    alert("✅ Order Placed");
-    watch(ref.id);
-    products.forEach(p=>p.qty=0);
-    render();
+    item,
+    qty,
+    payment,
+    address,
+    location: userLat ? { lat: userLat, lng: userLng } : null,
+    status: "Pending",
+    time: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    document.getElementById("successMsg").style.display = "block";
   });
 }
-
-/* 🔄 LIVE STATUS */
-function watch(id){
-  db.collection("orders").doc(id).onSnapshot(d=>{
-    if(!d.exists) return;
-    const o = d.data();
-    current.innerHTML = `
-      ₹${o.total} –
-      <span class="${o.status}">${o.status}</span>
-    `;
-  });
-}
-
-window.onload = ()=>{
-  initmap();
-  render();
-};
 </script>
 
 </body>
 </html>
+
