@@ -1,140 +1,145 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>SGMC – Chai Order</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-<style>
-body{
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:linear-gradient(135deg,#ff9a9e,#fad0c4);
-}
-header{
-  background:#6d1b1b;
-  color:#fff;
-  padding:16px;
-  text-align:center;
-  font-size:22px;
-}
-.container{padding:14px}
-.card{
-  background:#fff;
-  border-radius:14px;
-  padding:14px;
-  margin-bottom:14px;
-  box-shadow:0 6px 12px rgba(0,0,0,.2);
-}
-.row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  margin-bottom:10px;
-}
-.row input{
-  width:70px;
-  padding:6px;
-}
-.total{
-  font-size:22px;
-  font-weight:bold;
-  text-align:center;
-  background:#fff3cd;
-  padding:14px;
-  border-radius:12px;
-}
-button{
-  width:100%;
-  padding:16px;
-  font-size:18px;
-  border:none;
-  border-radius:14px;
-  background:#28a745;
-  color:#fff;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGMC - Order Online</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f7; font-family: 'Segoe UI', sans-serif; padding-bottom: 50px; }
+        .menu-card { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-top: 20px; border-top: 5px solid #d35400; }
+        .brand-title { color: #d35400; font-weight: 800; letter-spacing: 1px; }
+        .section-title { font-size: 14px; color: #7f8c8d; font-weight: bold; text-transform: uppercase; margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .item-row { margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .qty-input { width: 60px; text-align: center; border: 1px solid #ced4da; border-radius: 5px; padding: 5px; }
+        .brand-input { width: 100px; font-size: 12px; margin-right: 10px; border: 1px solid #eee; border-radius: 4px; padding: 5px; }
+        .btn-chai { background: linear-gradient(45deg, #d35400, #e67e22); color: white; width: 100%; font-weight: bold; border: none; padding: 12px; border-radius: 10px; margin-top: 20px; }
+    </style>
 </head>
-
 <body>
 
-<header>☕ SGMC Chai Order</header>
-
 <div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5 menu-card">
+            <div class="text-center mb-3">
+                <h2 class="brand-title">🔥 SGMC Delivery</h2>
+                <p class="text-muted small">Chai • Sutta • Snacks</p>
+            </div>
+            
+            <form id="orderForm">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <input type="text" id="cName" class="form-control form-control-sm" placeholder="Aapka Naam" required>
+                    </div>
+                    <div class="col-6">
+                        <input type="text" id="cLoc" class="form-control form-control-sm" placeholder="Location/Shop" required>
+                    </div>
+                </div>
 
-<div class="card">
-<h3>🛒 Items</h3>
+                <div class="section-title">Garama Garam</div>
+                <div class="item-row">
+                    <label>☕ Chai (₹10)</label>
+                    <input type="number" id="qtyChai" class="qty-input" value="" placeholder="0">
+                </div>
 
-<div class="row">Normal Chai ₹10 <input id="chai" type="number" min="0" value="0" onchange="calc()"></div>
-<div class="row">Adrak Chai ₹15 <input id="adrak" type="number" min="0" value="0" onchange="calc()"></div>
-<div class="row">Masala Chai ₹20 <input id="masala" type="number" min="0" value="0" onchange="calc()"></div>
-<div class="row">Elaichi Chai ₹20 <input id="elaichi" type="number" min="0" value="0" onchange="calc()"></div>
-<div class="row">Biscuit ₹5 <input id="biscuit" type="number" min="0" value="0" onchange="calc()"></div>
-<div class="row">Bun / Toast ₹10 <input id="bun" type="number" min="0" value="0" onchange="calc()"></div>
+                <div class="section-title">Sutta & Pan</div>
+                <div class="item-row">
+                    <label>🚬 Cigarette</label>
+                    <div class="d-flex">
+                        <input type="text" id="nameCig" class="brand-input" placeholder="Brand (Ex: GF)">
+                        <input type="number" id="qtyCig" class="qty-input" value="" placeholder="0">
+                    </div>
+                </div>
+                <div class="item-row">
+                    <label>✌️ Pan Masala</label>
+                    <div class="d-flex">
+                        <input type="text" id="namePan" class="brand-input" placeholder="Brand (Ex: Vimal)">
+                        <input type="number" id="qtyPan" class="qty-input" value="" placeholder="0">
+                    </div>
+                </div>
 
+                <div class="section-title">Nashta / Snacks</div>
+                <div class="item-row">
+                    <label>🍞 Bun Maska</label>
+                    <input type="number" id="qtyBun" class="qty-input" value="" placeholder="0">
+                </div>
+                <div class="item-row">
+                    <label>🍪 Mathi</label>
+                    <input type="number" id="qtyMathi" class="qty-input" value="" placeholder="0">
+                </div>
+                <div class="item-row">
+                    <label>🌯 Veg Roll</label>
+                    <input type="number" id="qtyRoll" class="qty-input" value="" placeholder="0">
+                </div>
+
+                <div class="mt-3">
+                    <input type="text" id="otherItem" class="form-control form-control-sm" placeholder="Kuch aur chahiye? (Yahan likhein)">
+                </div>
+
+                <button type="submit" class="btn btn-chai">ORDER KARO 🚀</button>
+            </form>
+        </div>
+    </div>
 </div>
 
-<div class="card total">
-Total ₹ <span id="total">0</span>
-</div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-<button onclick="placeOrder()">✅ Place Order</button>
+  // TODO: PASTE API KEY HERE
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY_HERE",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
 
-</div>
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
-  authDomain: "sgmc-16568.firebaseapp.com",
-  databaseURL: "https://sgmc-16568-default-rtdb.firebaseio.com",
-  projectId: "sgmc-16568",
-  storageBucket: "sgmc-16568.firebasestorage.app",
-  messagingSenderId: "339041646158",
-  appId: "1:339041646158:web:85d9a50a3b51b30aae351f"
-};
+  document.getElementById('orderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.querySelector('.btn-chai');
+      btn.innerHTML = "Sending..."; btn.disabled = true;
 
-if(!firebase.apps.length){
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
+      // Get Values
+      const items = {
+          chai: document.getElementById('qtyChai').value,
+          bun: document.getElementById('qtyBun').value,
+          mathi: document.getElementById('qtyMathi').value,
+          roll: document.getElementById('qtyRoll').value,
+          cig: { qty: document.getElementById('qtyCig').value, brand: document.getElementById('nameCig').value },
+          pan: { qty: document.getElementById('qtyPan').value, brand: document.getElementById('namePan').value },
+          other: document.getElementById('otherItem').value
+      };
 
-function calc(){
-  const total =
-    chai.value*10 +
-    adrak.value*15 +
-    masala.value*20 +
-    elaichi.value*20 +
-    biscuit.value*5 +
-    bun.value*10;
-  document.getElementById("total").innerText = total;
-}
+      // Check if empty
+      if(!items.chai && !items.bun && !items.mathi && !items.roll && !items.cig.qty && !items.pan.qty && !items.other) {
+          alert("Order khali hai! Kuch to select karo.");
+          btn.innerHTML = "ORDER KARO 🚀"; btn.disabled = false;
+          return;
+      }
 
-function placeOrder(){
-  const total = document.getElementById("total").innerText;
-  if(total == 0){
-    alert("❗ Item select karo");
-    return;
-  }
+      const orderData = {
+          customerName: document.getElementById('cName').value,
+          location: document.getElementById('cLoc').value,
+          items: items,
+          status: 'Pending',
+          timestamp: serverTimestamp()
+      };
 
-  db.ref("orders").push({
-    chai: chai.value,
-    adrak: adrak.value,
-    masala: masala.value,
-    elaichi: elaichi.value,
-    biscuit: biscuit.value,
-    bun: bun.value,
-    total: total,
-    status: "Placed",
-    time: new Date().toLocaleString()
+      try {
+          await addDoc(collection(db, "orders"), orderData);
+          alert("✅ Order Placed Successfully!");
+          location.reload();
+      } catch (error) {
+          console.error("Error", error);
+          alert("❌ Error. Net check karo.");
+          btn.disabled = false;
+      }
   });
-
-  alert("✅ Order Placed");
-}
 </script>
-
 </body>
 </html>
