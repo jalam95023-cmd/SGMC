@@ -3,57 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC Admin Panel</title>
+    <title>SGMC Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
         body { background-color: #0f0f0f; color: white; font-family: sans-serif; }
         .card { background: #1f1f1f; border-radius: 12px; border: 1px solid #333; }
-        .status-open { background-color: #10B981; }
-        .status-closed { background-color: #EF4444; }
         .tab-active { border-bottom: 2px solid #F97316; color: #F97316; }
+        .btn-action { padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto">
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
-        <button id="shop-toggle-btn" onclick="toggleShop()" class="px-6 py-2 rounded-full font-bold text-white shadow-lg transition-all">
-            Loading...
-        </button>
+        <button id="shop-toggle-btn" onclick="toggleShop()" class="px-4 py-2 rounded text-sm font-bold bg-gray-700">Loading...</button>
     </div>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
-        <div class="card p-4 text-center">
-            <p class="text-gray-400 text-xs uppercase">Today's Sales (Paid)</p>
-            <h2 class="text-2xl font-bold text-green-400">₹<span id="total-sales">0</span></h2>
+        <div class="card p-3 text-center">
+            <p class="text-gray-400 text-xs">Total Sales Today</p>
+            <h2 class="text-xl font-bold text-green-400">₹<span id="total-sales">0</span></h2>
         </div>
-        <div class="card p-4 text-center">
-            <p class="text-gray-400 text-xs uppercase">Pending Orders</p>
-            <h2 class="text-2xl font-bold text-yellow-400" id="pending-count">0</h2>
+        <div class="card p-3 text-center">
+            <p class="text-gray-400 text-xs">Active Orders</p>
+            <h2 class="text-xl font-bold text-yellow-400" id="pending-count">0</h2>
         </div>
     </div>
 
     <div class="flex mb-4 border-b border-gray-700">
-        <button onclick="switchTab('orders')" id="tab-orders" class="flex-1 py-3 text-center tab-active font-bold">New Orders</button>
-        <button onclick="switchTab('udhaar')" id="tab-udhaar" class="flex-1 py-3 text-center text-gray-400 font-bold">Udhaar Khata</button>
+        <button onclick="switchTab('live')" id="tab-live" class="flex-1 py-3 tab-active font-bold">Live Orders</button>
+        <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-3 text-gray-400 font-bold">History</button>
+        <button onclick="switchTab('udhaar')" id="tab-udhaar" class="flex-1 py-3 text-gray-400 font-bold">Udhaar</button>
     </div>
 
-    <div id="view-orders" class="space-y-4">
-        <p class="text-center text-gray-500 mt-10">Checking for orders...</p>
+    <div id="view-live" class="space-y-4">
+        </div>
+
+    <div id="view-history" class="hidden space-y-4">
+        <p class="text-gray-500 text-center text-sm">Last 20 Completed Orders</p>
+        <div id="history-list"></div>
     </div>
 
     <div id="view-udhaar" class="hidden space-y-4">
-        <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Name or Number..." class="w-full p-3 bg-gray-800 rounded-lg text-white border border-gray-700 mb-2">
-        <div id="udhaar-list" class="space-y-3">
-            </div>
+        <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search..." class="w-full p-2 bg-gray-800 rounded border border-gray-700 mb-2">
+        <div id="udhaar-list"></div>
     </div>
 
     <script>
-        // *** FIREBASE KEYS ***
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
             authDomain: "sgmc-16568.firebaseapp.com",
@@ -70,130 +69,139 @@
         let udhaarData = [];
 
         function init() {
-            // 1. Listen to Shop Status
+            // Shop Status
             db.collection('settings').doc('status').onSnapshot(doc => {
-                if(doc.exists) {
-                    isShopOpen = doc.data().isOpen;
-                    updateShopBtn();
-                } else {
-                    db.collection('settings').doc('status').set({isOpen: true});
-                }
+                isShopOpen = doc.exists ? doc.data().isOpen : true;
+                const btn = document.getElementById('shop-toggle-btn');
+                btn.innerText = isShopOpen ? "OPEN (Click to Close)" : "CLOSED (Click to Open)";
+                btn.className = isShopOpen ? "px-4 py-2 rounded text-sm font-bold bg-green-600 text-white" : "px-4 py-2 rounded text-sm font-bold bg-red-600 text-white";
             });
 
-            // 2. Listen to Orders & Calculate Udhaar
+            // LIVE ORDERS LISTENER
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-                const ordersDiv = document.getElementById('view-orders');
+                const liveDiv = document.getElementById('view-live');
+                const histDiv = document.getElementById('history-list');
                 
-                let html = '';
+                let liveHtml = '';
+                let histHtml = '';
                 let sales = 0;
-                let pending = 0;
-                let tempUdhaarMap = {}; 
+                let activeCount = 0;
+                let tempUdhaar = {};
 
                 snapshot.docs.forEach(doc => {
                     const data = doc.data();
                     const id = doc.id;
 
-                    // Calculate Udhaar (Based on Phone Number)
+                    // Calculate Udhaar
                     if(data.paymentMode === 'Udhaar' && data.customerPhone) {
-                        const phone = data.customerPhone;
-                        if(!tempUdhaarMap[phone]) {
-                            tempUdhaarMap[phone] = { name: data.customerName, total: 0, orders: 0 };
+                        if(!tempUdhaar[data.customerPhone]) tempUdhaar[data.customerPhone] = { name: data.customerName, total: 0, count: 0 };
+                        if(data.status !== 'cancelled') { // Only count if not cancelled
+                            tempUdhaar[data.customerPhone].total += data.totalAmount;
+                            tempUdhaar[data.customerPhone].count++;
                         }
-                        // Assuming Udhaar orders are unpaid debts
-                        tempUdhaarMap[phone].total += data.totalAmount;
-                        tempUdhaarMap[phone].orders += 1;
                     }
 
-                    // Calculate Sales (Only Completed & Paid via Cash/UPI)
+                    // Calculate Sales
                     if(data.status === 'completed' && data.paymentMode !== 'Udhaar') {
                         sales += data.totalAmount;
                     }
 
-                    // Show Pending Orders
-                    if(data.status === 'pending') {
-                        pending++;
-                        const isUdhaar = data.paymentMode === 'Udhaar';
-                        html += `
-                        <div class="card p-4 border-l-4 ${isUdhaar ? 'border-red-500' : 'border-green-500'}">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="font-bold text-lg">${data.customerName}</h3>
-                                    <p class="text-xs text-gray-400 mb-2">${new Date(data.timestamp.toDate()).toLocaleTimeString()} • ${data.paymentMode}</p>
-                                    <ul class="text-sm space-y-1 mb-3 text-gray-300">
-                                        ${data.items.map(i => `<li>• ${i.qty} x ${i.name}</li>`).join('')}
-                                    </ul>
-                                    <h4 class="font-bold text-orange-400 text-lg">Total: ₹${data.totalAmount}</h4>
-                                </div>
-                                <div class="flex flex-col space-y-2">
-                                    <a href="tel:${data.customerPhone}" class="bg-blue-600 text-white w-10 h-10 flex items-center justify-center rounded-lg"><i class="fas fa-phone"></i></a>
-                                    <button onclick="markComplete('${id}')" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-sm">Done</button>
-                                </div>
+                    // Render Live Orders (Pending/Cooking/Ready)
+                    if(['pending', 'cooking', 'ready'].includes(data.status)) {
+                        activeCount++;
+                        const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
+                        
+                        liveHtml += `
+                        <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'}">
+                            <div class="flex justify-between">
+                                <h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3>
+                                <h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3>
+                            </div>
+                            <ul class="text-sm text-gray-300 mt-2 mb-3">
+                                ${data.items.map(i => `<li>${i.qty} x ${i.name}</li>`).join('')}
+                            </ul>
+                            
+                            ${isUpiPending ? `<div class="bg-yellow-900/50 text-yellow-200 text-xs p-2 rounded mb-2 border border-yellow-700 flex justify-between items-center">
+                                <span>UPI Payment Check Karo!</span>
+                                <button onclick="verifyPayment('${id}')" class="bg-yellow-600 text-white px-2 py-1 rounded">Verify</button>
+                            </div>` : ''}
+
+                            <div class="flex gap-2 mt-2">
+                                <select onchange="updateStatus('${id}', this.value)" class="bg-gray-700 text-white text-sm p-2 rounded border border-gray-600">
+                                    <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                    <option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option>
+                                    <option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option>
+                                </select>
+                                <button onclick="markComplete('${id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold flex-1">Complete</button>
+                                <button onclick="cancelOrder('${id}')" class="bg-red-900 text-red-200 px-3 py-2 rounded"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>`;
+                    } else if (data.status === 'completed') {
+                        // History Limit 20
+                        if(histHtml.split('div').length < 40) { // rough check
+                            histHtml += `
+                            <div class="bg-gray-800 p-3 rounded border border-gray-700 opacity-70">
+                                <div class="flex justify-between">
+                                    <span class="font-bold">${data.customerName}</span>
+                                    <span class="text-green-400">₹${data.totalAmount}</span>
+                                </div>
+                                <p class="text-xs text-gray-400">${data.items.map(i => i.name).join(', ')}</p>
+                            </div>`;
+                        }
                     }
                 });
 
-                document.getElementById('view-orders').innerHTML = html || '<p class="text-center text-gray-500 mt-10">Abhi koi order nahi hai.</p>';
+                document.getElementById('view-live').innerHTML = liveHtml || '<p class="text-center text-gray-500 mt-10">All clear!</p>';
+                document.getElementById('history-list').innerHTML = histHtml;
                 document.getElementById('total-sales').innerText = sales;
-                document.getElementById('pending-count').innerText = pending;
+                document.getElementById('pending-count').innerText = activeCount;
 
-                // Prepare Udhaar List
-                udhaarData = Object.entries(tempUdhaarMap).map(([phone, info]) => ({phone, ...info}));
-                renderUdhaarList(udhaarData);
+                // Udhaar Render
+                udhaarData = Object.entries(tempUdhaar).map(([phone, d]) => ({phone, ...d}));
+                renderUdhaar();
             });
         }
 
+        // --- ACTIONS ---
         function toggleShop() {
             db.collection('settings').doc('status').set({ isOpen: !isShopOpen });
         }
-
-        function updateShopBtn() {
-            const btn = document.getElementById('shop-toggle-btn');
-            if(isShopOpen) {
-                btn.innerText = "DUKAN KHULI HAI";
-                btn.className = "px-6 py-2 rounded-full font-bold text-white shadow-lg transition-all status-open";
-            } else {
-                btn.innerText = "DUKAN BAND HAI";
-                btn.className = "px-6 py-2 rounded-full font-bold text-white shadow-lg transition-all status-closed";
-            }
+        function updateStatus(id, status) {
+            db.collection('orders').doc(id).update({ status: status });
         }
-
         function markComplete(id) {
-            if(confirm("Order complete ho gaya?")) {
-                db.collection('orders').doc(id).update({ status: 'completed' });
-            }
+            if(confirm('Order Complete?')) db.collection('orders').doc(id).update({ status: 'completed' });
+        }
+        function cancelOrder(id) {
+            if(confirm('Delete Order?')) db.collection('orders').doc(id).update({ status: 'cancelled' });
+        }
+        function verifyPayment(id) {
+            if(confirm('Paisaa aa gaya account me?')) db.collection('orders').doc(id).update({ paymentVerified: true });
         }
 
+        // --- TABS & UDHAAR ---
         function switchTab(tab) {
-            if(tab === 'orders') {
-                document.getElementById('view-orders').classList.remove('hidden');
-                document.getElementById('view-udhaar').classList.add('hidden');
-                document.getElementById('tab-orders').className = "flex-1 py-3 text-center tab-active font-bold";
-                document.getElementById('tab-udhaar').className = "flex-1 py-3 text-center text-gray-400 font-bold";
-            } else {
-                document.getElementById('view-orders').classList.add('hidden');
-                document.getElementById('view-udhaar').classList.remove('hidden');
-                document.getElementById('tab-udhaar').className = "flex-1 py-3 text-center tab-active font-bold";
-                document.getElementById('tab-orders').className = "flex-1 py-3 text-center text-gray-400 font-bold";
-            }
+            ['live', 'history', 'udhaar'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('tab-active', 'text-white');
+                document.getElementById(`tab-${t}`).classList.add('text-gray-400');
+            });
+            document.getElementById(`view-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active', 'text-white');
+            document.getElementById(`tab-${tab}`).classList.remove('text-gray-400');
         }
 
-        function renderUdhaarList(list) {
-            const container = document.getElementById('udhaar-list');
-            if(list.length === 0) {
-                container.innerHTML = "<p class='text-center text-gray-500'>Koi udhaar nahi hai.</p>";
-                return;
-            }
-            container.innerHTML = list.map(u => `
-                <div class="card p-4 flex justify-between items-center">
+        function renderUdhaar() {
+            const list = document.getElementById('udhaar-list');
+            list.innerHTML = udhaarData.map(u => `
+                <div class="card p-3 flex justify-between items-center">
                     <div>
-                        <h3 class="font-bold text-lg">${u.name}</h3>
-                        <p class="text-xs text-gray-400 font-mono">${u.phone}</p>
-                        <p class="text-xs text-gray-500">${u.orders} orders pending</p>
+                        <h4 class="font-bold">${u.name}</h4>
+                        <p class="text-xs text-gray-400">${u.phone}</p>
                     </div>
                     <div class="text-right">
-                        <h3 class="font-bold text-red-400 text-xl">₹${u.total}</h3>
-                        <a href="tel:${u.phone}" class="text-blue-400 text-xs mt-1 block"><i class="fas fa-phone"></i> Call</a>
+                        <h4 class="text-red-400 font-bold">₹${u.total}</h4>
+                        <a href="tel:${u.phone}" class="text-blue-400 text-xs"><i class="fas fa-phone"></i> Call</a>
                     </div>
                 </div>
             `).join('');
@@ -202,7 +210,19 @@
         function filterUdhaar() {
             const q = document.getElementById('search-udhaar').value.toLowerCase();
             const filtered = udhaarData.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
-            renderUdhaarList(filtered);
+            // Simple re-render logic for filter (reusing map logic inside would be cleaner but this is quick)
+            const list = document.getElementById('udhaar-list');
+            list.innerHTML = filtered.map(u => `
+                <div class="card p-3 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold">${u.name}</h4>
+                        <p class="text-xs text-gray-400">${u.phone}</p>
+                    </div>
+                    <div class="text-right">
+                        <h4 class="text-red-400 font-bold">₹${u.total}</h4>
+                    </div>
+                </div>
+            `).join('');
         }
 
         init();
