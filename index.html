@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <title>SGMC – Chai Order</title>
@@ -10,56 +10,97 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f5f5f5}
-header{background:#7b1e1e;color:#fff;padding:12px;text-align:center;font-size:18px}
+body{
+  margin:0;
+  font-family:Arial;
+  background:linear-gradient(135deg,#ffecd2,#fcb69f);
+}
+header{
+  background:#7b1e1e;
+  color:white;
+  padding:14px;
+  text-align:center;
+  font-size:20px;
+}
 .container{padding:12px}
-.card{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
-label{font-size:14px;font-weight:bold;margin-bottom:6px;display:block}
-input,select{width:100%;padding:10px;border-radius:6px;border:1px solid #ccc}
-button{width:100%;padding:12px;background:#7b1e1e;color:#fff;border:none;border-radius:6px;font-size:16px;margin-top:8px}
-#map{height:200px;border-radius:8px}
+.card{
+  background:white;
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:14px;
+  box-shadow:0 4px 8px rgba(0,0,0,.15)
+}
+.item-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+.item-row input{
+  width:60px;
+}
+.total-box{
+  font-size:20px;
+  font-weight:bold;
+  text-align:center;
+  background:#fff3cd;
+  padding:12px;
+  border-radius:10px;
+}
+button{
+  width:100%;
+  padding:14px;
+  font-size:18px;
+  border:none;
+  border-radius:10px;
+  background:#28a745;
+  color:white;
+}
 </style>
 </head>
 
 <body>
 
-<header>☕ SGMC – Chai Order</header>
+<header>☕ SGMC Chai Order</header>
 
 <div class="container">
 
 <div class="card">
-<label>📍 Delivery Address</label>
-<input id="address" placeholder="Live location auto fill hoga">
-<button onclick="detectLocation()">📍 Detect Live Location</button>
+<h3>☕ Items</h3>
+
+<div class="item-row">
+Normal Chai (₹10)
+<input type="number" min="0" value="0" onchange="calcTotal()" id="chai">
 </div>
 
-<div class="card">
-<div id="map"></div>
+<div class="item-row">
+Adrak Chai (₹15)
+<input type="number" min="0" value="0" onchange="calcTotal()" id="adrak">
 </div>
 
-<div class="card">
-<label>☕ Select Item</label>
-<select id="item">
-<option>Normal Chai</option>
-<option>Adrak Chai</option>
-<option>Masala Chai</option>
-<option>Elaichi Chai</option>
-<option>Biscuit</option>
-<option>Bun / Toast</option>
-</select>
+<div class="item-row">
+Masala Chai (₹20)
+<input type="number" min="0" value="0" onchange="calcTotal()" id="masala">
 </div>
 
-<div class="card">
-<label>🔢 Quantity</label>
-<input type="number" id="qty" value="1" min="1">
+<div class="item-row">
+Elaichi Chai (₹20)
+<input type="number" min="0" value="0" onchange="calcTotal()" id="elaichi">
 </div>
 
-<div class="card">
-<label>💳 Payment</label>
-<select id="payment">
-<option>Cash on Delivery</option>
-<option>UPI</option>
-</select>
+<div class="item-row">
+Biscuit (₹5)
+<input type="number" min="0" value="0" onchange="calcTotal()" id="biscuit">
+</div>
+
+<div class="item-row">
+Bun / Toast (₹10)
+<input type="number" min="0" value="0" onchange="calcTotal()" id="bun">
+</div>
+</div>
+
+<div class="card total-box">
+Total: ₹ <span id="total">0</span>
 </div>
 
 <button onclick="placeOrder()">✅ Place Order</button>
@@ -67,10 +108,11 @@ button{width:100%;padding:12px;background:#7b1e1e;color:#fff;border:none;border-
 </div>
 
 <script>
-/* 🔥 FIREBASE CONFIG (TERA KEY) */
+/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
   authDomain: "sgmc-16568.firebaseapp.com",
+  databaseURL: "https://sgmc-16568-default-rtdb.firebaseio.com",
   projectId: "sgmc-16568",
   storageBucket: "sgmc-16568.firebasestorage.app",
   messagingSenderId: "339041646158",
@@ -79,54 +121,33 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* 🗺️ MAP VARIABLES */
-let map, marker, userLat, userLng;
-
-/* 📍 DETECT LOCATION */
-function detectLocation(){
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(pos=>{
-      userLat = pos.coords.latitude;
-      userLng = pos.coords.longitude;
-      initMap();
-      document.getElementById("address").value =
-        `Lat: ${userLat}, Lng: ${userLng}`;
-    },()=>alert("Location allow karo"));
-  }
+function calcTotal(){
+  const total =
+    chai.value*10 +
+    adrak.value*15 +
+    masala.value*20 +
+    elaichi.value*20 +
+    biscuit.value*5 +
+    bun.value*10;
+  document.getElementById("total").innerText = total;
 }
 
-/* 🗺️ INIT MAP */
-function initMap(){
-  map = new google.maps.Map(document.getElementById("map"),{
-    center:{lat:userLat,lng:userLng},
-    zoom:16
-  });
-  marker = new google.maps.Marker({
-    position:{lat:userLat,lng:userLng},
-    map:map
-  });
-}
-
-/* 🧾 PLACE ORDER */
 function placeOrder(){
-  const orderId = Date.now();
-  db.ref("orders/"+orderId).set({
-    item: item.value,
-    quantity: qty.value,
-    payment: payment.value,
-    address: address.value,
-    lat: userLat,
-    lng: userLng,
-    status: "Placed",
-    time: new Date().toLocaleString()
-  });
+  const order = {
+    chai: chai.value,
+    adrak: adrak.value,
+    masala: masala.value,
+    elaichi: elaichi.value,
+    biscuit: biscuit.value,
+    bun: bun.value,
+    total: document.getElementById("total").innerText,
+    status:"Placed",
+    time:new Date().toLocaleString()
+  };
+  db.ref("orders").push(order);
   alert("✅ Order Placed");
 }
 </script>
-
-<!-- 🗺️ GOOGLE MAPS SCRIPT -->
-<!-- ⬇️ YAHA APNI GOOGLE MAPS API KEY DALO ⬇️ -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA"></script>
 
 </body>
 </html>
