@@ -1,198 +1,187 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC - Chai & More</title>
+    <title>SGMC - Order App</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-
-        /* --- 1. Top Warning Bar (Dukan Band Hone Par) --- */
-        #shopClosedBar {
-            background-color: #d32f2f; /* Red Color */
-            color: white;
-            text-align: center;
-            padding: 12px;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            display: none; /* By default chupa rahega */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .container {
-            padding: 20px;
-            max-width: 600px;
-            margin: auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .item-card {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* --- Payment Section Design --- */
-        .payment-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 30px;
-            border: 1px solid #ddd;
-        }
-
-        .payment-option {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #eee;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { color: #d35400; margin-bottom: 5px; }
+        p { color: #555; font-size: 14px; margin-bottom: 10px; }
         
-        /* Udhaar option ko highlight karne ke liye */
-        .khata-option {
-            background-color: #e3f2fd; /* Light Blue */
-            border-color: #2196f3;
-            font-weight: bold;
-            display: none; /* Default mein chupa rahega */
-        }
+        /* Shop Status Banner */
+        #shop-status { padding: 10px; color: white; font-weight: bold; border-radius: 5px; margin-bottom: 20px; }
+        .open { background-color: #2ecc71; } /* Green */
+        .closed { background-color: #e74c3c; } /* Red */
 
-        button.order-btn {
-            background-color: #28a745;
-            color: white;
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-        }
+        /* Menu Items */
+        .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .menu-item:last-child { border-bottom: none; }
+        .item-name { font-weight: bold; font-size: 16px; }
+        .checkbox { transform: scale(1.5); accent-color: #d35400; cursor: pointer; }
 
-        button.order-btn:active {
-            transform: scale(0.98);
-        }
+        /* Inputs */
+        input[type="text"] { width: 90%; padding: 10px; margin-top: 20px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        
+        /* Udhaar Section */
+        .udhaar-section { margin-top: 15px; padding: 10px; background: #ffebee; border-radius: 5px; border: 1px solid red; display: flex; align-items: center; justify-content: center; gap: 10px;}
+        .udhaar-text { color: red; font-weight: bold; }
 
+        /* Button */
+        button { width: 100%; padding: 12px; background-color: #d35400; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        button:hover { background-color: #a04000; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* Order List */
+        #orders-list { margin-top: 30px; text-align: left; }
+        .order-card { background: #fff3e0; padding: 10px; margin-bottom: 10px; border-radius: 5px; border-left: 5px solid #d35400; }
+        .status-badge { float: right; font-size: 12px; padding: 3px 8px; border-radius: 10px; color: white; font-weight: bold; }
+        .paid { background-color: green; }
+        .udhaar { background-color: red; }
     </style>
 </head>
 <body>
 
-    <div id="shopClosedBar">
-        😴 Dukan abhi band hai. Subah 8 baje khulegi.
-    </div>
-
     <div class="container">
-        <div class="header">
-            <h1>☕ SGMC</h1>
-            <p>Chai, Sutta, Pan Masala & More</p>
-        </div>
+        <h1>☕ SGMC</h1>
+        <p>Shree Mataji Chai Stall</p>
+        
+        <div id="shop-status">Checking Status...</div>
 
-        <div class="item-card">
-            <div>
-                <h3>Adrak Chai</h3>
-                <small>Garam aur Kadak</small>
+        <hr>
+
+        <div id="menu">
+            <div class="menu-item">
+                <span class="item-name">🔥 Kadak Chai</span>
+                <input type="checkbox" class="checkbox" value="Chai">
             </div>
-            <b>₹15</b>
-        </div>
-
-        <div class="item-card">
-            <div>
-                <h3>Gold Flake (Choti)</h3>
-                <small>Cigarette</small>
+            <div class="menu-item">
+                <span class="item-name">🚬 Cigarette (Sutta)</span>
+                <input type="checkbox" class="checkbox" value="Cigarette">
             </div>
-            <b>₹10</b>
-        </div>
-
-        <div class="item-card">
-            <div>
-                <h3>Cream Roll</h3>
-                <small>Bakery Item</small>
+            <div class="menu-item">
+                <span class="item-name">🍃 Pan Masala</span>
+                <input type="checkbox" class="checkbox" value="Pan Masala">
             </div>
-            <b>₹20</b>
+            <div class="menu-item">
+                <span class="item-name">🍪 Mathri</span>
+                <input type="checkbox" class="checkbox" value="Mathri">
+            </div>
+            <div class="menu-item">
+                <span class="item-name">🌯 Veg Roll</span>
+                <input type="checkbox" class="checkbox" value="Roll">
+            </div>
         </div>
 
-        <div class="payment-section">
-            <h3>Payment Mode</h3>
-            
-            <label class="payment-option">
-                <input type="radio" name="payment" value="cash" checked> &nbsp; Cash on Delivery
-            </label>
-
-            <label class="payment-option">
-                <input type="radio" name="payment" value="upi"> &nbsp; UPI / QR Code
-            </label>
-
-            <label class="payment-option khata-option" id="khataOption">
-                <input type="radio" name="payment" value="khata"> &nbsp; 📒 Khata / Udhaar (Add to Ledger)
-            </label>
+        <input type="text" id="customerName" placeholder="Apna Naam Likhein...">
+        
+        <div class="udhaar-section">
+            <input type="checkbox" id="isUdhaar" class="checkbox" style="accent-color: red;">
+            <span class="udhaar-text">Khate me likh lo (Udhaar) 📕</span>
         </div>
 
-        <button class="order-btn" onclick="placeOrder()">Order Now</button>
+        <button onclick="placeOrder()">Order Lagao 🚀</button>
+
+        <div id="orders-list">
+            <h3>🔴 Live Orders</h3>
+            <div id="orderDisplay">Loading...</div>
+        </div>
     </div>
 
-    <script>
-        // --- SETTINGS (Ye data backend/admin panel se aayega) ---
-        
-        // 1. DUKAN KA STATUS (true = Khula, false = Band)
-        // Abhi 'false' rakha hai check karne ke liye
-        let isShopOpen = false; 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 2. USER KA STATUS (true = Purana/Bharosemand customer, false = Naya customer)
-        // Ise 'true' karke dekho, Udhaar option aa jayega. 'false' pe gayab ho jayega.
-        let isTrustedCustomer = true; 
+        // 🟢 SETTING: Yaha se dukan ON/OFF karo (True = Khuli, False = Band)
+        const isShopOpen = true; 
 
+        // ----- Shop Status Logic -----
+        const statusDiv = document.getElementById("shop-status");
+        if (isShopOpen) {
+            statusDiv.innerHTML = "🟢 Dukan Khuli Hai - Order Karo!";
+            statusDiv.className = "open";
+        } else {
+            statusDiv.innerHTML = "🔴 Dukan Band Hai - Kal Aana!";
+            statusDiv.className = "closed";
+        }
 
-        // --- LOGIC ---
-
-        // Page load hote hi check karega
-        window.onload = function() {
-            // Agar dukan band hai, to upar Red Bar dikhao
-            if (!isShopOpen) {
-                document.getElementById('shopClosedBar').style.display = 'block';
-            }
-
-            // Agar Customer Trusted hai, to 'Udhaar' option dikhao
-            if (isTrustedCustomer) {
-                document.getElementById('khataOption').style.display = 'flex';
-            }
+        const firebaseConfig = {
+            apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+            authDomain: "sgmc-16568.firebaseapp.com",
+            projectId: "sgmc-16568",
+            storageBucket: "sgmc-16568.firebasestorage.app",
+            messagingSenderId: "339041646158",
+            appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
+            measurementId: "G-4996NPF55N"
         };
 
-        // Order Button Click Function
-        function placeOrder() {
-            // Sabse pehle check: Kya dukan khuli hai?
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Function to Place Order
+        window.placeOrder = async function() {
+            // 🛑 CHECK: Agar dukan band hai to yahi rok do
             if (!isShopOpen) {
-                // Agar band hai, to wahi message jo aapne bola
-                alert("Sorry SGMC av close hai");
-                return; // Code yahi ruk jayega, order place nahi hoga
+                alert("⛔ Dukan band hai bhai! Abhi order nahi le sakte. Kal subah aana.");
+                return;
             }
 
-            // Payment method check
-            let paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+            const name = document.getElementById("customerName").value;
+            const udhaarCheck = document.getElementById("isUdhaar").checked;
+            
+            const checkboxes = document.querySelectorAll('#menu .checkbox:checked');
+            let selectedItems = [];
+            checkboxes.forEach((checkbox) => {
+                selectedItems.push(checkbox.value);
+            });
 
-            if (paymentMethod === 'khata') {
-                alert("Order Placed! Amount aapke Khate mein likh diya gaya hai.");
-            } else {
-                alert("Order Received! Jald hi delivery hogi.");
+            if (name === "" || selectedItems.length === 0) {
+                alert("Naam likho aur kuch order to karo!");
+                return;
+            }
+
+            const paymentStatus = udhaarCheck ? "Udhaar ❌" : "Cash/Paid ✅";
+
+            try {
+                await addDoc(collection(db, "orders"), {
+                    customer: name,
+                    items: selectedItems,
+                    payment: paymentStatus,
+                    timestamp: serverTimestamp()
+                });
+                alert("Order Bheja Gaya! ✅");
+                
+                document.getElementById("customerName").value = ""; 
+                document.getElementById("isUdhaar").checked = false;
+                checkboxes.forEach(cb => cb.checked = false); 
+            } catch (error) {
+                console.error("Error: ", error);
+                alert("Database Error! Console check karo.");
             }
         }
+
+        // Live Order Updates
+        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const orderDiv = document.getElementById("orderDisplay");
+            orderDiv.innerHTML = ""; 
+            snapshot.forEach((doc) => {
+                const order = doc.data();
+                const itemString = order.items.join(", ");
+                const badgeClass = order.payment.includes("Udhaar") ? "udhaar" : "paid";
+
+                orderDiv.innerHTML += `
+                    <div class="order-card">
+                        <span class="status-badge ${badgeClass}">${order.payment}</span>
+                        <strong>👤 ${order.customer}</strong><br>
+                        🛒 ${itemString}
+                    </div>
+                `;
+            });
+        });
     </script>
+
 </body>
 </html>
