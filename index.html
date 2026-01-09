@@ -12,7 +12,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* FIX: Increased padding-bottom from 80px to 140px so cart doesn't cover last item */
         body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         .card { background: #1a1a1a; border-radius: 16px; border: 1px solid #333; overflow: hidden; }
         .btn-primary { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); color: white; font-weight: bold; }
@@ -28,6 +27,9 @@
         /* Modal & Profile */
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
         .profile-avatar { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; items-center; justify-center; font-weight: bold; color: #F97316; border: 1px solid #F97316; }
+
+        /* Dropdown Styling */
+        select { -webkit-appearance: none; appearance: none; text-align-last: center; }
     </style>
 </head>
 <body>
@@ -214,19 +216,30 @@
 
         // --- STATE ---
         let cart = {};
+        
+        // Define standard menu items
         let menuItems = [
             { id: 1, name: "Normal Chai", price: 10 },
             { id: 2, name: "Adrak Chai", price: 15 },
-            { id: 3, name: "Cigarette (Gold)", price: 18, variant: true },
+            { id: 3, name: "Cigarettes", isSpecial: true }, // Placeholder for Dropdown logic
             { id: 4, name: "Matthi", price: 5 },
             { id: 5, name: "Veg Roll", price: 10 },
             { id: 6, name: "Biscuit", price: 5 },
             { id: 7, name: "Namkeen", price: 10 }
         ];
+
+        // Define Cigarette Variants
+        let cigaretteOptions = [
+            { id: 'cig_marlboro', name: 'Marlboro Advance', price: 20 },
+            { id: 'cig_goldflake', name: 'Gold Flake Ind.', price: 20 },
+            { id: 'cig_chhoti_gold', name: 'Chhoti Gold', price: 12 },
+            { id: 'cig_chhoti_adv', name: 'Chhoti Advance', price: 12 }
+        ];
+
         let userProfile = { name: "", phone: "" };
         let selectedPayment = 'Cash';
         let isShopOpen = true;
-        let cachedOrders = {}; // To store order data for details popup
+        let cachedOrders = {}; 
 
         // --- INIT ---
         function init() {
@@ -299,7 +312,30 @@
         function renderMenu(stockStatus) {
             const container = document.getElementById('menu-container');
             container.innerHTML = menuItems.map(item => {
+                // Determine if item is out of stock (Admin controlled)
                 if(stockStatus[item.id] === false) return '';
+
+                // SPECIAL LOGIC FOR CIGARETTES (ID 3)
+                if(item.id === 3) {
+                    return `
+                    <div class="card p-3 flex justify-between items-center item-row bg-gray-800/50">
+                        <div>
+                            <h3 class="font-bold text-white">Cigarettes</h3>
+                            <p class="text-xs text-orange-400">Select Brand</p>
+                        </div>
+                        <div class="relative">
+                            <select onchange="addCigarette(this)" class="bg-gray-800 text-white text-xs p-2 pl-3 pr-8 rounded-lg border border-gray-600 outline-none appearance-none focus:border-orange-500">
+                                <option value="">Tap to Select...</option>
+                                ${cigaretteOptions.map(opt => `<option value="${opt.id}|${opt.name}|${opt.price}">${opt.name} - ₹${opt.price}</option>`).join('')}
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                                <i class="fas fa-chevron-down text-[10px]"></i>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                // NORMAL ITEMS
                 return `
                 <div class="card p-3 flex justify-between items-center item-row">
                     <div>
@@ -314,6 +350,7 @@
                 </div>`;
             }).join('');
             
+            // Re-update quantities on re-render
             for(let id in cart) {
                 if(document.getElementById(`qty-${id}`)) {
                     document.getElementById(`qty-${id}`).innerText = cart[id].qty;
@@ -326,6 +363,7 @@
             if(!isShopOpen) { alert("Shop is closed now."); return; }
             if(!cart[id]) {
                 const item = menuItems.find(i => i.id === id);
+                if(!item) return;
                 cart[id] = { ...item, qty: 0 };
             }
             cart[id].qty += change;
@@ -335,6 +373,30 @@
                 document.getElementById(`qty-${id}`).innerText = cart[id] ? cart[id].qty : 0;
             }
             updateCartUI();
+        }
+
+        // NEW: Function to handle Cigarette Dropdown
+        function addCigarette(selectEl) {
+            if(!isShopOpen) { alert("Shop is closed now."); selectEl.value = ""; return; }
+            const val = selectEl.value;
+            if(!val) return;
+
+            const [id, name, price] = val.split('|');
+            
+            if(!cart[id]) {
+                cart[id] = { id: id, name: name, price: parseInt(price), qty: 0 };
+            }
+            cart[id].qty += 1;
+            
+            // Reset Dropdown
+            selectEl.value = "";
+            
+            updateCartUI();
+            
+            // Optional: Small feedback
+            const btn = document.getElementById('cart-bar');
+            btn.classList.add('animate-bounce');
+            setTimeout(() => btn.classList.remove('animate-bounce'), 500);
         }
 
         function updateCartUI() {
@@ -364,13 +426,23 @@
                 total += itemTotal;
                 html += `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
                     <span>${item.name} <span class="text-orange-400">x${item.qty}</span></span>
-                    <span class="font-bold">₹${itemTotal}</span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold">₹${itemTotal}</span>
+                        <button onclick="removeItem('${id}')" class="text-red-500 text-xs ml-2"><i class="fas fa-trash"></i></button>
+                    </div>
                 </div>`;
             }
             container.innerHTML = html;
             document.getElementById('checkout-total').innerText = total;
             document.getElementById('checkout-modal').classList.remove('hidden');
             setPayment('Cash');
+        }
+
+        function removeItem(id) {
+            delete cart[id];
+            updateCartUI();
+            if(Object.keys(cart).length === 0) closeCheckout();
+            else openCheckout(); // Refresh list
         }
 
         function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
@@ -422,6 +494,12 @@
                 popup.classList.remove('hidden');
                 document.getElementById('success-box').classList.add('scale-100');
                 
+                if(selectedPayment === 'UPI') {
+                    const upiId = "9523196156@ybl";
+                    const upiLink = `upi://pay?pa=${upiId}&pn=SGMC&am=${total}&tn=Order_${userProfile.name}`;
+                    window.location.href = upiLink;
+                }
+                
                 if(document.getElementById('nav-orders').classList.contains('active')) fetchMyHistory();
             }).catch(e => {
                 alert("Error: " + e.message);
@@ -452,7 +530,7 @@
             return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         }
 
-        // --- NEW: ORDER DETAILS LOGIC ---
+        // --- HISTORY DETAIL LOGIC ---
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
@@ -463,14 +541,13 @@
                   
                   const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
                   
-                  cachedOrders = {}; // Clear cache
+                  cachedOrders = {}; 
 
                   list.innerHTML = docs.map(doc => {
                       const d = doc.data();
-                      cachedOrders[doc.id] = d; // Store for popup
+                      cachedOrders[doc.id] = d; 
                       
                       const dateStr = formatDate(d.timestamp);
-                      // Added onclick and hover styles
                       return `
                       <div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} cursor-pointer hover:bg-gray-800 transition" onclick="openOrderDetail('${doc.id}')">
                           <div class="flex justify-between items-start">
@@ -493,7 +570,7 @@
             if(!data) return;
 
             document.getElementById('od-date').innerText = formatDate(data.timestamp);
-            document.getElementById('od-payment').innerText = data.paymentMode || 'Cash'; // Fallback
+            document.getElementById('od-payment').innerText = data.paymentMode || 'Cash'; 
             document.getElementById('od-status').innerText = data.status;
             document.getElementById('od-status').className = "uppercase font-bold " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
             document.getElementById('od-total').innerText = '₹' + data.totalAmount;
