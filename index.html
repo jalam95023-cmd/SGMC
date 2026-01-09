@@ -11,9 +11,9 @@
         p { color: #555; font-size: 14px; margin-bottom: 10px; }
         
         /* Shop Status Banner */
-        #shop-status { padding: 10px; color: white; font-weight: bold; border-radius: 5px; margin-bottom: 20px; }
-        .open { background-color: #2ecc71; } /* Green */
-        .closed { background-color: #e74c3c; } /* Red */
+        #shop-status { padding: 15px; color: white; font-weight: bold; border-radius: 5px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.3s; }
+        .open { background-color: #2ecc71; border: 2px solid #27ae60; } /* Green */
+        .closed { background-color: #e74c3c; border: 2px solid #c0392b; } /* Red */
 
         /* Menu Items */
         .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
@@ -29,9 +29,11 @@
         .udhaar-text { color: red; font-weight: bold; }
 
         /* Button */
-        button { width: 100%; padding: 12px; background-color: #d35400; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; margin-top: 15px; font-weight: bold; }
+        button { width: 100%; padding: 12px; background-color: #d35400; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; margin-top: 15px; font-weight: bold; transition: 0.3s; }
         button:hover { background-color: #a04000; }
-        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* Disabled Button Style */
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
 
         /* Order List */
         #orders-list { margin-top: 30px; text-align: left; }
@@ -47,7 +49,7 @@
         <h1>☕ SGMC</h1>
         <p>Shree Mataji Chai Stall</p>
         
-        <div id="shop-status">Checking Status...</div>
+        <div id="shop-status">Connecting...</div>
 
         <hr>
 
@@ -81,7 +83,7 @@
             <span class="udhaar-text">Khate me likh lo (Udhaar) 📕</span>
         </div>
 
-        <button onclick="placeOrder()">Order Lagao 🚀</button>
+        <button id="orderBtn" onclick="placeOrder()">Order Lagao 🚀</button>
 
         <div id="orders-list">
             <h3>🔴 Live Orders</h3>
@@ -91,21 +93,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } 
+        import { getFirestore, collection, addDoc, onSnapshot, doc, query, orderBy, serverTimestamp } 
         from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // 🟢 SETTING: Yaha se dukan ON/OFF karo (True = Khuli, False = Band)
-        const isShopOpen = true; 
-
-        // ----- Shop Status Logic -----
-        const statusDiv = document.getElementById("shop-status");
-        if (isShopOpen) {
-            statusDiv.innerHTML = "🟢 Dukan Khuli Hai - Order Karo!";
-            statusDiv.className = "open";
-        } else {
-            statusDiv.innerHTML = "🔴 Dukan Band Hai - Kal Aana!";
-            statusDiv.className = "closed";
-        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
@@ -120,11 +109,43 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // --- 🟢 REAL-TIME SHOP STATUS LOGIC ---
+        let isShopOpen = true; // Default
+        const statusDiv = document.getElementById("shop-status");
+        const orderBtn = document.getElementById("orderBtn");
+
+        // Admin ki setting suno (Listen)
+        const statusDocRef = doc(db, "shopSettings", "status");
+        
+        onSnapshot(statusDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+                isShopOpen = docSnap.data().isOpen;
+            } else {
+                // Agar setting database me nahi hai, to by default Open maano
+                isShopOpen = true;
+            }
+
+            // UI Update karo
+            if (isShopOpen) {
+                statusDiv.innerHTML = "🟢 Dukan Khuli Hai";
+                statusDiv.className = "open";
+                orderBtn.disabled = false;
+                orderBtn.innerText = "Order Lagao 🚀";
+                orderBtn.style.backgroundColor = "#d35400";
+            } else {
+                statusDiv.innerHTML = "🔴 Dukan Band Hai (Closed)";
+                statusDiv.className = "closed";
+                orderBtn.disabled = true; // Button disable kar diya
+                orderBtn.innerText = "⛔ Abhi Order Band Hai";
+                orderBtn.style.backgroundColor = "#95a5a6";
+            }
+        });
+
         // Function to Place Order
         window.placeOrder = async function() {
-            // 🛑 CHECK: Agar dukan band hai to yahi rok do
+            // Double check security
             if (!isShopOpen) {
-                alert("⛔ Dukan band hai bhai! Abhi order nahi le sakte. Kal subah aana.");
+                alert("Dukan band hai bhai! Kal aana.");
                 return;
             }
 
@@ -158,7 +179,7 @@
                 checkboxes.forEach(cb => cb.checked = false); 
             } catch (error) {
                 console.error("Error: ", error);
-                alert("Database Error! Console check karo.");
+                alert("Order nahi gaya. Internet check karo.");
             }
         }
 
