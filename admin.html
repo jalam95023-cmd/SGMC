@@ -3,23 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC Admin Panel</title>
+    <title>SGMC Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f6f9; font-family: sans-serif; }
-        .order-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid #d35400; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .order-card.ready { border-left-color: #f1c40f; }
-        .order-card.delivered { border-left-color: #2ecc71; opacity: 0.7; }
-        .items-list { background: #fff5f0; padding: 10px; border-radius: 8px; font-size: 14px; margin: 10px 0; }
-        .btn-status { font-size: 12px; margin-right: 5px; }
+        body { background-color: #eef2f7; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Dashboard Stats */
+        .stats-card { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); }
+        .stats-label { font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+        .stats-value { font-size: 2.5rem; font-weight: bold; }
+
+        /* Order Cards */
+        .order-card { 
+            background: white; border-radius: 12px; border: none; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; 
+            transition: transform 0.2s; position: relative; overflow: hidden;
+        }
+        .order-card:hover { transform: translateY(-3px); }
+        
+        .status-strip { width: 6px; position: absolute; top: 0; bottom: 0; left: 0; }
+        .card-pending .status-strip { background: #ff4757; } /* Red */
+        .card-accepted .status-strip { background: #5352ed; } /* Blue */
+        .card-ready .status-strip { background: #ffa502; } /* Orange/Yellow */
+        .card-delivered .status-strip { background: #2ed573; } /* Green */
+
+        .card-header-custom { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px dashed #eee; margin-bottom: 10px; }
+        .items-box { background: #f8f9fa; border-radius: 8px; padding: 10px; font-size: 0.95rem; }
+        .btn-action { border-radius: 20px; font-size: 0.8rem; padding: 5px 15px; font-weight: 600; }
     </style>
 </head>
 <body>
 
-<div class="container py-3">
-    <h3 class="fw-bold text-center mb-4">👨‍💻 SGMC Admin Panel</h3>
+<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold text-dark m-0"><i class="fas fa-store me-2"></i>SGMC Admin</h4>
+        <button class="btn btn-sm btn-outline-primary" onclick="enableSound()">🔔 Enable Sound</button>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="stats-card">
+                <div class="stats-label">Today's Total Sale</div>
+                <div class="stats-value" id="totalSaleDisplay">₹0</div>
+                <small class="text-white-50">Based on Delivered orders</small>
+            </div>
+        </div>
+    </div>
+
+    <h6 class="text-muted fw-bold mb-3">LATEST ORDERS</h6>
     <div id="orders-container">
-        <p class="text-center text-muted">Connecting to orders...</p>
+        <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
     </div>
 </div>
 
@@ -27,6 +63,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+  // AAPKI CONFIG
   const firebaseConfig = {
     apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
     authDomain: "sgmc-16568.firebaseapp.com",
@@ -40,15 +77,29 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // Listen for Orders Real-time
+  // Sound Function
+  window.enableSound = () => {
+      document.getElementById('notifSound').play().catch(() => {});
+      alert("Sound Enabled! Ab naye order par awaz aayegi.");
+  }
+
+  // Listen for Orders
   const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
   
   onSnapshot(q, (snapshot) => {
       const container = document.getElementById('orders-container');
-      container.innerHTML = ""; // Clear list
+      let totalSale = 0;
+      let html = "";
       
+      // Play sound if new order added (snapshot changes)
+      snapshot.docChanges().forEach((change) => {
+          if (change.type === "added" && !snapshot.metadata.fromCache) {
+              document.getElementById('notifSound').play().catch(e => console.log("Click to enable sound"));
+          }
+      });
+
       if(snapshot.empty) {
-          container.innerHTML = "<p class='text-center'>Abhi koi order nahi hai.</p>";
+          container.innerHTML = "<p class='text-center text-muted'>Koi order nahi hai.</p>";
           return;
       }
 
@@ -56,53 +107,65 @@
           const order = docSnap.data();
           const id = docSnap.id;
           
-          // Format Items List
-          let itemsHtml = "";
-          if(order.items.chai > 0) itemsHtml += `<div>☕ Chai: <b>${order.items.chai}</b></div>`;
-          if(order.items.bun > 0) itemsHtml += `<div>🍞 Bun: <b>${order.items.bun}</b></div>`;
-          if(order.items.mathi > 0) itemsHtml += `<div>🍪 Mathi: <b>${order.items.mathi}</b></div>`;
-          if(order.items.roll > 0) itemsHtml += `<div>🌯 Roll: <b>${order.items.roll}</b></div>`;
-          if(order.items.cig.qty > 0) itemsHtml += `<div>🚬 Cig: <b>${order.items.cig.qty}</b> (${order.items.cig.brand})</div>`;
-          if(order.items.pan.qty > 0) itemsHtml += `<div>✌️ Pan: <b>${order.items.pan.qty}</b> (${order.items.pan.brand})</div>`;
-          if(order.items.other) itemsHtml += `<div>📝 Other: ${order.items.other}</div>`;
+          // Calculate Total Sale (Only for Delivered orders)
+          if(order.status === 'Delivered') {
+              totalSale += order.totalBill;
+          }
 
-          // Card HTML
-          const card = document.createElement('div');
-          let statusClass = order.status.toLowerCase();
-          card.className = `order-card ${statusClass}`;
-          
-          card.innerHTML = `
-              <div class="d-flex justify-content-between">
-                  <h5 class="m-0 fw-bold">₹${order.totalBill}</h5>
-                  <span class="badge bg-secondary">${order.status}</span>
-              </div>
-              <div class="small text-muted mt-1">
-                  👤 ${order.customerName} | 📱 <a href="tel:${order.phone}">${order.phone}</a>
-              </div>
-              <div class="fw-bold text-danger mt-1">📍 ${order.location}</div>
-              
-              <div class="items-list">${itemsHtml}</div>
-              
-              <div class="mt-2">
-                  <button onclick="updateStatus('${id}', 'Accepted')" class="btn btn-primary btn-sm btn-status">Accept</button>
-                  <button onclick="updateStatus('${id}', 'Ready')" class="btn btn-warning btn-sm btn-status">Ready</button>
-                  <button onclick="updateStatus('${id}', 'Delivered')" class="btn btn-success btn-sm btn-status">Done</button>
-                  <button onclick="deleteOrder('${id}')" class="btn btn-outline-danger btn-sm float-end">❌</button>
+          // Build Items HTML
+          let itemsHtml = "";
+          const items = order.items;
+          if(items.chai > 0) itemsHtml += `<div>☕ Chai x ${items.chai}</div>`;
+          if(items.bun > 0) itemsHtml += `<div>🍞 Bun x ${items.bun}</div>`;
+          if(items.mathi > 0) itemsHtml += `<div>🍪 Mathi x ${items.mathi}</div>`;
+          if(items.roll > 0) itemsHtml += `<div>🌯 Roll x ${items.roll}</div>`;
+          if(items.cig && items.cig.qty > 0) itemsHtml += `<div>🚬 ${items.cig.brand} x ${items.cig.qty}</div>`;
+          if(items.pan && items.pan.qty > 0) itemsHtml += `<div>✌️ ${items.pan.brand} x ${items.pan.qty}</div>`;
+          if(items.other) itemsHtml += `<div>📝 ${items.other}</div>`;
+
+          // Determine Class based on status
+          let statusClass = "card-" + order.status.toLowerCase(); // card-pending, card-ready etc.
+
+          html += `
+              <div class="order-card ${statusClass} p-3">
+                  <div class="status-strip"></div>
+                  <div class="card-header-custom">
+                      <div>
+                          <h5 class="m-0 fw-bold">₹${order.totalBill}</h5>
+                          <small class="text-muted">${order.customerName}</small>
+                      </div>
+                      <span class="badge bg-dark">${order.status}</span>
+                  </div>
+                  
+                  <div class="items-box mb-2">
+                      ${itemsHtml}
+                  </div>
+                  
+                  <div class="d-flex justify-content-between align-items-center">
+                      <div class="small text-danger fw-bold"><i class="fas fa-map-marker-alt"></i> ${order.location}</div>
+                      <div>
+                          ${order.status !== 'Delivered' ? `
+                            <button onclick="updateStatus('${id}', 'Accepted')" class="btn btn-primary btn-action">Accept</button>
+                            <button onclick="updateStatus('${id}', 'Ready')" class="btn btn-warning btn-action">Ready</button>
+                            <button onclick="updateStatus('${id}', 'Delivered')" class="btn btn-success btn-action">Done</button>
+                          ` : `<span class="text-success small fw-bold">Completed ✅</span>`}
+                          <button onclick="deleteOrder('${id}')" class="btn btn-link text-danger p-0 ms-2"><i class="fas fa-trash"></i></button>
+                      </div>
+                  </div>
               </div>
           `;
-          container.appendChild(card);
       });
+
+      container.innerHTML = html;
+      document.getElementById('totalSaleDisplay').innerText = "₹" + totalSale;
   });
 
-  // Expose functions to window
   window.updateStatus = async (id, status) => {
       await updateDoc(doc(db, "orders", id), { status: status });
   }
   
   window.deleteOrder = async (id) => {
-      if(confirm("Delete kar de?")) {
-          await deleteDoc(doc(db, "orders", id));
-      }
+      if(confirm("Pakka delete karna hai?")) await deleteDoc(doc(db, "orders", id));
   }
 </script>
 </body>
