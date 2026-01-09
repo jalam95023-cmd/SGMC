@@ -1,141 +1,132 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SGMC – Order Chai</title>
+<meta charset="UTF-8">
+<title>SGMC – Chai Order</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Google Maps (APNI MAP KEY DALNA) -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=.AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA&callback=initMap" async defer></script>
-
-  <style>
-    body { font-family: Arial; background:#f4f4f4; margin:0 }
-    header { background:#6f1d1b; color:white; padding:15px; text-align:center; font-size:22px }
-    .box { background:white; margin:10px; padding:15px; border-radius:10px }
-    input, select, button {
-      width:100%; padding:10px; margin-top:8px;
-      border-radius:6px; border:1px solid #ccc;
-    }
-    button { background:#6f1d1b; color:white; font-size:16px; border:none }
-    #map { height:250px; margin-top:10px; border-radius:10px }
-    .success {
-      background:#d4edda; color:#155724;
-      padding:10px; margin:10px; border-radius:6px; display:none;
-    }
-  </style>
+<style>
+body{margin:0;font-family:Arial;background:#f5f5f5}
+header{background:#7b1e1e;color:#fff;padding:12px;text-align:center;font-size:18px}
+.container{padding:12px}
+.card{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
+label{font-size:14px;font-weight:bold;margin-bottom:6px;display:block}
+input,select{width:100%;padding:10px;border-radius:6px;border:1px solid #ccc}
+button{width:100%;padding:12px;background:#7b1e1e;color:#fff;border:none;border-radius:6px;font-size:16px;margin-top:8px}
+#map{height:200px;border-radius:8px}
+</style>
 </head>
 
 <body>
 
 <header>☕ SGMC – Chai Order</header>
 
-<div class="box">
-  <label>📍 Delivery Address</label>
-  <input type="text" id="address" placeholder="Address auto detect hoga..." />
+<div class="container">
 
-  <button onclick="detectLocation()">📡 Detect Live Location</button>
-  <div id="map"></div>
+<div class="card">
+<label>📍 Delivery Address</label>
+<input id="address" placeholder="Live location auto fill hoga">
+<button onclick="detectLocation()">📍 Detect Live Location</button>
 </div>
 
-<div class="box">
-  <label>☕ Select Item</label>
-  <select id="item">
-    <option>Normal Chai</option>
-    <option>Adrak Chai</option>
-    <option>Masala Chai</option>
-    <option>Biscuit</option>
-  </select>
-
-  <label>🔢 Quantity</label>
-  <input type="number" id="qty" value="1" min="1" />
-
-  <label>💳 Payment</label>
-  <select id="payment">
-    <option>Cash on Delivery</option>
-    <option>UPI</option>
-  </select>
-
-  <button onclick="placeOrder()">✅ Place Order</button>
+<div class="card">
+<div id="map"></div>
 </div>
 
-<div class="success" id="successMsg">
-  ✅ Order placed successfully!
+<div class="card">
+<label>☕ Select Item</label>
+<select id="item">
+<option>Normal Chai</option>
+<option>Adrak Chai</option>
+<option>Masala Chai</option>
+<option>Elaichi Chai</option>
+<option>Biscuit</option>
+<option>Bun / Toast</option>
+</select>
+</div>
+
+<div class="card">
+<label>🔢 Quantity</label>
+<input type="number" id="qty" value="1" min="1">
+</div>
+
+<div class="card">
+<label>💳 Payment</label>
+<select id="payment">
+<option>Cash on Delivery</option>
+<option>UPI</option>
+</select>
+</div>
+
+<button onclick="placeOrder()">✅ Place Order</button>
+
 </div>
 
 <script>
-/* ================= FIREBASE ================= */
+/* 🔥 FIREBASE CONFIG (TERA KEY) */
 const firebaseConfig = {
   apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
   authDomain: "sgmc-16568.firebaseapp.com",
   projectId: "sgmc-16568",
   storageBucket: "sgmc-16568.firebasestorage.app",
   messagingSenderId: "339041646158",
-  appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
-  measurementId: "G-4996NPF55N"
+  appId: "1:339041646158:web:85d9a50a3b51b30aae351f"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db = firebase.database();
 
-/* ================= MAP ================= */
-let map, marker;
-let userLat = null, userLng = null;
+/* 🗺️ MAP VARIABLES */
+let map, marker, userLat, userLng;
 
-function initMap() {
-  map = new google.maps.Map(document.getElementById("map"), {
-    center: { lat: 28.6139, lng: 77.2090 },
-    zoom: 14
+/* 📍 DETECT LOCATION */
+function detectLocation(){
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(pos=>{
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      initMap();
+      document.getElementById("address").value =
+        `Lat: ${userLat}, Lng: ${userLng}`;
+    },()=>alert("Location allow karo"));
+  }
+}
+
+/* 🗺️ INIT MAP */
+function initMap(){
+  map = new google.maps.Map(document.getElementById("map"),{
+    center:{lat:userLat,lng:userLng},
+    zoom:16
+  });
+  marker = new google.maps.Marker({
+    position:{lat:userLat,lng:userLng},
+    map:map
   });
 }
 
-function detectLocation() {
-  if (!navigator.geolocation) {
-    alert("Location not supported");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(pos => {
-    userLat = pos.coords.latitude;
-    userLng = pos.coords.longitude;
-
-    const location = { lat: userLat, lng: userLng };
-    map.setCenter(location);
-
-    if (marker) marker.setMap(null);
-    marker = new google.maps.Marker({ position: location, map: map });
-
-    document.getElementById("address").value =
-      `Lat: ${userLat.toFixed(5)}, Lng: ${userLng.toFixed(5)}`;
+/* 🧾 PLACE ORDER */
+function placeOrder(){
+  const orderId = Date.now();
+  db.ref("orders/"+orderId).set({
+    item: item.value,
+    quantity: qty.value,
+    payment: payment.value,
+    address: address.value,
+    lat: userLat,
+    lng: userLng,
+    status: "Placed",
+    time: new Date().toLocaleString()
   });
-}
-
-/* ================= ORDER ================= */
-function placeOrder() {
-  const address = document.getElementById("address").value;
-  const item = document.getElementById("item").value;
-  const qty = document.getElementById("qty").value;
-  const payment = document.getElementById("payment").value;
-
-  if (!address) {
-    alert("Address required");
-    return;
-  }
-
-  db.collection("orders").add({
-    item,
-    qty,
-    payment,
-    address,
-    location: userLat ? { lat: userLat, lng: userLng } : null,
-    status: "Pending",
-    time: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    document.getElementById("successMsg").style.display = "block";
-  });
+  alert("✅ Order Placed");
 }
 </script>
+
+<!-- 🗺️ GOOGLE MAPS SCRIPT -->
+<!-- ⬇️ YAHA APNI GOOGLE MAPS API KEY DALO ⬇️ -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAP_KEY"></script>
 
 </body>
 </html>
