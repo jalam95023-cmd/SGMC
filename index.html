@@ -172,14 +172,33 @@
     </div>
 
     <div id="upi-confirm-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[60] hidden">
-        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-yellow-600 shadow-2xl w-full max-w-xs">
-            <div class="w-16 h-16 bg-yellow-600/20 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-500 text-3xl animate-pulse">
-                <i class="fas fa-mobile-alt"></i>
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-yellow-600 shadow-2xl w-full max-w-sm">
+            <div class="w-16 h-16 bg-yellow-600/20 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-500 text-3xl">
+                <i class="fas fa-qrcode"></i>
             </div>
-            <h2 class="text-lg font-bold text-white mb-2">Complete Payment</h2>
-            <p class="text-gray-400 text-xs mb-6">Redirecting to UPI App...<br>Please complete the payment and return here.</p>
-            <button onclick="finalizeOrder('UPI')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg">I Have Paid & Confirm</button>
-            <button onclick="document.getElementById('upi-confirm-modal').classList.add('hidden')" class="mt-3 text-gray-500 text-xs underline">Cancel</button>
+            <h2 class="text-lg font-bold text-white mb-2">Pay via UPI</h2>
+            
+            <div class="bg-black/30 p-3 rounded-lg mb-4 text-left">
+                <p class="text-xs text-gray-400 mb-1">Total Amount:</p>
+                <p class="text-xl font-bold text-orange-500">₹<span id="upi-modal-amount">0</span></p>
+                
+                <p class="text-xs text-gray-400 mt-3 mb-1">UPI ID:</p>
+                <div class="flex justify-between items-center bg-black/50 p-2 rounded border border-gray-700">
+                    <span class="text-sm font-mono text-white select-all">9523196156@ybl</span>
+                    <button onclick="copyToClipboard('9523196156@ybl')" class="text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600">Copy</button>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <button onclick="attemptDeepLink()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg text-sm">
+                    Open UPI App <i class="fas fa-external-link-alt ml-1"></i>
+                </button>
+                <button onclick="finalizeOrder('UPI')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg text-sm">
+                    I Have Made Payment
+                </button>
+            </div>
+            
+            <button onclick="document.getElementById('upi-confirm-modal').classList.add('hidden')" class="mt-4 text-gray-500 text-xs underline">Cancel</button>
         </div>
     </div>
 
@@ -245,8 +264,6 @@
         let selectedPayment = 'Cash';
         let isShopOpen = true;
         let cachedOrders = {}; 
-        
-        // New State for Cigarette Modal Counter
         let tempCigQuantities = {}; 
 
         // --- INIT ---
@@ -336,7 +353,6 @@
             container.innerHTML = menuItems.map(item => {
                 if(stockStatus[item.id] === false) return '';
 
-                // SPECIAL CIGARETTE UI
                 if(item.id === 3) {
                     return `
                     <div class="card p-3 flex justify-between items-center item-row bg-gray-800/50">
@@ -350,7 +366,6 @@
                     </div>`;
                 }
 
-                // NORMAL ITEMS
                 return `
                 <div class="card p-3 flex justify-between items-center item-row">
                     <div>
@@ -372,11 +387,10 @@
             }
         }
 
-        // --- CIGARETTE MODAL LOGIC (UPDATED for Multi-Select) ---
+        // --- CIGARETTE MODAL LOGIC (Multi-Select) ---
         function openCigModal() {
             if(!isShopOpen) { alert("Shop is closed."); return; }
             
-            // Initialize/Reset temp quantities
             tempCigQuantities = {};
             cigaretteOptions.forEach(opt => tempCigQuantities[opt.id] = 0);
 
@@ -420,12 +434,7 @@
                     }
                 }
             }
-            
-            if(!added) {
-                alert("Please add at least one item.");
-                return;
-            }
-            
+            if(!added) { alert("Please add at least one item."); return; }
             closeCigModal();
             updateCartUI();
         }
@@ -451,6 +460,13 @@
         }
 
         function updateCartUI() {
+            // Only show cart if on MENU tab
+            const activeTab = localStorage.getItem('activeTab') || 'menu';
+            if(activeTab !== 'menu') {
+                document.getElementById('cart-bar').classList.add('hidden');
+                return;
+            }
+
             let count = 0; let total = 0;
             for(let id in cart) {
                 count += cart[id].qty;
@@ -515,7 +531,6 @@
             if(Object.keys(cart).length === 0) return;
             if(!userProfile.phone) { alert("Please setup profile first."); openProfileEdit(); return; }
             
-            // VALIDATION: Address Required
             const address = document.getElementById('order-address').value.trim();
             if(!address) {
                 alert("Please enter a Delivery Address to continue.");
@@ -525,20 +540,28 @@
 
             const total = parseInt(document.getElementById('checkout-total').innerText);
 
-            // IF UPI: OPEN APP FIRST
             if(selectedPayment === 'UPI') {
-                const upiId = "9523196156@ybl";
-                // Simplified URL to avoid security errors
-                const upiLink = `upi://pay?pa=${upiId}&pn=SGMC&am=${total}&cu=INR`;
-                
-                window.location.href = upiLink;
-                
+                // Show UPI Modal instead of direct link
+                document.getElementById('upi-modal-amount').innerText = total;
                 document.getElementById('checkout-modal').classList.add('hidden');
                 document.getElementById('upi-confirm-modal').classList.remove('hidden');
             } 
             else {
                 finalizeOrder(selectedPayment);
             }
+        }
+
+        // NEW: UPI Fallback Functions
+        function attemptDeepLink() {
+            const total = parseInt(document.getElementById('checkout-total').innerText);
+            const upiLink = `upi://pay?pa=9523196156@ybl&pn=SGMC&am=${total}&cu=INR`;
+            window.location.href = upiLink;
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("UPI ID Copied! Pay via any app.");
+            });
         }
 
         function finalizeOrder(paymentMode) {
@@ -557,10 +580,10 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
+            // Loading state
             if(document.getElementById('place-order-btn')) {
-                const btn = document.getElementById('place-order-btn');
-                btn.innerText = "Processing...";
-                btn.disabled = true;
+                document.getElementById('place-order-btn').innerText = "Processing...";
+                document.getElementById('place-order-btn').disabled = true;
             }
 
             db.collection('orders').add(orderData).then(() => {
@@ -573,9 +596,8 @@
                 document.getElementById('upi-confirm-modal').classList.add('hidden');
                 
                 if(document.getElementById('place-order-btn')) {
-                    const btn = document.getElementById('place-order-btn');
-                    btn.innerText = "Place Order";
-                    btn.disabled = false;
+                    document.getElementById('place-order-btn').innerText = "Place Order";
+                    document.getElementById('place-order-btn').disabled = false;
                 }
                 
                 document.getElementById('success-name').innerText = userProfile.name;
@@ -583,6 +605,7 @@
                 popup.classList.remove('hidden');
                 document.getElementById('success-box').classList.add('scale-100');
                 
+                // If on orders tab, refresh
                 if(document.getElementById('nav-orders').classList.contains('active')) fetchMyHistory();
 
             }).catch(e => {
@@ -603,6 +626,9 @@
             document.getElementById('view-' + tab).classList.remove('hidden');
             document.getElementById('nav-' + tab).classList.add('active');
 
+            // Force Cart Update (hides it if not menu)
+            updateCartUI();
+
             if(tab === 'orders') fetchMyHistory();
             if(tab === 'udhaar') fetchMyUdhaar();
         }
@@ -617,7 +643,7 @@
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
-            list.innerHTML = '<p class="text-center text-gray-500 mt-10">Loading...</p>';
+            list.innerHTML = '<p class="text-center text-gray-500 mt-10"><i class="fas fa-circle-notch fa-spin"></i> Loading history...</p>';
             
             db.collection('orders').where('customerPhone', '==', userProfile.phone).get().then(snap => {
                   if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
