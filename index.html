@@ -74,6 +74,9 @@
             <div class="space-y-4">
                 <input type="text" id="c-name" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Apna Naam">
                 <input type="tel" id="c-phone" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Mobile Number">
+                
+                <input type="text" id="c-address" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Address / Room No. (Optional)">
+
                 <div>
                     <label class="text-xs text-gray-400 uppercase ml-1">Payment Method</label>
                     <div class="grid grid-cols-3 gap-3 mt-1">
@@ -89,11 +92,15 @@
     </div>
 
     <div id="udhaar-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-800 w-full max-w-sm p-6 rounded-2xl relative">
+        <div class="bg-gray-800 w-full max-w-sm p-6 rounded-2xl relative max-h-[80vh] overflow-y-auto">
             <button onclick="document.getElementById('udhaar-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times"></i></button>
             <h2 class="text-xl font-bold text-white mb-6">My Udhaar Details</h2>
             <div id="udhaar-content" class="text-center">
                 <p class="text-gray-500 animate-pulse">Checking...</p>
+            </div>
+            <div id="payment-history-list" class="mt-6 border-t border-gray-700 pt-4 text-left hidden">
+                <h4 class="text-sm font-bold text-gray-400 mb-2">Payment History (Settled)</h4>
+                <div id="p-history-items" class="space-y-2 text-xs"></div>
             </div>
         </div>
     </div>
@@ -109,7 +116,7 @@
     </div>
 
     <script>
-        const YOUR_UPI_ID = "9523196156@ybl"; // <--- UPI ID HERE (e.g., 9876543210@paytm)
+        const YOUR_UPI_ID = "9523196156@ybl"; // <--- UPI ID HERE
         
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
@@ -155,7 +162,7 @@
             if(savedPhone) { document.getElementById('c-phone').value = savedPhone; listenToLatestOrder(savedPhone); }
         }
 
-        // --- MENU & CART FUNCTIONS ---
+        // --- MENU & CART ---
         function renderMenu() {
             const container = document.getElementById('menu-container');
             const activeItems = menuItems.filter(item => !disabledItems.includes(item.id));
@@ -212,12 +219,25 @@
         function placeOrder() {
             const name = document.getElementById('c-name').value.trim();
             const phone = document.getElementById('c-phone').value.trim();
+            const address = document.getElementById('c-address').value.trim(); // Added Address
             const mode = document.getElementById('selected-payment').value;
             const total = parseInt(document.getElementById('cart-total').innerText);
             if (!name || !phone || !mode) { alert("Sab details bharo!"); return; }
             localStorage.setItem('userPhone', phone);
             const items = []; for (const k in cart) { items.push({ name: k, qty: cart[k].qty, price: cart[k].price }); }
-            const orderData = { customerName: name, customerPhone: phone, items: items, totalAmount: total, paymentMode: mode, paymentVerified: (mode === 'Cash'), status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
+            
+            const orderData = { 
+                customerName: name, 
+                customerPhone: phone, 
+                customerAddress: address, // Saved Address
+                items: items, 
+                totalAmount: total, 
+                paymentMode: mode, 
+                paymentVerified: (mode === 'Cash'), 
+                status: 'pending', 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            };
+
             db.collection('orders').add(orderData).then(() => {
                 closeCheckout(); cart = {}; renderCartSummary();
                 const toast = document.getElementById("toast"); toast.className = "show"; setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
@@ -226,29 +246,41 @@
             });
         }
 
-        // --- UDHAAR DASHBOARD & PAY ---
+        // --- UDHAAR DASHBOARD & PAYMENT HISTORY ---
         async function showUdhaar() {
             let phone = localStorage.getItem('userPhone');
-            if(!phone) { 
-                phone = prompt("Apna registered Mobile Number daalo:");
-                if(phone) localStorage.setItem('userPhone', phone);
-                else return;
-            }
+            if(!phone) { phone = prompt("Apna registered Mobile Number daalo:"); if(phone) localStorage.setItem('userPhone', phone); else return; }
             
             document.getElementById('udhaar-modal').classList.remove('hidden');
             const content = document.getElementById('udhaar-content');
+            const historyContainer = document.getElementById('payment-history-list');
+            const historyItems = document.getElementById('p-history-items');
+            
             content.innerHTML = '<p class="text-gray-500 animate-pulse">Calculating...</p>';
+            historyItems.innerHTML = ''; 
 
             try {
-                // 1. Get Total Debits
+                // 1. Debits
                 const ordersSnap = await db.collection('orders').where('customerPhone', '==', phone).where('paymentMode', '==', 'Udhaar').get();
                 let debit = 0;
                 ordersSnap.forEach(doc => { if(doc.data().status !== 'cancelled') debit += doc.data().totalAmount; });
 
-                // 2. Get Total Credits
-                const paymentsSnap = await db.collection('payments').where('phone', '==', phone).get();
+                // 2. Credits (Payments)
+                const paymentsSnap = await db.collection('payments').where('phone', '==', phone).orderBy('timestamp', 'desc').get();
                 let credit = 0;
-                paymentsSnap.forEach(doc => credit += doc.data().amount);
+                let paymentListHtml = '';
+                
+                paymentsSnap.forEach(doc => { 
+                    const p = doc.data();
+                    credit += p.amount;
+                    // Format Date
+                    const date = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                    paymentListHtml += `
+                        <div class="flex justify-between bg-gray-700 p-2 rounded">
+                            <span class="text-gray-400">${date}</span>
+                            <span class="text-white font-bold">₹${p.amount}</span>
+                        </div>`;
+                });
 
                 const balance = debit - credit;
 
@@ -269,7 +301,16 @@
                         </button>
                     `;
                 }
-            } catch(e) { content.innerHTML = `<p class="text-red-500">Error.</p>`; }
+
+                // Show Payment History if exists
+                if(paymentListHtml) {
+                    historyContainer.classList.remove('hidden');
+                    historyItems.innerHTML = paymentListHtml;
+                } else {
+                    historyContainer.classList.add('hidden');
+                }
+
+            } catch(e) { content.innerHTML = `<p class="text-red-500">Error.</p>`; console.error(e); }
         }
 
         function payUdhaar(amount) {
@@ -277,7 +318,7 @@
             window.location.href = upiLink;
         }
 
-        // --- HISTORY & TRACKING ---
+        // --- HISTORY ---
         function listenToLatestOrder(phone) {
             db.collection('orders').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
                 if(!snap.empty) {
