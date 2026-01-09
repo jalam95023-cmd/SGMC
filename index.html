@@ -27,11 +27,6 @@
         /* Modal & Profile */
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
         .profile-avatar { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; items-center; justify-center; font-weight: bold; color: #F97316; border: 1px solid #F97316; }
-
-        /* Cigarette Selection Styling */
-        .cig-option { border: 1px solid #333; transition: all 0.2s; }
-        .cig-option.selected { border-color: #F97316; background-color: #2a2a2a; }
-        .cig-radio { accent-color: #F97316; }
     </style>
 </head>
 <body>
@@ -129,25 +124,16 @@
     </div>
 
     <div id="cig-modal" class="fixed inset-0 modal-overlay flex items-end sm:items-center justify-center z-[60] hidden">
-        <div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-t-2xl sm:rounded-2xl border-t sm:border border-gray-700 shadow-2xl animate-slide-up">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold">Select Cigarette</h3>
+        <div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-t-2xl sm:rounded-2xl border-t sm:border border-gray-700 shadow-2xl animate-slide-up max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+                <h3 class="text-lg font-bold">Select Cigarettes</h3>
                 <button onclick="closeCigModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
             
-            <div id="cig-options-list" class="space-y-2 mb-4">
+            <div id="cig-options-list" class="space-y-3 overflow-y-auto mb-4 flex-1">
                 </div>
 
-            <div class="flex justify-between items-center bg-gray-800 p-3 rounded-xl mb-4">
-                <span class="text-sm font-bold text-gray-300">Quantity</span>
-                <div class="flex items-center gap-4">
-                    <button onclick="changeCigQty(-1)" class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center font-bold text-xl">-</button>
-                    <span id="cig-modal-qty" class="font-bold text-lg w-4 text-center">1</span>
-                    <button onclick="changeCigQty(1)" class="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center font-bold text-xl">+</button>
-                </div>
-            </div>
-
-            <button onclick="confirmCigSelection()" class="w-full btn-primary py-3 rounded-xl shadow-lg">Add to Cart</button>
+            <button onclick="confirmCigSelection()" class="w-full btn-primary py-3 rounded-xl shadow-lg">Add All to Cart</button>
         </div>
     </div>
 
@@ -167,7 +153,7 @@
                 </div>
 
                 <div>
-                    <label class="text-xs text-gray-400 ml-1">Delivery Address (Optional)</label>
+                    <label class="text-xs text-orange-500 ml-1 font-bold">Delivery Address (Required)*</label>
                     <input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:border-orange-500 outline-none" placeholder="Room no, Floor, or Landmark...">
                 </div>
 
@@ -259,15 +245,16 @@
         let selectedPayment = 'Cash';
         let isShopOpen = true;
         let cachedOrders = {}; 
-        let tempCigQty = 1;
-        let tempCigSelection = null;
+        
+        // New State for Cigarette Modal Counter
+        let tempCigQuantities = {}; 
 
         // --- INIT ---
         function init() {
             loadProfile();
             loadMenuStatus();
             listenToShopStatus();
-            loadCartFromStorage(); // NEW: Load Cart logic
+            loadCartFromStorage(); 
             const lastTab = localStorage.getItem('activeTab') || 'menu';
             switchTab(lastTab);
         }
@@ -358,7 +345,7 @@
                             <p class="text-xs text-orange-400">Multiple Brands</p>
                         </div>
                         <button onclick="openCigModal()" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg border border-gray-600 font-bold active:bg-orange-600 active:border-orange-500 transition">
-                            Select <i class="fas fa-chevron-right ml-1"></i>
+                            Add <i class="fas fa-plus ml-1"></i>
                         </button>
                     </div>`;
                 }
@@ -385,22 +372,25 @@
             }
         }
 
-        // --- CIGARETTE MODAL LOGIC ---
+        // --- CIGARETTE MODAL LOGIC (UPDATED for Multi-Select) ---
         function openCigModal() {
             if(!isShopOpen) { alert("Shop is closed."); return; }
-            tempCigQty = 1;
-            tempCigSelection = null;
-            document.getElementById('cig-modal-qty').innerText = 1;
             
+            // Initialize/Reset temp quantities
+            tempCigQuantities = {};
+            cigaretteOptions.forEach(opt => tempCigQuantities[opt.id] = 0);
+
             const list = document.getElementById('cig-options-list');
             list.innerHTML = cigaretteOptions.map(opt => `
-                <div class="cig-option p-3 rounded-lg flex justify-between items-center cursor-pointer bg-gray-900" onclick="selectCigOption(this, '${opt.id}|${opt.name}|${opt.price}')">
+                <div class="p-3 rounded-xl flex justify-between items-center bg-gray-800/50 border border-gray-700">
                     <div>
                         <p class="font-bold text-sm text-white">${opt.name}</p>
                         <p class="text-xs text-gray-500">₹${opt.price}</p>
                     </div>
-                    <div class="w-4 h-4 rounded-full border border-gray-500 flex items-center justify-center">
-                        <div class="w-2 h-2 rounded-full bg-transparent inner-circle"></div>
+                    <div class="flex items-center gap-3 bg-gray-900 rounded-lg p-1">
+                        <button onclick="updateTempCigQty('${opt.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold">-</button>
+                        <span class="font-bold w-4 text-center" id="temp-qty-${opt.id}">0</span>
+                        <button onclick="updateTempCigQty('${opt.id}', 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold">+</button>
                     </div>
                 </div>
             `).join('');
@@ -408,32 +398,33 @@
             document.getElementById('cig-modal').classList.remove('hidden');
         }
 
-        function selectCigOption(el, value) {
-            // Remove active style from all
-            document.querySelectorAll('.cig-option').forEach(d => {
-                d.classList.remove('selected', 'border-orange-500');
-                d.querySelector('.inner-circle').classList.remove('bg-orange-500');
-            });
-            // Add to current
-            el.classList.add('selected', 'border-orange-500');
-            el.querySelector('.inner-circle').classList.add('bg-orange-500');
-            tempCigSelection = value;
-        }
-
-        function changeCigQty(change) {
-            tempCigQty += change;
-            if(tempCigQty < 1) tempCigQty = 1;
-            document.getElementById('cig-modal-qty').innerText = tempCigQty;
+        function updateTempCigQty(id, change) {
+            if(!tempCigQuantities[id]) tempCigQuantities[id] = 0;
+            tempCigQuantities[id] += change;
+            if(tempCigQuantities[id] < 0) tempCigQuantities[id] = 0;
+            document.getElementById(`temp-qty-${id}`).innerText = tempCigQuantities[id];
         }
 
         function confirmCigSelection() {
-            if(!tempCigSelection) { alert("Please select a brand."); return; }
-            const [id, name, price] = tempCigSelection.split('|');
-            
-            if(!cart[id]) {
-                cart[id] = { id: id, name: name, price: parseInt(price), qty: 0 };
+            let added = false;
+            for(let id in tempCigQuantities) {
+                const qty = tempCigQuantities[id];
+                if(qty > 0) {
+                    const opt = cigaretteOptions.find(o => o.id === id);
+                    if(opt) {
+                        if(!cart[id]) {
+                            cart[id] = { id: id, name: opt.name, price: opt.price, qty: 0 };
+                        }
+                        cart[id].qty += qty;
+                        added = true;
+                    }
+                }
             }
-            cart[id].qty += tempCigQty;
+            
+            if(!added) {
+                alert("Please add at least one item.");
+                return;
+            }
             
             closeCigModal();
             updateCartUI();
@@ -474,7 +465,7 @@
             } else {
                 bar.classList.add('hidden');
             }
-            saveCartToStorage(); // Save on every update
+            saveCartToStorage(); 
         }
 
         // --- CHECKOUT ---
@@ -519,40 +510,46 @@
             btn.classList.remove('border-gray-600');
         }
 
-        // --- MAIN ORDER LOGIC (UPDATED FOR UPI FLOW) ---
+        // --- MAIN ORDER LOGIC ---
         function handlePlaceOrderClick() {
             if(Object.keys(cart).length === 0) return;
             if(!userProfile.phone) { alert("Please setup profile first."); openProfileEdit(); return; }
+            
+            // VALIDATION: Address Required
+            const address = document.getElementById('order-address').value.trim();
+            if(!address) {
+                alert("Please enter a Delivery Address to continue.");
+                document.getElementById('order-address').focus();
+                return;
+            }
 
             const total = parseInt(document.getElementById('checkout-total').innerText);
 
-            // IF UPI: OPEN APP FIRST, DO NOT SAVE ORDER YET
+            // IF UPI: OPEN APP FIRST
             if(selectedPayment === 'UPI') {
                 const upiId = "9523196156@ybl";
-                const upiLink = `upi://pay?pa=${upiId}&pn=SGMC&am=${total}&tn=Order_${userProfile.name}`;
+                // Simplified URL to avoid security errors
+                const upiLink = `upi://pay?pa=${upiId}&pn=SGMC&am=${total}&cu=INR`;
                 
-                // Open UPI App
                 window.location.href = upiLink;
                 
-                // Show Confirmation Popup waiting for user return
                 document.getElementById('checkout-modal').classList.add('hidden');
                 document.getElementById('upi-confirm-modal').classList.remove('hidden');
             } 
             else {
-                // Cash/Udhaar: Place immediately
                 finalizeOrder(selectedPayment);
             }
         }
 
         function finalizeOrder(paymentMode) {
-            const address = document.getElementById('order-address').value;
+            const address = document.getElementById('order-address').value.trim();
             const total = parseInt(document.getElementById('checkout-total').innerText);
 
             const orderData = {
                 items: Object.values(cart),
                 totalAmount: total,
                 paymentMode: paymentMode,
-                paymentVerified: (paymentMode === 'UPI' ? false : false), // UPI still needs admin verify check usually, or assume true if user confirmed
+                paymentVerified: false,
                 status: 'pending',
                 customerName: userProfile.name,
                 customerPhone: userProfile.phone,
@@ -560,7 +557,6 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Loading state
             if(document.getElementById('place-order-btn')) {
                 const btn = document.getElementById('place-order-btn');
                 btn.innerText = "Processing...";
@@ -568,24 +564,20 @@
             }
 
             db.collection('orders').add(orderData).then(() => {
-                // Clear Cart
                 cart = {};
-                saveCartToStorage(); // Clear local storage too
+                saveCartToStorage(); 
                 renderMenu({}); 
                 updateCartUI();
                 
-                // Close Modals
                 closeCheckout();
                 document.getElementById('upi-confirm-modal').classList.add('hidden');
                 
-                // Reset Button
                 if(document.getElementById('place-order-btn')) {
                     const btn = document.getElementById('place-order-btn');
                     btn.innerText = "Place Order";
                     btn.disabled = false;
                 }
                 
-                // Success
                 document.getElementById('success-name').innerText = userProfile.name;
                 const popup = document.getElementById('success-popup');
                 popup.classList.remove('hidden');
@@ -723,7 +715,7 @@
             const amount = document.getElementById('my-udhaar-amount').innerText;
             const name = userProfile.name;
             const upiId = "9523196156@ybl";
-            const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&tn=ClearUdhaar_${name}`;
+            const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&cu=INR`;
             window.location.href = link;
         }
 
