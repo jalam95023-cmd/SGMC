@@ -82,18 +82,25 @@
     </div>
 
     <div id="settle-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-1 text-white">Settle Payment</h3>
             <p class="text-gray-400 text-sm mb-4" id="settle-name"></p>
+            
             <div class="text-center mb-6">
                 <p class="text-xs text-gray-500 uppercase">Current Due</p>
                 <p class="text-3xl font-bold text-red-400">₹<span id="settle-due">0</span></p>
             </div>
+            
             <input type="number" id="settle-amount" class="w-full p-4 bg-gray-800 rounded-lg text-white mb-4 border border-gray-700 outline-none text-center text-xl font-bold focus:border-blue-500" placeholder="Amount Received">
-            <div class="flex gap-3">
+            
+            <div class="flex gap-3 mb-6">
                 <button onclick="closeSettle()" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold">Cancel</button>
                 <button onclick="submitPayment()" class="flex-1 py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">Settle</button>
             </div>
+
+            <h4 class="text-xs font-bold text-gray-500 uppercase border-b border-gray-700 pb-2 mb-2">Recent Payments</h4>
+            <div id="settle-history-list" class="space-y-2 text-sm max-h-40 overflow-y-auto">
+                </div>
         </div>
     </div>
 
@@ -101,8 +108,8 @@
         <div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs confirm-box shadow-2xl">
             <h3 class="text-lg font-bold text-white mb-2" id="confirm-title">Confirm?</h3>
             <div class="flex gap-3 mt-4">
-                <button onclick="closeConfirm(false)" class="flex-1 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">No</button>
-                <button onclick="closeConfirm(true)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-900/50">Yes</button>
+                <button onclick="closeConfirm(false)" class="flex-1 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button>
+                <button onclick="closeConfirm(true)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-900/50">Confirm</button>
             </div>
         </div>
     </div>
@@ -134,7 +141,7 @@
         let lastResetSeconds = 0; 
         let lastPendingCount = 0; 
         let soundEnabled = false;
-        let pendingAction = null; // For Custom Confirm
+        let pendingAction = null; 
 
         // --- INITIALIZATION ---
         function init() {
@@ -148,7 +155,7 @@
                 btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; 
                 btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white shadow-lg shadow-green-900/50" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white shadow-lg shadow-red-900/50"; 
             });
-            db.collection('payments').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
+            db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
         }
 
@@ -245,6 +252,11 @@
             document.getElementById('total-sales').innerText = sales;
             document.getElementById('pending-count').innerText = activeCount;
             renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            
+            // If modal is open, refresh history
+            if(!document.getElementById('settle-modal').classList.contains('hidden') && currentSettlePhone) {
+                renderSettleHistory(currentSettlePhone);
+            }
         }
 
         // --- UI RENDERERS ---
@@ -312,7 +324,7 @@
             window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // --- TOAST & CONFIRM SYSTEM (The Fix) ---
+        // --- TOAST & CONFIRM SYSTEM ---
         function showToast(msg, type = 'success') {
             const container = document.getElementById('toast-container');
             const el = document.createElement('div');
@@ -339,15 +351,86 @@
 
         // --- CORE FUNCTIONS ---
         function deleteHistoryItem(id) { db.collection('orders').doc(id).delete().then(() => showToast("Deleted")); }
-        function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name + " (" + phone + ")"; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = ""; document.getElementById('settle-modal').classList.remove('hidden'); }
+        
+        function openSettle(phone, name, due) { 
+            currentSettlePhone = phone; 
+            document.getElementById('settle-name').innerText = name + " (" + phone + ")"; 
+            document.getElementById('settle-due').innerText = due; 
+            document.getElementById('settle-amount').value = ""; 
+            
+            // Render History immediately
+            renderSettleHistory(phone);
+            
+            document.getElementById('settle-modal').classList.remove('hidden'); 
+        }
+        
+        function renderSettleHistory(phone) {
+            const list = document.getElementById('settle-history-list');
+            list.innerHTML = '<p class="text-center text-gray-600 text-xs">Loading...</p>';
+            
+            if(!window.paymentsSnapshot) {
+                list.innerHTML = '<p class="text-center text-gray-600 text-xs">No data.</p>';
+                return;
+            }
+
+            const payments = [];
+            window.paymentsSnapshot.docs.forEach(doc => {
+                const d = doc.data();
+                if(d.phone === phone) payments.push(d);
+            });
+
+            if(payments.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 text-xs">No previous payments found.</p>';
+                return;
+            }
+
+            list.innerHTML = payments.map(p => {
+                const dateStr = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                const timeStr = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                
+                return `
+                <div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
+                    <div>
+                        <span class="text-green-400 font-bold text-sm">+₹${p.amount}</span>
+                        <p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p>
+                    </div>
+                    <div class="text-right text-xs text-gray-400">
+                        <p>${dateStr}</p>
+                        <p>${timeStr}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
         function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
-        function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Manual_Admin' }).then(() => { closeSettle(); showToast("Payment Settled"); }); }
+        
+        function submitPayment() { 
+            const amount = parseInt(document.getElementById('settle-amount').value); 
+            if(!amount) return; 
+            db.collection('payments').add({ 
+                phone: currentSettlePhone, 
+                amount: amount, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
+                mode: 'Cash (Admin)' // Defaulting to Cash since admin collects it
+            }).then(() => { 
+                closeSettle(); 
+                showToast("Payment Settled"); 
+            }); 
+        }
+        
         function endDay() { db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => showToast("Day Reset Successful")); }
         function openMenuControl() { db.collection('settings').doc('menu').get().then(doc => { const s = doc.exists ? doc.data() : {}; document.getElementById('menu-list-items').innerHTML = adminMenuItems.map(i => `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700"><span>${i.name}</span><input type="checkbox" id="stock-${i.id}" ${s[i.id]!==false?'checked':''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }); }
         function saveMenuStatus() { const u = {}; adminMenuItems.forEach(i => u[i.id] = document.getElementById(`stock-${i.id}`).checked); db.collection('settings').doc('menu').set(u).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Menu Updated"); }); }
         function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened")); }
         function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }).then(() => showToast("Status Updated")); }
-        function markComplete(id) { db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); }
+        
+        // NEW: Mark Complete with Confirmation
+        function markComplete(id) { 
+            confirmAction('Mark as Delivered?', () => {
+                db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); 
+            });
+        }
+        
         function cancelOrder(id) { db.collection('orders').doc(id).update({ status: 'cancelled' }).then(() => showToast("Order Cancelled")); }
         function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
         
