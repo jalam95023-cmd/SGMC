@@ -12,49 +12,50 @@
 <style>
 body{
   margin:0;
-  font-family:Arial;
-  background:linear-gradient(135deg,#ffecd2,#fcb69f);
+  font-family:Arial, sans-serif;
+  background:linear-gradient(135deg,#ff9a9e,#fad0c4);
 }
 header{
-  background:#7b1e1e;
-  color:white;
-  padding:14px;
+  background:#6d1b1b;
+  color:#fff;
+  padding:16px;
   text-align:center;
-  font-size:20px;
+  font-size:22px;
 }
-.container{padding:12px}
+.container{padding:14px}
 .card{
-  background:white;
-  border-radius:12px;
+  background:#fff;
+  border-radius:14px;
   padding:14px;
   margin-bottom:14px;
-  box-shadow:0 4px 8px rgba(0,0,0,.15)
+  box-shadow:0 6px 12px rgba(0,0,0,.2);
 }
-.item-row{
+.row{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:8px;
+  margin-bottom:10px;
 }
-.item-row input{
-  width:60px;
+.row input{
+  width:70px;
+  padding:6px;
 }
-.total-box{
-  font-size:20px;
+.total{
+  font-size:22px;
   font-weight:bold;
   text-align:center;
   background:#fff3cd;
-  padding:12px;
-  border-radius:10px;
+  padding:14px;
+  border-radius:12px;
 }
 button{
   width:100%;
-  padding:14px;
+  padding:16px;
   font-size:18px;
   border:none;
-  border-radius:10px;
+  border-radius:14px;
   background:#28a745;
-  color:white;
+  color:#fff;
 }
 </style>
 </head>
@@ -66,41 +67,19 @@ button{
 <div class="container">
 
 <div class="card">
-<h3>☕ Items</h3>
+<h3>🛒 Items</h3>
 
-<div class="item-row">
-Normal Chai (₹10)
-<input type="number" min="0" value="0" onchange="calcTotal()" id="chai">
+<div class="row">Normal Chai ₹10 <input id="chai" type="number" min="0" value="0" onchange="calc()"></div>
+<div class="row">Adrak Chai ₹15 <input id="adrak" type="number" min="0" value="0" onchange="calc()"></div>
+<div class="row">Masala Chai ₹20 <input id="masala" type="number" min="0" value="0" onchange="calc()"></div>
+<div class="row">Elaichi Chai ₹20 <input id="elaichi" type="number" min="0" value="0" onchange="calc()"></div>
+<div class="row">Biscuit ₹5 <input id="biscuit" type="number" min="0" value="0" onchange="calc()"></div>
+<div class="row">Bun / Toast ₹10 <input id="bun" type="number" min="0" value="0" onchange="calc()"></div>
+
 </div>
 
-<div class="item-row">
-Adrak Chai (₹15)
-<input type="number" min="0" value="0" onchange="calcTotal()" id="adrak">
-</div>
-
-<div class="item-row">
-Masala Chai (₹20)
-<input type="number" min="0" value="0" onchange="calcTotal()" id="masala">
-</div>
-
-<div class="item-row">
-Elaichi Chai (₹20)
-<input type="number" min="0" value="0" onchange="calcTotal()" id="elaichi">
-</div>
-
-<div class="item-row">
-Biscuit (₹5)
-<input type="number" min="0" value="0" onchange="calcTotal()" id="biscuit">
-</div>
-
-<div class="item-row">
-Bun / Toast (₹10)
-<input type="number" min="0" value="0" onchange="calcTotal()" id="bun">
-</div>
-</div>
-
-<div class="card total-box">
-Total: ₹ <span id="total">0</span>
+<div class="card total">
+Total ₹ <span id="total">0</span>
 </div>
 
 <button onclick="placeOrder()">✅ Place Order</button>
@@ -108,7 +87,6 @@ Total: ₹ <span id="total">0</span>
 </div>
 
 <script>
-/* 🔥 FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
   authDomain: "sgmc-16568.firebaseapp.com",
@@ -118,10 +96,13 @@ const firebaseConfig = {
   messagingSenderId: "339041646158",
   appId: "1:339041646158:web:85d9a50a3b51b30aae351f"
 };
-firebase.initializeApp(firebaseConfig);
+
+if(!firebase.apps.length){
+  firebase.initializeApp(firebaseConfig);
+}
 const db = firebase.database();
 
-function calcTotal(){
+function calc(){
   const total =
     chai.value*10 +
     adrak.value*15 +
@@ -133,18 +114,24 @@ function calcTotal(){
 }
 
 function placeOrder(){
-  const order = {
+  const total = document.getElementById("total").innerText;
+  if(total == 0){
+    alert("❗ Item select karo");
+    return;
+  }
+
+  db.ref("orders").push({
     chai: chai.value,
     adrak: adrak.value,
     masala: masala.value,
     elaichi: elaichi.value,
     biscuit: biscuit.value,
     bun: bun.value,
-    total: document.getElementById("total").innerText,
-    status:"Placed",
-    time:new Date().toLocaleString()
-  };
-  db.ref("orders").push(order);
+    total: total,
+    status: "Placed",
+    time: new Date().toLocaleString()
+  });
+
   alert("✅ Order Placed");
 }
 </script>
