@@ -5,88 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGMC - Order App</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; text-align: center; }
-        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { color: #d35400; margin-bottom: 5px; }
-        p { color: #555; font-size: 14px; margin-bottom: 10px; }
+        /* Modern & Clean UI */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fcefe7; margin: 0; padding: 0; }
+        .container { max-width: 420px; margin: 20px auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        /* Header */
+        h1 { color: #d35400; margin: 0; text-align: center; font-size: 28px; letter-spacing: 1px; }
+        .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
         
         /* Shop Status Banner */
-        #shop-status { padding: 15px; color: white; font-weight: bold; border-radius: 5px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.3s; }
-        .open { background-color: #2ecc71; border: 2px solid #27ae60; } /* Green */
-        .closed { background-color: #e74c3c; border: 2px solid #c0392b; } /* Red */
-
-        /* Menu Items */
-        .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        .menu-item:last-child { border-bottom: none; }
-        .item-name { font-weight: bold; font-size: 16px; }
-        .checkbox { transform: scale(1.5); accent-color: #d35400; cursor: pointer; }
+        #shop-status { text-align: center; padding: 12px; font-weight: bold; color: white; border-radius: 8px; margin-bottom: 25px; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .open { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+        .closed { background: linear-gradient(135deg, #e74c3c, #c0392b); }
 
         /* Inputs */
-        input[type="text"] { width: 90%; padding: 10px; margin-top: 20px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
-        
-        /* Udhaar Section */
-        .udhaar-section { margin-top: 15px; padding: 10px; background: #ffebee; border-radius: 5px; border: 1px solid red; display: flex; align-items: center; justify-content: center; gap: 10px;}
-        .udhaar-text { color: red; font-weight: bold; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { font-size: 13px; color: #555; font-weight: bold; margin-bottom: 5px; display: block; }
+        input[type="text"], input[type="tel"] { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; transition: 0.3s; }
+        input[type="text"]:focus, input[type="tel"]:focus { border-color: #d35400; outline: none; }
 
-        /* Button */
-        button { width: 100%; padding: 12px; background-color: #d35400; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; margin-top: 15px; font-weight: bold; transition: 0.3s; }
-        button:hover { background-color: #a04000; }
-        
-        /* Disabled Button Style */
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        /* Menu Grid */
+        .menu-label { font-size: 18px; font-weight: bold; color: #333; margin: 20px 0 10px 0; display: block; }
+        .menu-list { display: flex; flex-direction: column; gap: 10px; }
+        .menu-item { display: flex; align-items: center; justify-content: space-between; background: #fff8f0; padding: 12px 15px; border-radius: 10px; border: 1px solid #f0e0d0; transition: 0.2s; }
+        .menu-item:hover { border-color: #d35400; background: #fff; }
+        .item-text { font-weight: 600; font-size: 16px; color: #444; }
+        .checkbox { width: 20px; height: 20px; accent-color: #d35400; cursor: pointer; }
 
-        /* Order List */
-        #orders-list { margin-top: 30px; text-align: left; }
-        .order-card { background: #fff3e0; padding: 10px; margin-bottom: 10px; border-radius: 5px; border-left: 5px solid #d35400; }
-        .status-badge { float: right; font-size: 12px; padding: 3px 8px; border-radius: 10px; color: white; font-weight: bold; }
-        .paid { background-color: green; }
-        .udhaar { background-color: red; }
+        /* Udhaar Toggle */
+        .udhaar-box { margin-top: 25px; display: flex; align-items: center; justify-content: center; background: #ffebee; padding: 12px; border-radius: 10px; border: 1px dashed #e74c3c; gap: 10px; cursor: pointer; }
+        .udhaar-text { color: #c0392b; font-weight: bold; font-size: 15px; }
+
+        /* Order Button */
+        button#orderBtn { width: 100%; padding: 15px; background: #d35400; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(211, 84, 0, 0.4); transition: 0.3s; }
+        button#orderBtn:active { transform: scale(0.98); }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; }
+
+        /* Live Orders Section */
+        #orders-list { margin-top: 40px; }
+        .section-title { font-size: 18px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 15px; }
+        .order-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #d35400; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; text-align: left; }
+        .order-header { display: flex; justify-content: space-between; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .order-items { color: #666; font-size: 14px; }
+        .badge { padding: 3px 8px; border-radius: 5px; font-size: 11px; color: white; }
+        .b-paid { background: #27ae60; }
+        .b-udhaar { background: #c0392b; }
+
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>☕ SGMC</h1>
-        <p>Shree Mataji Chai Stall</p>
+        <p class="subtitle">Shree Mataji Chai Stall</p>
         
-        <div id="shop-status">Connecting...</div>
+        <div id="shop-status">Loading Status...</div>
 
-        <hr>
-
-        <div id="menu">
-            <div class="menu-item">
-                <span class="item-name">🔥 Kadak Chai</span>
-                <input type="checkbox" class="checkbox" value="Chai">
-            </div>
-            <div class="menu-item">
-                <span class="item-name">🚬 Cigarette (Sutta)</span>
-                <input type="checkbox" class="checkbox" value="Cigarette">
-            </div>
-            <div class="menu-item">
-                <span class="item-name">🍃 Pan Masala</span>
-                <input type="checkbox" class="checkbox" value="Pan Masala">
-            </div>
-            <div class="menu-item">
-                <span class="item-name">🍪 Mathri</span>
-                <input type="checkbox" class="checkbox" value="Mathri">
-            </div>
-            <div class="menu-item">
-                <span class="item-name">🌯 Veg Roll</span>
-                <input type="checkbox" class="checkbox" value="Roll">
-            </div>
+        <div class="input-group">
+            <label>Apna Naam</label>
+            <input type="text" id="customerName" placeholder="Rahul, Amit, etc.">
+        </div>
+        <div class="input-group">
+            <label>Mobile Number (Optional)</label>
+            <input type="tel" id="customerPhone" placeholder="98765...">
         </div>
 
-        <input type="text" id="customerName" placeholder="Apna Naam Likhein...">
-        
-        <div class="udhaar-section">
+        <span class="menu-label">Menu Select Karein:</span>
+        <div class="menu-list" id="menu">
+            <label class="menu-item">
+                <span class="item-text">🔥 Kadak Chai</span>
+                <input type="checkbox" class="checkbox" value="Chai">
+            </label>
+            <label class="menu-item">
+                <span class="item-text">🚬 Cigarette (Sutta)</span>
+                <input type="checkbox" class="checkbox" value="Cigarette">
+            </label>
+            <label class="menu-item">
+                <span class="item-text">🍃 Pan Masala</span>
+                <input type="checkbox" class="checkbox" value="Pan Masala">
+            </label>
+            <label class="menu-item">
+                <span class="item-text">🍪 Mathri</span>
+                <input type="checkbox" class="checkbox" value="Mathri">
+            </label>
+            <label class="menu-item">
+                <span class="item-text">🌯 Veg Roll</span>
+                <input type="checkbox" class="checkbox" value="Roll">
+            </label>
+        </div>
+
+        <div class="udhaar-box">
             <input type="checkbox" id="isUdhaar" class="checkbox" style="accent-color: red;">
             <span class="udhaar-text">Khate me likh lo (Udhaar) 📕</span>
         </div>
 
-        <button id="orderBtn" onclick="placeOrder()">Order Lagao 🚀</button>
+        <button id="orderBtn" onclick="placeOrder()">ORDER LAGAO 🚀</button>
 
         <div id="orders-list">
-            <h3>🔴 Live Orders</h3>
+            <div class="section-title">🔴 Live Orders (Abhi bane hain)</div>
             <div id="orderDisplay">Loading...</div>
         </div>
     </div>
@@ -109,95 +125,103 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- 🟢 REAL-TIME SHOP STATUS LOGIC ---
-        let isShopOpen = true; // Default
+        // --- SHOP STATUS ---
+        let isShopOpen = true;
         const statusDiv = document.getElementById("shop-status");
         const orderBtn = document.getElementById("orderBtn");
 
-        // Admin ki setting suno (Listen)
-        const statusDocRef = doc(db, "shopSettings", "status");
-        
-        onSnapshot(statusDocRef, (docSnap) => {
-            if (docSnap.exists()) {
-                isShopOpen = docSnap.data().isOpen;
-            } else {
-                // Agar setting database me nahi hai, to by default Open maano
-                isShopOpen = true;
-            }
+        onSnapshot(doc(db, "shopSettings", "status"), (docSnap) => {
+            if (docSnap.exists()) isShopOpen = docSnap.data().isOpen;
+            else isShopOpen = true;
 
-            // UI Update karo
             if (isShopOpen) {
                 statusDiv.innerHTML = "🟢 Dukan Khuli Hai";
                 statusDiv.className = "open";
                 orderBtn.disabled = false;
-                orderBtn.innerText = "Order Lagao 🚀";
-                orderBtn.style.backgroundColor = "#d35400";
+                orderBtn.innerHTML = "ORDER LAGAO 🚀";
+                orderBtn.style.background = "#d35400";
             } else {
                 statusDiv.innerHTML = "🔴 Dukan Band Hai (Closed)";
                 statusDiv.className = "closed";
-                orderBtn.disabled = true; // Button disable kar diya
-                orderBtn.innerText = "⛔ Abhi Order Band Hai";
-                orderBtn.style.backgroundColor = "#95a5a6";
+                orderBtn.disabled = true;
+                orderBtn.innerHTML = "⛔ Abhi Band Hai";
+                orderBtn.style.background = "#bdc3c7";
             }
         });
 
-        // Function to Place Order
+        // --- PLACE ORDER ---
         window.placeOrder = async function() {
-            // Double check security
-            if (!isShopOpen) {
-                alert("Dukan band hai bhai! Kal aana.");
-                return;
-            }
+            if (!isShopOpen) { alert("Dukan band hai!"); return; }
 
-            const name = document.getElementById("customerName").value;
+            const name = document.getElementById("customerName").value.trim();
+            const phone = document.getElementById("customerPhone").value.trim();
             const udhaarCheck = document.getElementById("isUdhaar").checked;
             
+            // Get selected items
             const checkboxes = document.querySelectorAll('#menu .checkbox:checked');
             let selectedItems = [];
-            checkboxes.forEach((checkbox) => {
-                selectedItems.push(checkbox.value);
-            });
+            checkboxes.forEach((cb) => selectedItems.push(cb.value));
 
-            if (name === "" || selectedItems.length === 0) {
-                alert("Naam likho aur kuch order to karo!");
-                return;
-            }
+            // Validation
+            if (name === "") { alert("Bhai naam to likh do!"); return; }
+            if (selectedItems.length === 0) { alert("Kuch select to karo menu se!"); return; }
 
             const paymentStatus = udhaarCheck ? "Udhaar ❌" : "Cash/Paid ✅";
 
             try {
+                orderBtn.innerHTML = "Bheja ja raha hai...";
+                orderBtn.disabled = true;
+
                 await addDoc(collection(db, "orders"), {
                     customer: name,
+                    phone: phone, // Saving phone number
                     items: selectedItems,
                     payment: paymentStatus,
                     timestamp: serverTimestamp()
                 });
-                alert("Order Bheja Gaya! ✅");
+
+                alert("✅ Order Bhej Diya!");
                 
-                document.getElementById("customerName").value = ""; 
+                // Reset Form
+                document.getElementById("customerName").value = "";
+                document.getElementById("customerPhone").value = "";
                 document.getElementById("isUdhaar").checked = false;
-                checkboxes.forEach(cb => cb.checked = false); 
+                checkboxes.forEach(cb => cb.checked = false);
+                
+                orderBtn.innerHTML = "ORDER LAGAO 🚀";
+                orderBtn.disabled = false;
+
             } catch (error) {
-                console.error("Error: ", error);
+                console.error("Error:", error);
                 alert("Order nahi gaya. Internet check karo.");
+                orderBtn.disabled = false;
             }
         }
 
-        // Live Order Updates
+        // --- LIVE ORDER LIST ---
         const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
         onSnapshot(q, (snapshot) => {
-            const orderDiv = document.getElementById("orderDisplay");
-            orderDiv.innerHTML = ""; 
+            const display = document.getElementById("orderDisplay");
+            display.innerHTML = "";
+            
+            if(snapshot.empty) {
+                display.innerHTML = "<p style='text-align:center; color:#999;'>Abhi koi order nahi hai.</p>";
+                return;
+            }
+
             snapshot.forEach((doc) => {
                 const order = doc.data();
-                const itemString = order.items.join(", ");
-                const badgeClass = order.payment.includes("Udhaar") ? "udhaar" : "paid";
-
-                orderDiv.innerHTML += `
+                const badgeClass = order.payment.includes("Udhaar") ? "b-udhaar" : "b-paid";
+                
+                display.innerHTML += `
                     <div class="order-card">
-                        <span class="status-badge ${badgeClass}">${order.payment}</span>
-                        <strong>👤 ${order.customer}</strong><br>
-                        🛒 ${itemString}
+                        <div class="order-header">
+                            <span>👤 ${order.customer}</span>
+                            <span class="badge ${badgeClass}">${order.payment}</span>
+                        </div>
+                        <div class="order-items">
+                            🛒 ${order.items.join(", ")}
+                        </div>
                     </div>
                 `;
             });
