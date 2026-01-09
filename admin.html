@@ -70,6 +70,37 @@
         <div id="udhaar-list" class="space-y-2"></div>
     </div>
 
+    <div id="history-detail-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
+            <button onclick="closeHistoryDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            
+            <h3 class="text-xl font-bold mb-1 text-white">Order Details</h3>
+            <p id="hd-date" class="text-xs text-gray-500 mb-4"></p>
+
+            <div class="bg-black/40 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto border border-gray-800" id="hd-items">
+                </div>
+
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between text-gray-400">
+                    <span>Customer</span>
+                    <span id="hd-customer" class="text-white font-bold text-right"></span>
+                </div>
+                 <div class="flex justify-between text-gray-400">
+                    <span>Payment Mode</span>
+                    <span id="hd-payment" class="text-white font-bold"></span>
+                </div>
+                <div class="flex justify-between text-gray-400">
+                    <span>Status</span>
+                    <span id="hd-status" class="uppercase font-bold"></span>
+                </div>
+                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold text-white">
+                    <span>Total Amount</span>
+                    <span class="text-orange-500" id="hd-total"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="menu-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
         <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl">
             <h3 class="text-xl font-bold mb-4 text-white">Stock Management</h3>
@@ -299,21 +330,64 @@
                         ${g.orders.map(o => {
                             const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(o.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
                             return `
-                            <div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700/50">
+                            <div onclick="openHistoryDetail('${o.id}')" class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700/50 cursor-pointer hover:bg-gray-700 transition relative">
                                 <div>
                                     <span class="text-gray-500 text-[10px] block">${dateStr}</span> 
                                     <span class="text-[10px] uppercase font-bold px-1 rounded ${o.status==='completed'?'bg-green-900 text-green-300':'bg-red-900 text-red-300'}">${o.status}</span>
-                                    <p class="text-xs text-gray-300 mt-1">${o.items.map(i=>i.name).join(', ')}</p>
+                                    <p class="text-xs text-gray-300 mt-1 truncate max-w-[150px]">${o.items.map(i=>i.name).join(', ')}</p>
                                 </div>
                                 <div class="flex items-center gap-3">
                                     <span class="font-bold text-white text-sm">₹${o.totalAmount}</span>
-                                    <button onclick="confirmAction('Delete this record?', () => deleteHistoryItem('${o.id}'))" class="text-red-500 text-xs p-1 opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button>
+                                    <button onclick="event.stopPropagation(); confirmAction('Delete this record?', () => deleteHistoryItem('${o.id}'))" class="text-red-500 text-xs p-1 opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button>
                                 </div>
                             </div>`;
                         }).join('')}
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        // --- NEW: History Detail Logic ---
+        function openHistoryDetail(id) {
+            const data = allHistoryOrders.find(o => o.id === id);
+            if(!data) return;
+
+            // Date & Time
+            const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
+            document.getElementById('hd-date').innerText = dateStr;
+            
+            // Customer
+            document.getElementById('hd-customer').innerText = (data.customerName || 'Guest') + '\n' + (data.customerPhone || '');
+            
+            // Payment Mode
+            const mode = data.paymentMode || 'Cash';
+            document.getElementById('hd-payment').innerText = mode;
+            document.getElementById('hd-payment').className = "font-bold text-right " + (mode === 'Udhaar' ? 'text-red-400' : 'text-blue-400');
+
+            // Status
+            document.getElementById('hd-status').innerText = data.status;
+            document.getElementById('hd-status').className = "uppercase font-bold text-right " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
+
+            // Total
+            document.getElementById('hd-total').innerText = '₹' + data.totalAmount;
+
+            // Items List
+            const itemsContainer = document.getElementById('hd-items');
+            itemsContainer.innerHTML = data.items.map(i => `
+                <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1 last:border-0 last:pb-0">
+                    <div>
+                        <p class="text-sm font-bold text-white">${i.name}</p>
+                        <p class="text-xs text-gray-400">Qty: ${i.qty}</p>
+                    </div>
+                    <p class="font-bold text-orange-400 text-sm">₹${(i.price || 0) * i.qty}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('history-detail-modal').classList.remove('hidden');
+        }
+
+        function closeHistoryDetail() {
+            document.getElementById('history-detail-modal').classList.add('hidden');
         }
 
         // --- ACTIONS ---
