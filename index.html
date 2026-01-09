@@ -64,15 +64,15 @@
     </div>
 
     <div id="view-udhaar" class="hidden p-4">
-        <div class="card p-6 text-center mb-6 bg-gradient-to-br from-gray-800 to-gray-900">
+        <div class="card p-6 text-center mb-6 bg-gradient-to-br from-gray-800 to-slate-900 border-blue-900/30">
             <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Total Udhaar Pending</p>
-            <h1 class="text-4xl font-bold text-red-500 mb-1">₹<span id="my-udhaar-amount">0</span></h1>
+            <h1 class="text-4xl font-bold text-blue-500 mb-1">₹<span id="my-udhaar-amount">0</span></h1>
             <p class="text-[10px] text-gray-500">Please clear your dues via UPI</p>
             <div id="upi-pay-btn" class="mt-4 hidden">
-                <button onclick="payUdhaarViaUPI()" class="bg-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-green-900/50">Pay Now via UPI</button>
+                <button onclick="payUdhaarViaUPI()" class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-900/50">Pay Now via UPI</button>
             </div>
         </div>
-        <h3 class="font-bold text-gray-400 text-sm mb-3">Recent Transactions</h3>
+        <h3 class="font-bold text-gray-400 text-sm mb-3">Transaction History</h3>
         <div id="udhaar-history" class="space-y-2"></div>
     </div>
 
@@ -203,6 +203,10 @@
             loadProfile();
             loadMenuStatus();
             listenToShopStatus();
+            
+            // FIX: Restore last active tab from localStorage
+            const lastTab = localStorage.getItem('activeTab') || 'menu';
+            switchTab(lastTab);
         }
 
         // --- PROFILE SYSTEM ---
@@ -212,7 +216,6 @@
                 userProfile = JSON.parse(stored);
                 updateHeaderProfile();
             } else {
-                // First time user - show modal
                 setTimeout(() => document.getElementById('login-modal').classList.remove('hidden'), 1000);
             }
         }
@@ -220,9 +223,7 @@
         function saveProfile() {
             const name = document.getElementById('user-name').value.trim();
             const phone = document.getElementById('user-phone').value.trim();
-            
             if(!name || phone.length < 10) { alert("Please enter valid Name and 10-digit Phone."); return; }
-            
             userProfile = { name, phone };
             localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
             updateHeaderProfile();
@@ -247,34 +248,30 @@
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
                 const banner = document.getElementById('closed-banner');
                 const badge = document.getElementById('shop-status-badge');
-                
                 if(!isShopOpen) {
                     banner.classList.remove('hidden');
                     badge.innerText = "● Closed";
                     badge.className = "text-[10px] text-red-500";
-                    document.getElementById('cart-bar').classList.add('hidden'); // Hide cart if closed
+                    document.getElementById('cart-bar').classList.add('hidden');
                 } else {
                     banner.classList.add('hidden');
                     badge.innerText = "● Open";
                     badge.className = "text-[10px] text-green-500";
-                    updateCartUI(); // Show cart if items exist
+                    updateCartUI();
                 }
             });
         }
 
         function loadMenuStatus() {
             db.collection('settings').doc('menu').onSnapshot(doc => {
-                const status = doc.exists ? doc.data() : {};
-                renderMenu(status);
+                renderMenu(doc.exists ? doc.data() : {});
             });
         }
 
         function renderMenu(stockStatus) {
             const container = document.getElementById('menu-container');
             container.innerHTML = menuItems.map(item => {
-                const isAvailable = stockStatus[item.id] !== false;
-                if(!isAvailable) return ''; // Hide if out of stock
-                
+                if(stockStatus[item.id] === false) return '';
                 return `
                 <div class="card p-3 flex justify-between items-center item-row">
                     <div>
@@ -289,7 +286,6 @@
                 </div>`;
             }).join('');
             
-            // Restore cart quantities visually
             for(let id in cart) {
                 if(document.getElementById(`qty-${id}`)) {
                     document.getElementById(`qty-${id}`).innerText = cart[id].qty;
@@ -300,12 +296,10 @@
         // --- CART LOGIC ---
         function updateCart(id, change) {
             if(!isShopOpen) { alert("Shop is closed now."); return; }
-            
             if(!cart[id]) {
                 const item = menuItems.find(i => i.id === id);
                 cart[id] = { ...item, qty: 0 };
             }
-            
             cart[id].qty += change;
             if(cart[id].qty <= 0) delete cart[id];
             
@@ -321,7 +315,6 @@
                 count += cart[id].qty;
                 total += cart[id].qty * cart[id].price;
             }
-            
             const bar = document.getElementById('cart-bar');
             if(count > 0 && isShopOpen) {
                 bar.classList.remove('hidden');
@@ -337,7 +330,6 @@
         function openCheckout() {
             const container = document.getElementById('checkout-items');
             let html = ''; let total = 0;
-            
             for(let id in cart) {
                 const item = cart[id];
                 const itemTotal = item.qty * item.price;
@@ -347,11 +339,10 @@
                     <span class="font-bold">₹${itemTotal}</span>
                 </div>`;
             }
-            
             container.innerHTML = html;
             document.getElementById('checkout-total').innerText = total;
             document.getElementById('checkout-modal').classList.remove('hidden');
-            setPayment('Cash'); // Default
+            setPayment('Cash');
         }
 
         function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
@@ -382,7 +373,7 @@
                 status: 'pending',
                 customerName: userProfile.name,
                 customerPhone: userProfile.phone,
-                customerAddress: address, // NEW: Address field
+                customerAddress: address,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -392,17 +383,19 @@
 
             db.collection('orders').add(orderData).then(() => {
                 cart = {};
-                renderMenu({}); // Reset UI
+                renderMenu({}); 
                 updateCartUI();
                 closeCheckout();
                 btn.innerText = "Place Order";
                 btn.disabled = false;
                 
-                // Show Success
                 document.getElementById('success-name').innerText = userProfile.name;
                 const popup = document.getElementById('success-popup');
                 popup.classList.remove('hidden');
                 document.getElementById('success-box').classList.add('scale-100');
+                
+                // Refresh History if open
+                if(document.getElementById('nav-orders').classList.contains('active')) fetchMyHistory();
             }).catch(e => {
                 alert("Error: " + e.message);
                 btn.innerText = "Place Order";
@@ -412,8 +405,11 @@
         
         function closeSuccess() { document.getElementById('success-popup').classList.add('hidden'); }
 
-        // --- TABS & HISTORY/UDHAAR ---
+        // --- TABS & HISTORY/UDHAAR FIXES ---
         function switchTab(tab) {
+            // FIX: Save tab to localStorage
+            localStorage.setItem('activeTab', tab);
+
             ['menu', 'orders', 'udhaar'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('nav-' + t).classList.remove('active');
@@ -425,23 +421,34 @@
             if(tab === 'udhaar') fetchMyUdhaar();
         }
 
+        function formatDate(timestamp) {
+            if(!timestamp) return '';
+            const d = timestamp.toDate();
+            // Format: 10/01 5:30 PM
+            return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        }
+
+        // FIX: Improved History Fetching (Client-side Sort)
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
             list.innerHTML = '<p class="text-center text-gray-500 mt-10">Loading...</p>';
             
-            db.collection('orders').where('customerPhone', '==', userProfile.phone)
-              .orderBy('timestamp', 'desc').limit(20).get().then(snap => {
+            // Removed orderBy from query to avoid index errors, sorting in JS instead
+            db.collection('orders').where('customerPhone', '==', userProfile.phone).get().then(snap => {
                   if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
                   
-                  list.innerHTML = snap.docs.map(doc => {
+                  // Sort in memory
+                  const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
+
+                  list.innerHTML = docs.map(doc => {
                       const d = doc.data();
-                      const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
+                      const dateStr = formatDate(d.timestamp);
                       return `
                       <div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'}">
                           <div class="flex justify-between items-start">
                               <div>
-                                  <p class="text-xs text-gray-400">${date}</p>
+                                  <p class="text-xs text-gray-400">${dateStr}</p>
                                   <p class="font-bold text-sm text-white">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p>
                               </div>
                               <div class="text-right">
@@ -454,58 +461,98 @@
               });
         }
 
+        // FIX: Updated Udhaar Logic (Purchase vs Paid, No Item Names, Merged List)
         function fetchMyUdhaar() {
             if(!userProfile.phone) return;
             const upiBtn = document.getElementById('upi-pay-btn');
             const amtEl = document.getElementById('my-udhaar-amount');
+            const historyContainer = document.getElementById('udhaar-history');
             
-            // Calculate Debit (Orders)
-            db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get().then(snap => {
-                let debit = 0;
-                snap.forEach(d => { if(d.data().status !== 'cancelled') debit += d.data().totalAmount; });
+            historyContainer.innerHTML = '<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>';
+
+            // 1. Get Debits (Orders)
+            db.collection('orders')
+                .where('customerPhone', '==', userProfile.phone)
+                .where('paymentMode', '==', 'Udhaar')
+                .get().then(orderSnap => {
                 
-                // Calculate Credit (Payments)
+                let debit = 0;
+                let transactions = [];
+
+                orderSnap.forEach(doc => {
+                    const d = doc.data();
+                    if(d.status !== 'cancelled') {
+                        debit += d.totalAmount;
+                        transactions.push({
+                            type: 'purchase',
+                            amount: d.totalAmount,
+                            timestamp: d.timestamp,
+                            seconds: d.timestamp ? d.timestamp.seconds : 0
+                        });
+                    }
+                });
+                
+                // 2. Get Credits (Payments)
                 db.collection('payments').where('phone', '==', userProfile.phone).get().then(paySnap => {
                     let credit = 0;
-                    paySnap.forEach(d => credit += d.data().amount);
+                    paySnap.forEach(doc => {
+                        const d = doc.data();
+                        credit += d.amount;
+                        transactions.push({
+                            type: 'paid',
+                            amount: d.amount,
+                            timestamp: d.timestamp,
+                            seconds: d.timestamp ? d.timestamp.seconds : 0
+                        });
+                    });
                     
                     const netDue = debit - credit;
                     amtEl.innerText = netDue;
                     
-                    if(netDue > 0) {
-                        upiBtn.classList.remove('hidden');
-                        renderUdhaarHistory(snap.docs, paySnap.docs);
-                    } else {
-                        upiBtn.classList.add('hidden');
-                        document.getElementById('udhaar-history').innerHTML = '<p class="text-center text-green-500 mt-4">No pending dues! 🎉</p>';
-                    }
-                });
-            });
-        }
+                    // Show Pay button if due > 0
+                    if(netDue > 0) upiBtn.classList.remove('hidden');
+                    else upiBtn.classList.add('hidden');
 
-        function renderUdhaarHistory(orders, payments) {
-            // Simple combined list (for now just showing recent 5 items mixed)
-            // Ideally we sort by date, but simpler to just show breakdown
-            const container = document.getElementById('udhaar-history');
-            container.innerHTML = '';
-            
-            // Show last few orders
-            orders.slice(0, 3).forEach(d => {
-                container.innerHTML += `<div class="flex justify-between text-xs p-2 bg-gray-800 rounded mb-1"><span class="text-red-300">Ordered (${d.data().items[0].name}..)</span><span class="text-red-400 font-bold">-₹${d.data().totalAmount}</span></div>`;
-            });
-             // Show last few payments
-            payments.slice(0, 3).forEach(d => {
-                container.innerHTML += `<div class="flex justify-between text-xs p-2 bg-gray-800 rounded mb-1"><span class="text-green-300">Paid</span><span class="text-green-400 font-bold">+₹${d.data().amount}</span></div>`;
+                    // 3. Sort & Render Combined History
+                    transactions.sort((a, b) => b.seconds - a.seconds);
+
+                    if(transactions.length === 0) {
+                        historyContainer.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">No transactions yet.</p>';
+                        return;
+                    }
+
+                    historyContainer.innerHTML = transactions.map(t => {
+                        const dateStr = formatDate(t.timestamp);
+                        if(t.type === 'purchase') {
+                            // Red/Orange for Purchase (Debt Increase)
+                            return `
+                            <div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">${dateStr}</p>
+                                    <p class="text-white font-bold text-sm">Purchase</p>
+                                </div>
+                                <span class="text-red-400 font-bold text-lg">-₹${t.amount}</span>
+                            </div>`;
+                        } else {
+                            // Green for Paid (Debt Decrease)
+                            return `
+                            <div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">${dateStr}</p>
+                                    <p class="text-white font-bold text-sm">Paid</p>
+                                </div>
+                                <span class="text-green-500 font-bold text-lg">+₹${t.amount}</span>
+                            </div>`;
+                        }
+                    }).join('');
+                });
             });
         }
 
         function payUdhaarViaUPI() {
             const amount = document.getElementById('my-udhaar-amount').innerText;
             const name = userProfile.name;
-            
-            // Updated UPI ID
             const upiId = "9523196156@ybl";
-            
             const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&tn=ClearUdhaar_${name}`;
             window.location.href = link;
         }
