@@ -1,7 +1,7 @@
 {
-  "name": "SGMC Chai Stall",
-  "short_name": "SGMC",
-  "start_url": "index.html",
+  "name": "SGMC Customer",
+  "short_name": "SGMC Chai",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#0f0f0f",
