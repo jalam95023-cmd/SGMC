@@ -1,19 +1,19 @@
 {
-  "name": "SGMC Admin Panel",
-  "short_name": "SGMC Admin",
-  "start_url": "./admin.html",
+  "name": "SGMC Admin",
+  "short_name": "Admin Panel",
+  "start_url": "/admin.html",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#ff4500",
-  "orientation": "portrait",
+  "background_color": "#0f0f0f",
+  "theme_color": "#000000",
+  "id": "/admin.html",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/906/906343.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2206/2206368.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/906/906343.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2206/2206368.png",
       "sizes": "512x512",
       "type": "image/png"
     }
