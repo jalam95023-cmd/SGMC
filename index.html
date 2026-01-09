@@ -12,7 +12,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 80px; }
+        /* FIX: Increased padding-bottom from 80px to 140px so cart doesn't cover last item */
+        body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         .card { background: #1a1a1a; border-radius: 16px; border: 1px solid #333; overflow: hidden; }
         .btn-primary { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); color: white; font-weight: bold; }
         .item-row { transition: all 0.2s; }
@@ -203,8 +204,6 @@
             loadProfile();
             loadMenuStatus();
             listenToShopStatus();
-            
-            // FIX: Restore last active tab from localStorage
             const lastTab = localStorage.getItem('activeTab') || 'menu';
             switchTab(lastTab);
         }
@@ -394,7 +393,6 @@
                 popup.classList.remove('hidden');
                 document.getElementById('success-box').classList.add('scale-100');
                 
-                // Refresh History if open
                 if(document.getElementById('nav-orders').classList.contains('active')) fetchMyHistory();
             }).catch(e => {
                 alert("Error: " + e.message);
@@ -405,11 +403,9 @@
         
         function closeSuccess() { document.getElementById('success-popup').classList.add('hidden'); }
 
-        // --- TABS & HISTORY/UDHAAR FIXES ---
+        // --- TABS & HISTORY/UDHAAR ---
         function switchTab(tab) {
-            // FIX: Save tab to localStorage
             localStorage.setItem('activeTab', tab);
-
             ['menu', 'orders', 'udhaar'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('nav-' + t).classList.remove('active');
@@ -424,21 +420,17 @@
         function formatDate(timestamp) {
             if(!timestamp) return '';
             const d = timestamp.toDate();
-            // Format: 10/01 5:30 PM
             return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         }
 
-        // FIX: Improved History Fetching (Client-side Sort)
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
             list.innerHTML = '<p class="text-center text-gray-500 mt-10">Loading...</p>';
             
-            // Removed orderBy from query to avoid index errors, sorting in JS instead
             db.collection('orders').where('customerPhone', '==', userProfile.phone).get().then(snap => {
                   if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
                   
-                  // Sort in memory
                   const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
 
                   list.innerHTML = docs.map(doc => {
@@ -461,7 +453,6 @@
               });
         }
 
-        // FIX: Updated Udhaar Logic (Purchase vs Paid, No Item Names, Merged List)
         function fetchMyUdhaar() {
             if(!userProfile.phone) return;
             const upiBtn = document.getElementById('upi-pay-btn');
@@ -470,7 +461,6 @@
             
             historyContainer.innerHTML = '<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>';
 
-            // 1. Get Debits (Orders)
             db.collection('orders')
                 .where('customerPhone', '==', userProfile.phone)
                 .where('paymentMode', '==', 'Udhaar')
@@ -492,7 +482,6 @@
                     }
                 });
                 
-                // 2. Get Credits (Payments)
                 db.collection('payments').where('phone', '==', userProfile.phone).get().then(paySnap => {
                     let credit = 0;
                     paySnap.forEach(doc => {
@@ -509,11 +498,9 @@
                     const netDue = debit - credit;
                     amtEl.innerText = netDue;
                     
-                    // Show Pay button if due > 0
                     if(netDue > 0) upiBtn.classList.remove('hidden');
                     else upiBtn.classList.add('hidden');
 
-                    // 3. Sort & Render Combined History
                     transactions.sort((a, b) => b.seconds - a.seconds);
 
                     if(transactions.length === 0) {
@@ -524,7 +511,6 @@
                     historyContainer.innerHTML = transactions.map(t => {
                         const dateStr = formatDate(t.timestamp);
                         if(t.type === 'purchase') {
-                            // Red/Orange for Purchase (Debt Increase)
                             return `
                             <div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2">
                                 <div>
@@ -534,7 +520,6 @@
                                 <span class="text-red-400 font-bold text-lg">-₹${t.amount}</span>
                             </div>`;
                         } else {
-                            // Green for Paid (Debt Decrease)
                             return `
                             <div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2">
                                 <div>
