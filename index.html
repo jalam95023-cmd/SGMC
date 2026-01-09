@@ -61,6 +61,7 @@
 
     <div id="view-orders" class="hidden p-4">
         <h2 class="text-lg font-bold mb-4">My Orders</h2>
+        <p class="text-xs text-gray-500 mb-2">Tap on an order to view full details</p>
         <div id="orders-list" class="space-y-3"></div>
     </div>
 
@@ -159,6 +160,33 @@
         </div>
     </div>
 
+    <div id="order-detail-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[60] hidden">
+        <div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-2xl border border-gray-700 shadow-2xl relative">
+            <button onclick="closeOrderDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            
+            <h2 class="text-xl font-bold mb-1">Order Details</h2>
+            <p id="od-date" class="text-xs text-gray-500 mb-4">Date here</p>
+
+            <div class="bg-gray-900 rounded-xl p-4 mb-4 max-h-48 overflow-y-auto" id="od-items">
+                </div>
+
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between text-gray-400">
+                    <span>Payment Mode</span>
+                    <span id="od-payment" class="text-white font-bold tracking-wide"></span>
+                </div>
+                <div class="flex justify-between text-gray-400">
+                    <span>Status</span>
+                    <span id="od-status" class="uppercase font-bold"></span>
+                </div>
+                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold">
+                    <span>Total Bill</span>
+                    <span class="text-orange-500" id="od-total"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="success-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
         <div class="bg-[#1f1f1f] p-8 rounded-2xl text-center border border-green-900/50 shadow-2xl transform scale-95 transition-transform duration-200" id="success-box">
             <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-black text-4xl shadow-lg shadow-green-500/50">
@@ -198,6 +226,7 @@
         let userProfile = { name: "", phone: "" };
         let selectedPayment = 'Cash';
         let isShopOpen = true;
+        let cachedOrders = {}; // To store order data for details popup
 
         // --- INIT ---
         function init() {
@@ -423,6 +452,7 @@
             return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         }
 
+        // --- NEW: ORDER DETAILS LOGIC ---
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
@@ -432,12 +462,17 @@
                   if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
                   
                   const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
+                  
+                  cachedOrders = {}; // Clear cache
 
                   list.innerHTML = docs.map(doc => {
                       const d = doc.data();
+                      cachedOrders[doc.id] = d; // Store for popup
+                      
                       const dateStr = formatDate(d.timestamp);
+                      // Added onclick and hover styles
                       return `
-                      <div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'}">
+                      <div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} cursor-pointer hover:bg-gray-800 transition" onclick="openOrderDetail('${doc.id}')">
                           <div class="flex justify-between items-start">
                               <div>
                                   <p class="text-xs text-gray-400">${dateStr}</p>
@@ -451,6 +486,34 @@
                       </div>`;
                   }).join('');
               });
+        }
+
+        function openOrderDetail(orderId) {
+            const data = cachedOrders[orderId];
+            if(!data) return;
+
+            document.getElementById('od-date').innerText = formatDate(data.timestamp);
+            document.getElementById('od-payment').innerText = data.paymentMode || 'Cash'; // Fallback
+            document.getElementById('od-status').innerText = data.status;
+            document.getElementById('od-status').className = "uppercase font-bold " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
+            document.getElementById('od-total').innerText = '₹' + data.totalAmount;
+
+            const itemsContainer = document.getElementById('od-items');
+            itemsContainer.innerHTML = data.items.map(i => `
+                <div class="flex justify-between items-center mb-2 border-b border-gray-800 pb-1 last:border-0 last:pb-0">
+                    <div>
+                        <p class="text-sm font-bold text-white">${i.name}</p>
+                        <p class="text-xs text-gray-400">Qty: ${i.qty}</p>
+                    </div>
+                    <p class="font-bold text-orange-400 text-sm">₹${i.qty * i.price}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('order-detail-modal').classList.remove('hidden');
+        }
+
+        function closeOrderDetail() {
+            document.getElementById('order-detail-modal').classList.add('hidden');
         }
 
         function fetchMyUdhaar() {
