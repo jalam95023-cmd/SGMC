@@ -3,115 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC - Order App</title>
+    <title>SGMC Chai Stall</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        /* Modern & Clean UI */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fcefe7; margin: 0; padding: 0; }
-        .container { max-width: 420px; margin: 20px auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        
-        /* Header */
-        h1 { color: #d35400; margin: 0; text-align: center; font-size: 28px; letter-spacing: 1px; }
-        .subtitle { text-align: center; color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
-        
-        /* Shop Status Banner */
-        #shop-status { text-align: center; padding: 12px; font-weight: bold; color: white; border-radius: 8px; margin-bottom: 25px; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .open { background: linear-gradient(135deg, #2ecc71, #27ae60); }
-        .closed { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-
-        /* Inputs */
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { font-size: 13px; color: #555; font-weight: bold; margin-bottom: 5px; display: block; }
-        input[type="text"], input[type="tel"] { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; box-sizing: border-box; transition: 0.3s; }
-        input[type="text"]:focus, input[type="tel"]:focus { border-color: #d35400; outline: none; }
-
-        /* Menu Grid */
-        .menu-label { font-size: 18px; font-weight: bold; color: #333; margin: 20px 0 10px 0; display: block; }
-        .menu-list { display: flex; flex-direction: column; gap: 10px; }
-        .menu-item { display: flex; align-items: center; justify-content: space-between; background: #fff8f0; padding: 12px 15px; border-radius: 10px; border: 1px solid #f0e0d0; transition: 0.2s; }
-        .menu-item:hover { border-color: #d35400; background: #fff; }
-        .item-text { font-weight: 600; font-size: 16px; color: #444; }
-        .checkbox { width: 20px; height: 20px; accent-color: #d35400; cursor: pointer; }
-
-        /* Udhaar Toggle */
-        .udhaar-box { margin-top: 25px; display: flex; align-items: center; justify-content: center; background: #ffebee; padding: 12px; border-radius: 10px; border: 1px dashed #e74c3c; gap: 10px; cursor: pointer; }
-        .udhaar-text { color: #c0392b; font-weight: bold; font-size: 15px; }
-
-        /* Order Button */
-        button#orderBtn { width: 100%; padding: 15px; background: #d35400; color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 15px rgba(211, 84, 0, 0.4); transition: 0.3s; }
-        button#orderBtn:active { transform: scale(0.98); }
-        button:disabled { background: #bdc3c7; cursor: not-allowed; box-shadow: none; }
-
-        /* Live Orders Section */
-        #orders-list { margin-top: 40px; }
-        .section-title { font-size: 18px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 15px; }
-        .order-card { background: white; padding: 15px; border-radius: 10px; border-left: 5px solid #d35400; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; text-align: left; }
-        .order-header { display: flex; justify-content: space-between; font-weight: bold; color: #333; margin-bottom: 5px; }
-        .order-items { color: #666; font-size: 14px; }
-        .badge { padding: 3px 8px; border-radius: 5px; font-size: 11px; color: white; }
-        .b-paid { background: #27ae60; }
-        .b-udhaar { background: #c0392b; }
-
+        body { background-color: #121212; color: #e0e0e0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
+        .item-card { background: #1e1e1e; border-radius: 16px; border: 1px solid #333; }
+        .btn-primary { background: linear-gradient(135deg, #FF6B6B, #FF8E53); color: white; }
+        .floating-cart { box-shadow: 0 -4px 15px rgba(0,0,0,0.7); background: #1f2937; }
     </style>
 </head>
-<body>
+<body class="pb-28 select-none">
 
-    <div class="container">
-        <h1>☕ SGMC</h1>
-        <p class="subtitle">Shree Mataji Chai Stall</p>
-        
-        <div id="shop-status">Loading Status...</div>
+    <div class="p-4 flex justify-between items-center bg-gray-900 sticky top-0 z-20 shadow-lg border-b border-gray-800">
+        <h1 class="text-xl font-bold text-orange-500 tracking-wider"><i class="fas fa-mug-hot mr-2"></i>SGMC</h1>
+        <div id="shop-status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-600 text-white animate-pulse">Loading...</div>
+    </div>
 
-        <div class="input-group">
-            <label>Apna Naam</label>
-            <input type="text" id="customerName" placeholder="Rahul, Amit, etc.">
-        </div>
-        <div class="input-group">
-            <label>Mobile Number (Optional)</label>
-            <input type="tel" id="customerPhone" placeholder="98765...">
+    <div class="p-4 grid grid-cols-1 gap-4" id="menu-container">
         </div>
 
-        <span class="menu-label">Menu Select Karein:</span>
-        <div class="menu-list" id="menu">
-            <label class="menu-item">
-                <span class="item-text">🔥 Kadak Chai</span>
-                <input type="checkbox" class="checkbox" value="Chai">
-            </label>
-            <label class="menu-item">
-                <span class="item-text">🚬 Cigarette (Sutta)</span>
-                <input type="checkbox" class="checkbox" value="Cigarette">
-            </label>
-            <label class="menu-item">
-                <span class="item-text">🍃 Pan Masala</span>
-                <input type="checkbox" class="checkbox" value="Pan Masala">
-            </label>
-            <label class="menu-item">
-                <span class="item-text">🍪 Mathri</span>
-                <input type="checkbox" class="checkbox" value="Mathri">
-            </label>
-            <label class="menu-item">
-                <span class="item-text">🌯 Veg Roll</span>
-                <input type="checkbox" class="checkbox" value="Roll">
-            </label>
-        </div>
+    <div id="shop-closed-overlay" class="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center hidden text-center p-6">
+        <i class="fas fa-store-slash text-6xl text-gray-600 mb-6"></i>
+        <h2 class="text-3xl font-bold text-red-500 mb-2">Dukan Band Hai</h2>
+        <p class="text-gray-400">Order abhi nahi liya ja raha.</p>
+    </div>
 
-        <div class="udhaar-box">
-            <input type="checkbox" id="isUdhaar" class="checkbox" style="accent-color: red;">
-            <span class="udhaar-text">Khate me likh lo (Udhaar) 📕</span>
-        </div>
-
-        <button id="orderBtn" onclick="placeOrder()">ORDER LAGAO 🚀</button>
-
-        <div id="orders-list">
-            <div class="section-title">🔴 Live Orders (Abhi bane hain)</div>
-            <div id="orderDisplay">Loading...</div>
+    <div id="cart-bar" class="fixed bottom-0 left-0 w-full floating-cart p-4 rounded-t-3xl hidden z-40">
+        <div class="flex justify-between items-center max-w-md mx-auto">
+            <div class="flex flex-col">
+                <span class="text-gray-400 text-xs font-medium uppercase"><span id="cart-count">0</span> Items</span>
+                <span class="text-2xl font-bold text-white">₹<span id="cart-total">0</span></span>
+            </div>
+            <button onclick="openCheckout()" class="btn-primary px-8 py-3 rounded-xl font-bold shadow-lg">
+                View Cart <i class="fas fa-shopping-bag ml-2"></i>
+            </button>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, query, orderBy, serverTimestamp } 
-        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div id="checkout-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-end sm:items-center justify-center">
+        <div class="bg-gray-800 w-full max-w-md p-6 rounded-t-3xl sm:rounded-3xl shadow-2xl relative">
+            <button onclick="closeCheckout()" class="absolute top-4 right-4 text-gray-400 text-xl"><i class="fas fa-times"></i></button>
+            <h2 class="text-2xl font-bold mb-6 text-white">Finalize Order</h2>
+            
+            <div class="space-y-4">
+                <input type="text" id="c-name" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Apna Naam (Name)">
+                <input type="tel" id="c-phone" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Mobile Number">
 
+                <div>
+                    <label class="text-xs text-gray-400 uppercase ml-1">Payment Method</label>
+                    <div class="grid grid-cols-3 gap-3 mt-1">
+                        <button onclick="selectPayment('Cash')" class="pay-btn p-3 bg-gray-700 rounded-xl border border-gray-600 text-sm font-bold">💵 Cash</button>
+                        <button onclick="selectPayment('UPI')" class="pay-btn p-3 bg-gray-700 rounded-xl border border-gray-600 text-sm font-bold">📱 UPI</button>
+                        <button onclick="selectPayment('Udhaar')" class="pay-btn p-3 bg-gray-700 rounded-xl border border-gray-600 text-sm font-bold">📒 Udhaar</button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="selected-payment" value="">
+                <p id="payment-msg" class="text-xs text-orange-400 h-4 text-center font-medium"></p>
+
+                <button onclick="placeOrder()" id="confirm-btn" class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg mt-2">
+                    Confirm Order
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // *** CONFIGURATION ***
+        const YOUR_UPI_ID = "9523196156@ybl"; // <--- Replace with your UPI ID (e.g. number@ybl)
+        
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
             authDomain: "sgmc-16568.firebaseapp.com",
@@ -121,112 +85,148 @@
             appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
             measurementId: "G-4996NPF55N"
         };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const menuItems = [
+            { id: 1, name: "Masala Chai", price: 10, icon: "☕" },
+            { id: 2, name: "Coffee", price: 20, icon: "🥤" },
+            { id: 3, name: "Bun Maska", price: 25, icon: "🥯" },
+            { id: 4, name: "Veg Maggi", price: 30, icon: "🍜" },
+            { id: 5, name: "Cheese Maggi", price: 45, icon: "🧀" },
+            { id: 6, name: "Samosa", price: 15, icon: "🥟" },
+            { id: 7, name: "Patties", price: 20, icon: "🥐" },
+            { id: 8, name: "Cold Drink", price: 20, icon: "🧊" }
+        ];
 
-        // --- SHOP STATUS ---
-        let isShopOpen = true;
-        const statusDiv = document.getElementById("shop-status");
-        const orderBtn = document.getElementById("orderBtn");
+        let cart = {}; 
 
-        onSnapshot(doc(db, "shopSettings", "status"), (docSnap) => {
-            if (docSnap.exists()) isShopOpen = docSnap.data().isOpen;
-            else isShopOpen = true;
-
-            if (isShopOpen) {
-                statusDiv.innerHTML = "🟢 Dukan Khuli Hai";
-                statusDiv.className = "open";
-                orderBtn.disabled = false;
-                orderBtn.innerHTML = "ORDER LAGAO 🚀";
-                orderBtn.style.background = "#d35400";
-            } else {
-                statusDiv.innerHTML = "🔴 Dukan Band Hai (Closed)";
-                statusDiv.className = "closed";
-                orderBtn.disabled = true;
-                orderBtn.innerHTML = "⛔ Abhi Band Hai";
-                orderBtn.style.background = "#bdc3c7";
-            }
-        });
-
-        // --- PLACE ORDER ---
-        window.placeOrder = async function() {
-            if (!isShopOpen) { alert("Dukan band hai!"); return; }
-
-            const name = document.getElementById("customerName").value.trim();
-            const phone = document.getElementById("customerPhone").value.trim();
-            const udhaarCheck = document.getElementById("isUdhaar").checked;
-            
-            // Get selected items
-            const checkboxes = document.querySelectorAll('#menu .checkbox:checked');
-            let selectedItems = [];
-            checkboxes.forEach((cb) => selectedItems.push(cb.value));
-
-            // Validation
-            if (name === "") { alert("Bhai naam to likh do!"); return; }
-            if (selectedItems.length === 0) { alert("Kuch select to karo menu se!"); return; }
-
-            const paymentStatus = udhaarCheck ? "Udhaar ❌" : "Cash/Paid ✅";
-
-            try {
-                orderBtn.innerHTML = "Bheja ja raha hai...";
-                orderBtn.disabled = true;
-
-                await addDoc(collection(db, "orders"), {
-                    customer: name,
-                    phone: phone, // Saving phone number
-                    items: selectedItems,
-                    payment: paymentStatus,
-                    timestamp: serverTimestamp()
-                });
-
-                alert("✅ Order Bhej Diya!");
-                
-                // Reset Form
-                document.getElementById("customerName").value = "";
-                document.getElementById("customerPhone").value = "";
-                document.getElementById("isUdhaar").checked = false;
-                checkboxes.forEach(cb => cb.checked = false);
-                
-                orderBtn.innerHTML = "ORDER LAGAO 🚀";
-                orderBtn.disabled = false;
-
-            } catch (error) {
-                console.error("Error:", error);
-                alert("Order nahi gaya. Internet check karo.");
-                orderBtn.disabled = false;
-            }
-        }
-
-        // --- LIVE ORDER LIST ---
-        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const display = document.getElementById("orderDisplay");
-            display.innerHTML = "";
-            
-            if(snapshot.empty) {
-                display.innerHTML = "<p style='text-align:center; color:#999;'>Abhi koi order nahi hai.</p>";
-                return;
-            }
-
-            snapshot.forEach((doc) => {
-                const order = doc.data();
-                const badgeClass = order.payment.includes("Udhaar") ? "b-udhaar" : "b-paid";
-                
-                display.innerHTML += `
-                    <div class="order-card">
-                        <div class="order-header">
-                            <span>👤 ${order.customer}</span>
-                            <span class="badge ${badgeClass}">${order.payment}</span>
-                        </div>
-                        <div class="order-items">
-                            🛒 ${order.items.join(", ")}
+        function init() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = menuItems.map(item => `
+                <div class="item-card p-4 flex justify-between items-center shadow-md">
+                    <div class="flex items-center space-x-4">
+                        <span class="text-3xl">${item.icon}</span>
+                        <div>
+                            <h3 class="font-bold text-lg text-white">${item.name}</h3>
+                            <p class="text-orange-400 font-medium">₹${item.price}</p>
                         </div>
                     </div>
-                `;
-            });
-        });
-    </script>
+                    <div class="flex items-center bg-gray-800 rounded-lg overflow-hidden border border-gray-600">
+                        <button onclick="updateCart(${item.id}, -1)" class="w-8 h-8 flex items-center justify-center text-red-400 font-bold">-</button>
+                        <span id="qty-${item.id}" class="w-6 text-center text-sm font-bold text-white">0</span>
+                        <button onclick="updateCart(${item.id}, 1)" class="w-8 h-8 flex items-center justify-center text-green-400 font-bold">+</button>
+                    </div>
+                </div>
+            `).join('');
 
+            db.collection('settings').doc('status').onSnapshot(doc => {
+                const isOpen = doc.exists ? doc.data().isOpen : true;
+                const overlay = document.getElementById('shop-closed-overlay');
+                const badge = document.getElementById('shop-status-badge');
+                
+                if(!isOpen) {
+                    overlay.classList.remove('hidden');
+                    badge.innerText = "CLOSED";
+                    badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white";
+                } else {
+                    overlay.classList.add('hidden');
+                    badge.innerText = "OPEN";
+                    badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-green-600 text-white";
+                }
+            });
+        }
+
+        function updateCart(id, change) {
+            if (!cart[id]) cart[id] = 0;
+            cart[id] += change;
+            if (cart[id] < 0) cart[id] = 0;
+            document.getElementById(`qty-${id}`).innerText = cart[id];
+            renderCartSummary();
+        }
+
+        function renderCartSummary() {
+            let total = 0;
+            let count = 0;
+            for (const [id, qty] of Object.entries(cart)) {
+                if (qty > 0) {
+                    const item = menuItems.find(i => i.id == parseInt(id));
+                    total += item.price * qty;
+                    count += qty;
+                }
+            }
+            document.getElementById('cart-total').innerText = total;
+            document.getElementById('cart-count').innerText = count;
+            const cartBar = document.getElementById('cart-bar');
+            if (count > 0) cartBar.classList.remove('hidden');
+            else cartBar.classList.add('hidden');
+        }
+
+        function openCheckout() { document.getElementById('checkout-modal').classList.remove('hidden'); }
+        function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
+        
+        function selectPayment(mode) {
+            document.getElementById('selected-payment').value = mode;
+            document.querySelectorAll('.pay-btn').forEach(b => {
+                b.classList.remove('bg-orange-600', 'text-white', 'border-transparent');
+                b.classList.add('bg-gray-700', 'border-gray-600');
+            });
+            event.target.classList.remove('bg-gray-700', 'border-gray-600');
+            event.target.classList.add('bg-orange-600', 'text-white', 'border-transparent');
+            
+            const msg = document.getElementById('payment-msg');
+            if(mode === 'UPI') msg.innerText = "App automatically khulega.";
+            else if(mode === 'Udhaar') msg.innerText = "Udhaar ke liye Number jaruri hai.";
+            else msg.innerText = "Counter pe cash de dena.";
+        }
+
+        function placeOrder() {
+            const btn = document.getElementById('confirm-btn');
+            const name = document.getElementById('c-name').value.trim();
+            const phone = document.getElementById('c-phone').value.trim();
+            const mode = document.getElementById('selected-payment').value;
+            const total = parseInt(document.getElementById('cart-total').innerText);
+
+            if (!mode) { alert("Payment method select karo!"); return; }
+            if (!name) { alert("Naam likhna jaruri hai!"); return; }
+            if (mode === 'Udhaar' && (!phone || phone.length < 10)) { alert("Udhaar ke liye sahi Mobile Number jaruri hai!"); return; }
+
+            btn.disabled = true;
+            btn.innerText = "Ordering...";
+
+            const items = [];
+            for (const [id, qty] of Object.entries(cart)) {
+                if (qty > 0) {
+                    const i = menuItems.find(x => x.id == id);
+                    items.push({ name: i.name, qty: qty, price: i.price });
+                }
+            }
+
+            const orderData = {
+                customerName: name,
+                customerPhone: phone,
+                items: items,
+                totalAmount: total,
+                paymentMode: mode,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('orders').add(orderData).then(() => {
+                if (mode === 'UPI') {
+                    // Deep link to open any UPI app
+                    const upiLink = `upi://pay?pa=${YOUR_UPI_ID}&pn=SGMC&am=${total}&tn=Order-${name}`;
+                    window.location.href = upiLink;
+                }
+                alert("Order Bhej Diya! ✅");
+                location.reload();
+            }).catch(err => {
+                alert("Error: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "Confirm Order";
+            });
+        }
+        init();
+    </script>
 </body>
 </html>
