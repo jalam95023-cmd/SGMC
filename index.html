@@ -2,126 +2,175 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC Chai Stall</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SGMC Chai</title>
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f0f0f">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f0f0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
     <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
-        .item-card { background: #1e1e1e; border-radius: 16px; border: 1px solid #333; transition: 0.2s; }
-        .btn-primary { background: linear-gradient(135deg, #FF6B6B, #FF8E53); color: white; }
-        .floating-cart { box-shadow: 0 -4px 15px rgba(0,0,0,0.7); background: #1f2937; }
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); border: 1px solid #4CAF50; }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-        .shop-closed-bar { background: #EF4444; color: white; text-align: center; padding: 8px; font-size: 12px; font-weight: bold; display: none; width: 100%; position: fixed; top: 0; z-index: 50; }
+        body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 80px; }
+        .card { background: #1a1a1a; border-radius: 16px; border: 1px solid #333; overflow: hidden; }
+        .btn-primary { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); color: white; font-weight: bold; }
+        .item-row { transition: all 0.2s; }
+        .item-row:active { transform: scale(0.98); background: #222; }
+        
+        /* Tab Bar */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px; padding-bottom: 20px; z-index: 50; }
+        .nav-item { color: #666; text-align: center; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .nav-item i { font-size: 18px; margin-bottom: 2px; }
+        .nav-item.active { color: #F97316; }
+        
+        /* Modal & Profile */
+        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+        .profile-avatar { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; items-center; justify-center; font-weight: bold; color: #F97316; border: 1px solid #F97316; }
     </style>
 </head>
-<body class="pb-32 select-none pt-0">
+<body>
 
-    <div id="shop-closed-bar" class="shop-closed-bar">⚠️ Dukan Abhi Band Hai.</div>
-
-    <div class="p-4 flex justify-between items-center bg-gray-900 sticky top-0 z-20 border-b border-gray-800 mt-0" id="main-header">
-        <h1 class="text-xl font-bold text-orange-500 tracking-wider">SGMC</h1>
-        <div class="flex gap-2">
-            <button onclick="showUdhaar()" class="text-xs bg-red-900/30 border border-red-600 px-3 py-1 rounded text-red-200 active:bg-red-800">
-                <i class="fas fa-wallet mr-1"></i> My Udhaar
-            </button>
-            <button onclick="showMyOrders()" class="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded text-white active:bg-gray-700">
-                <i class="fas fa-history mr-1"></i> History
-            </button>
+    <div class="fixed top-0 left-0 right-0 bg-[#0f0f0f]/95 backdrop-blur z-40 px-4 py-3 flex justify-between items-center border-b border-gray-800">
+        <div>
+            <h1 class="text-xl font-bold text-orange-500">SGMC <span class="text-white text-sm font-normal">Chai Stall</span></h1>
+            <p class="text-[10px] text-green-500" id="shop-status-badge">● Open</p>
         </div>
-    </div>
-
-    <div class="p-4 grid grid-cols-1 gap-3" id="menu-container"></div>
-
-    <div id="live-order-tracker" class="hidden m-4 p-4 bg-blue-900/20 border border-blue-500 rounded-xl">
-        <h3 class="text-blue-400 font-bold text-sm mb-1"><i class="fas fa-spinner fa-spin mr-2"></i>Live Status</h3>
-        <p class="text-white text-lg font-bold" id="live-status-text">Pending...</p>
-        <p class="text-xs text-gray-400 mt-1">Payment: <span id="live-payment-status" class="text-white">Checking...</span></p>
-    </div>
-
-    <div id="toast"><i class="fas fa-check-circle text-green-500 mr-2"></i> Order Placed! Thank You.</div>
-
-    <div id="variant-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-800 w-full max-w-sm p-5 rounded-2xl">
-            <h3 class="text-xl font-bold text-white mb-4">Choose Variant</h3>
-            <div id="variant-options" class="grid grid-cols-2 gap-3"></div>
-            <button onclick="closeVariantModal()" class="mt-4 w-full py-2 text-gray-400">Cancel</button>
-        </div>
-    </div>
-
-    <div id="cart-bar" class="fixed bottom-0 left-0 w-full floating-cart p-4 rounded-t-3xl hidden z-40">
-        <div class="flex justify-between items-center max-w-md mx-auto">
-            <div class="flex flex-col">
-                <span class="text-gray-400 text-xs font-medium uppercase"><span id="cart-count">0</span> Items</span>
-                <span class="text-2xl font-bold text-white">₹<span id="cart-total">0</span></span>
+        <div class="flex items-center gap-2" onclick="openProfileEdit()">
+            <div class="text-right">
+                <p class="text-xs font-bold text-white" id="header-name">Guest</p>
+                <p class="text-[10px] text-gray-400" id="header-phone">Tap to setup</p>
             </div>
-            <button onclick="openCheckout()" class="btn-primary px-8 py-3 rounded-xl font-bold shadow-lg">View Cart</button>
+            <div class="profile-avatar" id="header-avatar"><i class="fas fa-user"></i></div>
         </div>
     </div>
 
-    <div id="checkout-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-end sm:items-center justify-center">
-        <div class="bg-gray-800 w-full max-w-md p-6 rounded-t-3xl sm:rounded-3xl shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-white">Checkout</h2>
-                <button onclick="closeCheckout()" class="text-gray-400"><i class="fas fa-times"></i></button>
+    <div class="h-16"></div>
+
+    <div id="view-menu" class="p-4 space-y-4">
+        <div id="closed-banner" class="hidden bg-red-900/20 border border-red-500/50 text-red-200 p-4 rounded-xl text-center mb-4">
+            <h3 class="font-bold mb-1"><i class="fas fa-store-slash"></i> Shop is Closed</h3>
+            <p class="text-xs">Orders allow nahi hain. Please wait.</p>
+        </div>
+
+        <div id="menu-container" class="space-y-3">
+            <div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500"></i></div>
+        </div>
+    </div>
+
+    <div id="view-orders" class="hidden p-4">
+        <h2 class="text-lg font-bold mb-4">My Orders</h2>
+        <div id="orders-list" class="space-y-3"></div>
+    </div>
+
+    <div id="view-udhaar" class="hidden p-4">
+        <div class="card p-6 text-center mb-6 bg-gradient-to-br from-gray-800 to-gray-900">
+            <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Total Udhaar Pending</p>
+            <h1 class="text-4xl font-bold text-red-500 mb-1">₹<span id="my-udhaar-amount">0</span></h1>
+            <p class="text-[10px] text-gray-500">Please clear your dues via UPI</p>
+            <div id="upi-pay-btn" class="mt-4 hidden">
+                <button onclick="payUdhaarViaUPI()" class="bg-green-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-green-900/50">Pay Now via UPI</button>
             </div>
+        </div>
+        <h3 class="font-bold text-gray-400 text-sm mb-3">Recent Transactions</h3>
+        <div id="udhaar-history" class="space-y-2"></div>
+    </div>
+
+    <div id="cart-bar" class="fixed bottom-20 left-4 right-4 bg-orange-600 text-white p-4 rounded-xl shadow-2xl flex justify-between items-center z-40 hidden cursor-pointer" onclick="openCheckout()">
+        <div class="flex items-center gap-3">
+            <div class="bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="cart-count">0</div>
+            <div>
+                <p class="text-xs text-orange-200">Total</p>
+                <p class="font-bold">₹<span id="cart-total">0</span></p>
+            </div>
+        </div>
+        <span class="font-bold text-sm">View Cart <i class="fas fa-chevron-right ml-1"></i></span>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu">
+            <i class="fas fa-utensils"></i> Menu
+        </div>
+        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders">
+            <i class="fas fa-clock"></i> History
+        </div>
+        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar">
+            <i class="fas fa-wallet"></i> Udhaar
+        </div>
+    </div>
+
+    <div id="login-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
+        <div class="bg-[#1f1f1f] w-full max-w-xs p-6 rounded-2xl border border-gray-700 shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-gray-800 rounded-full mx-auto flex items-center justify-center mb-3">
+                    <i class="fas fa-user-edit text-2xl text-orange-500"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white">Setup Profile</h2>
+                <p class="text-xs text-gray-400">Enter details for faster checkout</p>
+            </div>
+            
             <div class="space-y-4">
-                <input type="text" id="c-name" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Apna Naam">
-                <input type="tel" id="c-phone" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Mobile Number">
-                
-                <input type="text" id="c-address" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Address / Room No. (Optional)">
+                <div>
+                    <label class="text-xs text-gray-500 ml-1">Your Name</label>
+                    <input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none" placeholder="e.g. Rahul Kumar">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 ml-1">Phone Number</label>
+                    <input type="tel" id="user-phone" maxlength="10" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none" placeholder="e.g. 9876543210">
+                </div>
+                <button onclick="saveProfile()" class="w-full btn-primary py-3 rounded-xl mt-2 shadow-lg shadow-orange-900/20">Save & Continue</button>
+            </div>
+            <p class="text-center text-[10px] text-gray-600 mt-4">Details are saved locally on your device.</p>
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="fixed inset-0 modal-overlay flex items-end sm:items-center justify-center z-50 hidden">
+        <div class="bg-[#1f1f1f] w-full max-w-md p-6 rounded-t-2xl sm:rounded-2xl border-t sm:border border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-4">
+                <h2 class="text-xl font-bold">Checkout</h2>
+                <button onclick="closeCheckout()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div id="checkout-items" class="space-y-2 mb-4 max-h-40 overflow-y-auto"></div>
+            
+            <div class="border-t border-gray-800 pt-4 space-y-3">
+                <div class="flex justify-between font-bold text-lg">
+                    <span>Total To Pay</span>
+                    <span class="text-orange-500">₹<span id="checkout-total">0</span></span>
+                </div>
 
                 <div>
-                    <label class="text-xs text-gray-400 uppercase ml-1">Payment Method</label>
-                    <div class="grid grid-cols-3 gap-3 mt-1">
-                        <button onclick="selectPayment('Cash')" class="pay-btn p-3 bg-gray-700 rounded-xl border border-gray-600 text-sm font-bold">💵 Cash</button>
-                        <button onclick="selectPayment('UPI')" class="pay-btn p-3 bg-gray-700 rounded-xl border border-gray-600 text-sm font-bold">📱 UPI</button>
-                        <button onclick="selectPayment('Udhaar')" class="pay-btn p-3 bg-gray-700 rounded-xl border border-gray-600 text-sm font-bold">📒 Udhaar</button>
+                    <label class="text-xs text-gray-400 ml-1">Delivery Address (Optional)</label>
+                    <input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:border-orange-500 outline-none" placeholder="Room no, Floor, or Landmark...">
+                </div>
+
+                <div>
+                    <label class="text-xs text-gray-400 ml-1">Select Payment Mode</label>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                        <button onclick="setPayment('Cash')" id="pay-cash" class="p-2 rounded border border-gray-600 text-sm hover:bg-gray-700 payment-opt">Cash</button>
+                        <button onclick="setPayment('UPI')" id="pay-upi" class="p-2 rounded border border-gray-600 text-sm hover:bg-gray-700 payment-opt">UPI</button>
+                        <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-2 rounded border border-gray-600 text-sm hover:bg-gray-700 payment-opt">Udhaar</button>
                     </div>
                 </div>
-                <input type="hidden" id="selected-payment" value="">
-                <button onclick="placeOrder()" id="confirm-btn" class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg mt-2">Confirm Order</button>
+
+                <button onclick="placeOrder()" class="w-full btn-primary py-3 rounded-xl font-bold text-lg shadow-lg mt-2">Place Order</button>
             </div>
         </div>
     </div>
 
-    <div id="udhaar-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-gray-800 w-full max-w-sm p-6 rounded-2xl relative max-h-[80vh] overflow-y-auto">
-            <button onclick="document.getElementById('udhaar-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times"></i></button>
-            <h2 class="text-xl font-bold text-white mb-6">My Udhaar Details</h2>
-            <div id="udhaar-content" class="text-center">
-                <p class="text-gray-500 animate-pulse">Checking...</p>
+    <div id="success-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
+        <div class="bg-[#1f1f1f] p-8 rounded-2xl text-center border border-green-900/50 shadow-2xl transform scale-95 transition-transform duration-200" id="success-box">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-black text-4xl shadow-lg shadow-green-500/50">
+                <i class="fas fa-check"></i>
             </div>
-            <div id="payment-history-list" class="mt-6 border-t border-gray-700 pt-4 text-left hidden">
-                <h4 class="text-sm font-bold text-gray-400 mb-2">Payment History (Settled)</h4>
-                <div id="p-history-items" class="space-y-2 text-xs"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="history-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
-        <div class="p-4 max-w-md mx-auto">
-            <div class="flex justify-between items-center mb-6 sticky top-0 bg-black/95 py-4 z-10">
-                <h2 class="text-2xl font-bold text-white">Order History</h2>
-                <button onclick="document.getElementById('history-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times fa-lg"></i></button>
-            </div>
-            <div id="history-list" class="space-y-4 pb-10"></div>
+            <h2 class="text-2xl font-bold text-white mb-2">Order Placed!</h2>
+            <p class="text-gray-400 text-sm mb-6">Thank you, <span id="success-name"></span>!</p>
+            <button onclick="closeSuccess()" class="bg-gray-800 text-white px-8 py-2 rounded-lg font-bold">Okay</button>
         </div>
     </div>
 
     <script>
-        const YOUR_UPI_ID = "9523196156@ybl"; // <--- UPI ID HERE
-        
+        // --- CONFIG ---
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
             authDomain: "sgmc-16568.firebaseapp.com",
@@ -134,247 +183,328 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const menuItems = [
-            { id: 1, name: "Normal Chai", price: 10, icon: "☕", type: "simple" },
-            { id: 2, name: "Adrak Chai", price: 15, icon: "🍵", type: "simple" },
-            { id: 3, name: "Cigarette", price: 0, icon: "🚬", type: "variant", variants: [ {name: "Chhoti Gold", price: 10}, {name: "Advance", price: 18}, {name: "Marlboro", price: 20} ] },
-            { id: 4, name: "Matthi", price: 5, icon: "🍘", type: "simple" },
-            { id: 5, name: "Veg Roll", price: 10, icon: "🌯", type: "simple" },
-            { id: 6, name: "Biscuit", price: 5, icon: "🍪", type: "simple" },
-            { id: 7, name: "Namkeen", price: 10, icon: "🥡", type: "simple" }
+        // --- STATE ---
+        let cart = {};
+        let menuItems = [
+            { id: 1, name: "Normal Chai", price: 10 },
+            { id: 2, name: "Adrak Chai", price: 15 },
+            { id: 3, name: "Cigarette (Gold)", price: 18, variant: true },
+            { id: 4, name: "Matthi", price: 5 },
+            { id: 5, name: "Veg Roll", price: 10 },
+            { id: 6, name: "Biscuit", price: 5 },
+            { id: 7, name: "Namkeen", price: 10 }
         ];
+        let userProfile = { name: "", phone: "" };
+        let selectedPayment = 'Cash';
+        let isShopOpen = true;
 
-        let cart = {}; let isShopOpen = true; let disabledItems = [];
-
+        // --- INIT ---
         function init() {
-            db.collection('settings').doc('status').onSnapshot(doc => {
-                isShopOpen = doc.exists ? doc.data().isOpen : true;
-                const bar = document.getElementById('shop-closed-bar');
-                const header = document.getElementById('main-header');
-                if(!isShopOpen) { bar.style.display = 'block'; header.style.marginTop = '30px'; } 
-                else { bar.style.display = 'none'; header.style.marginTop = '0px'; }
-                renderMenu();
-            });
-            db.collection('settings').doc('menu').onSnapshot(doc => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    disabledItems = Object.keys(data).filter(k => data[k] === false).map(Number);
-                }
-                renderMenu();
-            });
-            const savedPhone = localStorage.getItem('userPhone');
-            if(savedPhone) { document.getElementById('c-phone').value = savedPhone; listenToLatestOrder(savedPhone); }
+            loadProfile();
+            loadMenuStatus();
+            listenToShopStatus();
         }
 
-        // --- MENU & CART ---
-        function renderMenu() {
-            const container = document.getElementById('menu-container');
-            const activeItems = menuItems.filter(item => !disabledItems.includes(item.id));
-            container.innerHTML = activeItems.map(item => `
-                <div class="item-card p-4 flex justify-between items-center shadow-md ${!isShopOpen ? 'opacity-50' : ''}">
-                    <div class="flex items-center space-x-4">
-                        <span class="text-3xl">${item.icon}</span>
-                        <div><h3 class="font-bold text-lg text-white">${item.name}</h3><p class="text-orange-400 font-medium">${item.type === 'variant' ? 'Choose Type' : '₹'+item.price}</p></div>
-                    </div>
-                    ${renderAddButton(item)}
-                </div>`).join('');
-        }
-        function renderAddButton(item) {
-            const disabled = !isShopOpen ? 'disabled style="pointer-events:none;"' : '';
-            if(item.type === 'variant') return `<button onclick="openVariantModal(${item.id})" ${disabled} class="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-orange-400 font-bold text-sm">Select</button>`;
-            return `<div class="flex items-center bg-gray-800 rounded-lg overflow-hidden border border-gray-600" ${disabled}>
-                    <button onclick="updateCart('${item.name}', ${item.price}, -1)" class="w-8 h-8 flex items-center justify-center text-red-400 font-bold">-</button>
-                    <span id="qty-${item.name.replace(/\s/g, '')}" class="w-6 text-center text-sm font-bold text-white">0</span>
-                    <button onclick="updateCart('${item.name}', ${item.price}, 1)" class="w-8 h-8 flex items-center justify-center text-green-400 font-bold">+</button></div>`;
-        }
-        function openVariantModal(id) {
-            const item = menuItems.find(i => i.id === id);
-            document.getElementById('variant-options').innerHTML = item.variants.map(v => `
-                <button onclick="addVariantToCart('${v.name}', ${v.price})" class="p-4 bg-gray-700 rounded-xl hover:bg-orange-600"><p class="font-bold text-white">${v.name}</p><p class="text-orange-300 text-sm">₹${v.price}</p></button>`).join('');
-            document.getElementById('variant-modal').classList.remove('hidden');
-        }
-        function closeVariantModal() { document.getElementById('variant-modal').classList.add('hidden'); }
-        function addVariantToCart(n, p) { updateCart(n, p, 1); closeVariantModal(); }
-        function updateCart(name, price, change) {
-            if (!cart[name]) cart[name] = { price: price, qty: 0 };
-            cart[name].qty += change;
-            if (cart[name].qty <= 0) delete cart[name];
-            const qtyEl = document.getElementById(`qty-${name.replace(/\s/g, '')}`);
-            if(qtyEl) qtyEl.innerText = cart[name] ? cart[name].qty : 0;
-            renderCartSummary();
-        }
-        function renderCartSummary() {
-            let total = 0, count = 0;
-            for (const k in cart) { total += cart[k].price * cart[k].qty; count += cart[k].qty; }
-            document.getElementById('cart-total').innerText = total;
-            document.getElementById('cart-count').innerText = count;
-            const bar = document.getElementById('cart-bar');
-            if (count > 0) bar.classList.remove('hidden'); else bar.classList.add('hidden');
-        }
-
-        // --- CHECKOUT ---
-        function openCheckout() { document.getElementById('checkout-modal').classList.remove('hidden'); }
-        function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
-        function selectPayment(mode) {
-            document.getElementById('selected-payment').value = mode;
-            document.querySelectorAll('.pay-btn').forEach(b => { b.classList.remove('bg-orange-600', 'text-white', 'border-transparent'); b.classList.add('bg-gray-700', 'border-gray-600'); });
-            event.target.classList.remove('bg-gray-700', 'border-gray-600'); event.target.classList.add('bg-orange-600', 'text-white', 'border-transparent');
-        }
-        function placeOrder() {
-            const name = document.getElementById('c-name').value.trim();
-            const phone = document.getElementById('c-phone').value.trim();
-            const address = document.getElementById('c-address').value.trim();
-            const mode = document.getElementById('selected-payment').value;
-            const total = parseInt(document.getElementById('cart-total').innerText);
-            if (!name || !phone || !mode) { alert("Sab details bharo!"); return; }
-            localStorage.setItem('userPhone', phone);
-            const items = []; for (const k in cart) { items.push({ name: k, qty: cart[k].qty, price: cart[k].price }); }
-            
-            const orderData = { 
-                customerName: name, 
-                customerPhone: phone, 
-                customerAddress: address,
-                items: items, 
-                totalAmount: total, 
-                paymentMode: mode, 
-                paymentVerified: (mode === 'Cash'), 
-                status: 'pending', 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-            };
-
-            db.collection('orders').add(orderData).then(() => {
-                closeCheckout(); cart = {}; renderCartSummary();
-                const toast = document.getElementById("toast"); toast.className = "show"; setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-                if (mode === 'UPI') { window.location.href = `upi://pay?pa=${YOUR_UPI_ID}&pn=SGMC&am=${total}&tn=Order`; }
-                listenToLatestOrder(phone);
-            });
-        }
-
-        // --- FIXED UDHAAR FUNCTION (Without Composite Index) ---
-        async function showUdhaar() {
-            let phone = localStorage.getItem('userPhone');
-            if(!phone) { phone = prompt("Apna registered Mobile Number daalo:"); if(phone) localStorage.setItem('userPhone', phone); else return; }
-            
-            document.getElementById('udhaar-modal').classList.remove('hidden');
-            const content = document.getElementById('udhaar-content');
-            const historyContainer = document.getElementById('payment-history-list');
-            const historyItems = document.getElementById('p-history-items');
-            
-            content.innerHTML = '<p class="text-gray-500 animate-pulse">Checking...</p>';
-            historyItems.innerHTML = ''; 
-
-            try {
-                // 1. Get ALL orders for this phone, then filter for Udhaar in JS
-                // This avoids needing a composite index in Firebase
-                const ordersSnap = await db.collection('orders').where('customerPhone', '==', phone).get();
-                let debit = 0;
-                ordersSnap.forEach(doc => { 
-                    const d = doc.data();
-                    if(d.paymentMode === 'Udhaar' && d.status !== 'cancelled') {
-                        debit += d.totalAmount; 
-                    }
-                });
-
-                // 2. Get Payments (Client side sorting to avoid index error)
-                const paymentsSnap = await db.collection('payments').where('phone', '==', phone).get();
-                let credit = 0;
-                let paymentList = [];
-                
-                paymentsSnap.forEach(doc => { 
-                    const p = doc.data();
-                    credit += p.amount;
-                    paymentList.push(p);
-                });
-
-                // Sort payments by date (newest first)
-                paymentList.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-
-                const balance = debit - credit;
-
-                if(balance <= 0) {
-                    content.innerHTML = `<i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i><h3 class="text-xl font-bold text-white">No Udhaar!</h3><p class="text-gray-400">Sab clear hai.</p>`;
-                } else {
-                    content.innerHTML = `
-                        <div class="bg-gray-700/50 p-4 rounded-xl border border-red-500/50 mb-6">
-                            <p class="text-gray-400 text-sm">Total Pending</p>
-                            <h3 class="text-4xl font-bold text-red-500">₹${balance}</h3>
-                            <div class="flex justify-between text-xs text-gray-400 mt-2 pt-2 border-t border-gray-600">
-                                <span>Total Udhaar: ₹${debit}</span>
-                                <span>Paid: ₹${credit}</span>
-                            </div>
-                        </div>
-                        <button onclick="payUdhaar(${balance})" class="w-full bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
-                            Pay Now via UPI <i class="fas fa-arrow-right ml-2"></i>
-                        </button>
-                    `;
-                }
-
-                // Render Payment History
-                if(paymentList.length > 0) {
-                    historyContainer.classList.remove('hidden');
-                    historyItems.innerHTML = paymentList.map(p => {
-                        const date = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                        return `<div class="flex justify-between bg-gray-700 p-2 rounded">
-                            <span class="text-gray-400">${date}</span>
-                            <span class="text-white font-bold">₹${p.amount}</span>
-                        </div>`;
-                    }).join('');
-                } else {
-                    historyContainer.classList.add('hidden');
-                }
-
-            } catch(e) { 
-                content.innerHTML = `<p class="text-red-500">Error loading data. Try again.</p>`; 
-                console.error(e); 
+        // --- PROFILE SYSTEM ---
+        function loadProfile() {
+            const stored = localStorage.getItem('sgmc_customer_profile');
+            if(stored) {
+                userProfile = JSON.parse(stored);
+                updateHeaderProfile();
+            } else {
+                // First time user - show modal
+                setTimeout(() => document.getElementById('login-modal').classList.remove('hidden'), 1000);
             }
         }
 
-        function payUdhaar(amount) {
-            const upiLink = `upi://pay?pa=${YOUR_UPI_ID}&pn=SGMC&am=${amount}&tn=UdhaarPay`;
-            window.location.href = upiLink;
+        function saveProfile() {
+            const name = document.getElementById('user-name').value.trim();
+            const phone = document.getElementById('user-phone').value.trim();
+            
+            if(!name || phone.length < 10) { alert("Please enter valid Name and 10-digit Phone."); return; }
+            
+            userProfile = { name, phone };
+            localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
+            updateHeaderProfile();
+            document.getElementById('login-modal').classList.add('hidden');
         }
 
-        // --- HISTORY ---
-        function listenToLatestOrder(phone) {
-            // Simplified query to avoid index error
-            db.collection('orders').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
-                if(!snap.empty) {
-                    const data = snap.docs[0].data();
-                    if(data.status !== 'completed' && data.status !== 'cancelled') {
-                        document.getElementById('live-order-tracker').classList.remove('hidden');
-                        let st = "Order Received"; if(data.status==='cooking') st="Ban Raha Hai 🍳"; if(data.status==='ready') st="Ready Hai! Le jao ✅";
-                        document.getElementById('live-status-text').innerText = st;
-                        const pEl = document.getElementById('live-payment-status');
-                        if(data.paymentMode === 'UPI') pEl.innerHTML = data.paymentVerified ? "<span class='text-green-400'>Confirmed ✅</span>" : "<span class='text-yellow-400'>Waiting for Admin...</span>";
-                        else pEl.innerText = data.paymentMode;
-                    } else document.getElementById('live-order-tracker').classList.add('hidden');
+        function updateHeaderProfile() {
+            document.getElementById('header-name').innerText = userProfile.name;
+            document.getElementById('header-phone').innerText = userProfile.phone;
+            document.getElementById('header-avatar').innerHTML = userProfile.name.charAt(0).toUpperCase();
+        }
+
+        function openProfileEdit() {
+            document.getElementById('user-name').value = userProfile.name;
+            document.getElementById('user-phone').value = userProfile.phone;
+            document.getElementById('login-modal').classList.remove('hidden');
+        }
+
+        // --- MENU & SHOP STATUS ---
+        function listenToShopStatus() {
+            db.collection('settings').doc('status').onSnapshot(doc => {
+                isShopOpen = doc.exists ? doc.data().isOpen : true;
+                const banner = document.getElementById('closed-banner');
+                const badge = document.getElementById('shop-status-badge');
+                
+                if(!isShopOpen) {
+                    banner.classList.remove('hidden');
+                    badge.innerText = "● Closed";
+                    badge.className = "text-[10px] text-red-500";
+                    document.getElementById('cart-bar').classList.add('hidden'); // Hide cart if closed
+                } else {
+                    banner.classList.add('hidden');
+                    badge.innerText = "● Open";
+                    badge.className = "text-[10px] text-green-500";
+                    updateCartUI(); // Show cart if items exist
                 }
             });
         }
 
-        function showMyOrders() {
-            const phone = localStorage.getItem('userPhone');
-            if(!phone) { alert("No history found."); return; }
-            const list = document.getElementById('history-list');
-            list.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
-            document.getElementById('history-modal').classList.remove('hidden');
-            
-            // Client side sorting
-            db.collection('orders').where('customerPhone', '==', phone).get().then(snap => {
-                const orders = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                orders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                
-                if(orders.length === 0) { list.innerHTML = "<p class='text-center text-gray-500'>No orders yet.</p>"; return; }
-
-                list.innerHTML = orders.map(data => {
-                    const dateObj = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
-                    const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    let color = data.status === 'completed' ? 'text-green-400' : 'text-yellow-400';
-                    return `<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm">
-                            <div class="flex justify-between items-start mb-2"><div><span class="block text-xs text-gray-500">${dateStr}</span><span class="font-bold text-lg text-white">₹${data.totalAmount}</span></div><span class="text-xs font-bold uppercase border border-gray-600 px-2 py-1 rounded ${color}">${data.status}</span></div>
-                            <p class="text-gray-300 text-sm border-t border-gray-700 pt-2 mt-2">${data.items.map(i => `${i.qty} ${i.name}`).join(', ')}</p></div>`;
-                }).join('');
+        function loadMenuStatus() {
+            db.collection('settings').doc('menu').onSnapshot(doc => {
+                const status = doc.exists ? doc.data() : {};
+                renderMenu(status);
             });
+        }
+
+        function renderMenu(stockStatus) {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = menuItems.map(item => {
+                const isAvailable = stockStatus[item.id] !== false;
+                if(!isAvailable) return ''; // Hide if out of stock
+                
+                return `
+                <div class="card p-3 flex justify-between items-center item-row">
+                    <div>
+                        <h3 class="font-bold text-white">${item.name}</h3>
+                        <p class="text-orange-400 font-bold text-sm">₹${item.price}</p>
+                    </div>
+                    <div class="flex items-center gap-3 bg-gray-800 rounded-lg p-1">
+                        <button onclick="updateCart(${item.id}, -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold text-lg">-</button>
+                        <span class="font-bold w-4 text-center" id="qty-${item.id}">0</span>
+                        <button onclick="updateCart(${item.id}, 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold text-lg">+</button>
+                    </div>
+                </div>`;
+            }).join('');
+            
+            // Restore cart quantities visually
+            for(let id in cart) {
+                if(document.getElementById(`qty-${id}`)) {
+                    document.getElementById(`qty-${id}`).innerText = cart[id].qty;
+                }
+            }
+        }
+
+        // --- CART LOGIC ---
+        function updateCart(id, change) {
+            if(!isShopOpen) { alert("Shop is closed now."); return; }
+            
+            if(!cart[id]) {
+                const item = menuItems.find(i => i.id === id);
+                cart[id] = { ...item, qty: 0 };
+            }
+            
+            cart[id].qty += change;
+            if(cart[id].qty <= 0) delete cart[id];
+            
+            if(document.getElementById(`qty-${id}`)) {
+                document.getElementById(`qty-${id}`).innerText = cart[id] ? cart[id].qty : 0;
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let count = 0; let total = 0;
+            for(let id in cart) {
+                count += cart[id].qty;
+                total += cart[id].qty * cart[id].price;
+            }
+            
+            const bar = document.getElementById('cart-bar');
+            if(count > 0 && isShopOpen) {
+                bar.classList.remove('hidden');
+                bar.classList.add('flex');
+                document.getElementById('cart-count').innerText = count;
+                document.getElementById('cart-total').innerText = total;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        // --- CHECKOUT ---
+        function openCheckout() {
+            const container = document.getElementById('checkout-items');
+            let html = ''; let total = 0;
+            
+            for(let id in cart) {
+                const item = cart[id];
+                const itemTotal = item.qty * item.price;
+                total += itemTotal;
+                html += `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
+                    <span>${item.name} <span class="text-orange-400">x${item.qty}</span></span>
+                    <span class="font-bold">₹${itemTotal}</span>
+                </div>`;
+            }
+            
+            container.innerHTML = html;
+            document.getElementById('checkout-total').innerText = total;
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            setPayment('Cash'); // Default
+        }
+
+        function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
+
+        function setPayment(mode) {
+            selectedPayment = mode;
+            document.querySelectorAll('.payment-opt').forEach(b => {
+                b.classList.remove('bg-orange-600', 'text-white', 'border-transparent');
+                b.classList.add('border-gray-600');
+            });
+            const btn = document.getElementById('pay-' + mode.toLowerCase());
+            btn.classList.add('bg-orange-600', 'text-white', 'border-transparent');
+            btn.classList.remove('border-gray-600');
+        }
+
+        function placeOrder() {
+            if(Object.keys(cart).length === 0) return;
+            if(!userProfile.phone) { alert("Please setup profile first."); openProfileEdit(); return; }
+
+            const address = document.getElementById('order-address').value;
+            const total = parseInt(document.getElementById('checkout-total').innerText);
+            
+            const orderData = {
+                items: Object.values(cart),
+                totalAmount: total,
+                paymentMode: selectedPayment,
+                paymentVerified: false,
+                status: 'pending',
+                customerName: userProfile.name,
+                customerPhone: userProfile.phone,
+                customerAddress: address, // NEW: Address field
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            const btn = document.querySelector('#checkout-modal .btn-primary');
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            db.collection('orders').add(orderData).then(() => {
+                cart = {};
+                renderMenu({}); // Reset UI
+                updateCartUI();
+                closeCheckout();
+                btn.innerText = "Place Order";
+                btn.disabled = false;
+                
+                // Show Success
+                document.getElementById('success-name').innerText = userProfile.name;
+                const popup = document.getElementById('success-popup');
+                popup.classList.remove('hidden');
+                document.getElementById('success-box').classList.add('scale-100');
+            }).catch(e => {
+                alert("Error: " + e.message);
+                btn.innerText = "Place Order";
+                btn.disabled = false;
+            });
+        }
+        
+        function closeSuccess() { document.getElementById('success-popup').classList.add('hidden'); }
+
+        // --- TABS & HISTORY/UDHAAR ---
+        function switchTab(tab) {
+            ['menu', 'orders', 'udhaar'].forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                document.getElementById('nav-' + t).classList.remove('active');
+            });
+            document.getElementById('view-' + tab).classList.remove('hidden');
+            document.getElementById('nav-' + tab).classList.add('active');
+
+            if(tab === 'orders') fetchMyHistory();
+            if(tab === 'udhaar') fetchMyUdhaar();
+        }
+
+        function fetchMyHistory() {
+            if(!userProfile.phone) return;
+            const list = document.getElementById('orders-list');
+            list.innerHTML = '<p class="text-center text-gray-500 mt-10">Loading...</p>';
+            
+            db.collection('orders').where('customerPhone', '==', userProfile.phone)
+              .orderBy('timestamp', 'desc').limit(20).get().then(snap => {
+                  if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
+                  
+                  list.innerHTML = snap.docs.map(doc => {
+                      const d = doc.data();
+                      const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
+                      return `
+                      <div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'}">
+                          <div class="flex justify-between items-start">
+                              <div>
+                                  <p class="text-xs text-gray-400">${date}</p>
+                                  <p class="font-bold text-sm text-white">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p>
+                              </div>
+                              <div class="text-right">
+                                  <p class="font-bold text-orange-400">₹${d.totalAmount}</p>
+                                  <p class="text-[10px] uppercase ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p>
+                              </div>
+                          </div>
+                      </div>`;
+                  }).join('');
+              });
+        }
+
+        function fetchMyUdhaar() {
+            if(!userProfile.phone) return;
+            const upiBtn = document.getElementById('upi-pay-btn');
+            const amtEl = document.getElementById('my-udhaar-amount');
+            
+            // Calculate Debit (Orders)
+            db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get().then(snap => {
+                let debit = 0;
+                snap.forEach(d => { if(d.data().status !== 'cancelled') debit += d.data().totalAmount; });
+                
+                // Calculate Credit (Payments)
+                db.collection('payments').where('phone', '==', userProfile.phone).get().then(paySnap => {
+                    let credit = 0;
+                    paySnap.forEach(d => credit += d.data().amount);
+                    
+                    const netDue = debit - credit;
+                    amtEl.innerText = netDue;
+                    
+                    if(netDue > 0) {
+                        upiBtn.classList.remove('hidden');
+                        renderUdhaarHistory(snap.docs, paySnap.docs);
+                    } else {
+                        upiBtn.classList.add('hidden');
+                        document.getElementById('udhaar-history').innerHTML = '<p class="text-center text-green-500 mt-4">No pending dues! 🎉</p>';
+                    }
+                });
+            });
+        }
+
+        function renderUdhaarHistory(orders, payments) {
+            // Simple combined list (for now just showing recent 5 items mixed)
+            // Ideally we sort by date, but simpler to just show breakdown
+            const container = document.getElementById('udhaar-history');
+            container.innerHTML = '';
+            
+            // Show last few orders
+            orders.slice(0, 3).forEach(d => {
+                container.innerHTML += `<div class="flex justify-between text-xs p-2 bg-gray-800 rounded mb-1"><span class="text-red-300">Ordered (${d.data().items[0].name}..)</span><span class="text-red-400 font-bold">-₹${d.data().totalAmount}</span></div>`;
+            });
+             // Show last few payments
+            payments.slice(0, 3).forEach(d => {
+                container.innerHTML += `<div class="flex justify-between text-xs p-2 bg-gray-800 rounded mb-1"><span class="text-green-300">Paid</span><span class="text-green-400 font-bold">+₹${d.data().amount}</span></div>`;
+            });
+        }
+
+        function payUdhaarViaUPI() {
+            const amount = document.getElementById('my-udhaar-amount').innerText;
+            const name = userProfile.name;
+            const upiId = "tumhari-upi-id@okicici"; // Replace with YOUR UPI ID
+            const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&tn=ClearUdhaar_${name}`;
+            window.location.href = link;
         }
 
         init();
