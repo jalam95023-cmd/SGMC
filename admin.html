@@ -3,170 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC Admin Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>SGMC - ADMIN PANEL</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        body { background-color: #eef2f7; font-family: 'Segoe UI', sans-serif; }
-        
-        /* Dashboard Stats */
-        .stats-card { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); }
-        .stats-label { font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
-        .stats-value { font-size: 2.5rem; font-weight: bold; }
-
-        /* Order Cards */
-        .order-card { 
-            background: white; border-radius: 12px; border: none; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; 
-            transition: transform 0.2s; position: relative; overflow: hidden;
-        }
-        .order-card:hover { transform: translateY(-3px); }
-        
-        .status-strip { width: 6px; position: absolute; top: 0; bottom: 0; left: 0; }
-        .card-pending .status-strip { background: #ff4757; } /* Red */
-        .card-accepted .status-strip { background: #5352ed; } /* Blue */
-        .card-ready .status-strip { background: #ffa502; } /* Orange/Yellow */
-        .card-delivered .status-strip { background: #2ed573; } /* Green */
-
-        .card-header-custom { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px dashed #eee; margin-bottom: 10px; }
-        .items-box { background: #f8f9fa; border-radius: 8px; padding: 10px; font-size: 0.95rem; }
-        .btn-action { border-radius: 20px; font-size: 0.8rem; padding: 5px 15px; font-weight: 600; }
+        :root { --primary: #27ae60; --dark: #2c3e50; --light: #f4f6f7; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: var(--light); color: var(--dark); }
+        .admin-header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        .stats-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-around; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-val { font-size: 28px; font-weight: bold; color: var(--primary); }
+        .admin-order-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #ccc; position: relative; }
+        .admin-order-card.new { border-left-color: var(--danger); animation: highlight 1s infinite alternate; }
+        @keyframes highlight { from { box-shadow: 0 0 5px rgba(231,76,60,0.2); } to { box-shadow: 0 0 15px rgba(231,76,60,0.5); } }
+        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .login-box { background: white; padding: 30px; border-radius: 10px; width: 300px; text-align: center; }
     </style>
 </head>
 <body>
-
-<audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
-
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold text-dark m-0"><i class="fas fa-store me-2"></i>SGMC Admin</h4>
-        <button class="btn btn-sm btn-outline-primary" onclick="enableSound()">🔔 Enable Sound</button>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="stats-card">
-                <div class="stats-label">Today's Total Sale</div>
-                <div class="stats-value" id="totalSaleDisplay">₹0</div>
-                <small class="text-white-50">Based on Delivered orders</small>
-            </div>
+    <div id="login-modal">
+        <div class="login-box">
+            <h3>Admin Access</h3>
+            <input type="password" id="admin-pass" placeholder="Enter Password" style="width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box;">
+            <button onclick="checkLogin()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; width: 100%; cursor: pointer;">Login</button>
         </div>
     </div>
 
-    <h6 class="text-muted fw-bold mb-3">LATEST ORDERS</h6>
-    <div id="orders-container">
-        <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+    <div id="dashboard" style="display: none;">
+        <div class="admin-header">
+            <h2 style="margin:0;">SGMC Admin</h2>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="shop-status-text" style="font-weight: bold;">Shop Status</span>
+                <label class="switch">
+                    <input type="checkbox" id="shop-toggle" onchange="toggleShopStatus()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="stats-card">
+                <div style="text-align:center;"><div class="stat-val" id="total-orders-count">0</div><div>Today's Orders</div></div>
+                <div style="text-align:center;"><div class="stat-val" id="total-revenue">₹0</div><div>Total Sales</div></div>
+            </div>
+
+            <h3 style="color:#555;">Recent Orders (Live)</h3>
+            <div id="admin-orders-list">Loading orders...</div>
+        </div>
     </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-  // AAPKI CONFIG
-  const firebaseConfig = {
-    apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
-    authDomain: "sgmc-16568.firebaseapp.com",
-    projectId: "sgmc-16568",
-    storageBucket: "sgmc-16568.firebasestorage.app",
-    messagingSenderId: "339041646158",
-    appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
-    measurementId: "G-4996NPF55N"
-  };
+        function checkLogin() {
+            if(document.getElementById('admin-pass').value === 'admin123') {
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                initAdmin();
+            } else { alert("Wrong Password!"); }
+        }
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+        function initAdmin() {
+            // 1. Sync Shop Status
+            db.collection('settings').doc('shopConfig').onSnapshot(doc => {
+                if(doc.exists) {
+                    const isOpen = doc.data().isOpen;
+                    document.getElementById('shop-toggle').checked = isOpen;
+                    const txt = document.getElementById('shop-status-text');
+                    txt.innerText = isOpen ? "Shop is OPEN" : "Shop is CLOSED";
+                    txt.style.color = isOpen ? "green" : "red";
+                }
+            });
 
-  // Sound Function
-  window.enableSound = () => {
-      document.getElementById('notifSound').play().catch(() => {});
-      alert("Sound Enabled! Ab naye order par awaz aayegi.");
-  }
+            // 2. Listen for Orders
+            let isFirstLoad = true;
+            db.collection('orders').orderBy('timestamp', 'desc').limit(30).onSnapshot(snapshot => {
+                let html = ''; let totalCount = 0; let totalSale = 0;
+                snapshot.forEach(doc => {
+                    const o = doc.data();
+                    totalCount++; totalSale += o.total;
+                    
+                    if(!isFirstLoad && o.status === 'Pending' && !doc.metadata.hasPendingWrites) playSound();
 
-  // Listen for Orders
-  const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
-  
-  onSnapshot(q, (snapshot) => {
-      const container = document.getElementById('orders-container');
-      let totalSale = 0;
-      let html = "";
-      
-      // Play sound if new order added (snapshot changes)
-      snapshot.docChanges().forEach((change) => {
-          if (change.type === "added" && !snapshot.metadata.fromCache) {
-              document.getElementById('notifSound').play().catch(e => console.log("Click to enable sound"));
-          }
-      });
+                    let itemsStr = o.items.map(i => i.name).join(', ');
+                    html += `
+                    <div class="admin-order-card ${o.status === 'Pending' ? 'new' : ''}">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                            <strong>${o.customer}</strong> <span style="font-weight:bold;">₹${o.total}</span>
+                        </div>
+                        <div style="font-size:13px; color:#555; margin-bottom:8px;">${o.address} <br> 📞 <a href="tel:${o.phone}">${o.phone}</a></div>
+                        <div style="background:#f4f6f7; padding:5px; font-size:13px; border-radius:4px;">${itemsStr}</div>
+                        <select style="width:100%; margin-top:10px; padding:8px; border:1px solid #ddd; border-radius:4px;" onchange="updateStatus('${doc.id}', this.value)">
+                            <option value="Pending" ${o.status === 'Pending'?'selected':''}>Pending (New)</option>
+                            <option value="Preparing" ${o.status === 'Preparing'?'selected':''}>Preparing</option>
+                            <option value="Out for Delivery" ${o.status === 'Out for Delivery'?'selected':''}>Out for Delivery</option>
+                            <option value="Delivered" ${o.status === 'Delivered'?'selected':''}>Delivered</option>
+                        </select>
+                    </div>`;
+                });
+                document.getElementById('admin-orders-list').innerHTML = html;
+                document.getElementById('total-orders-count').innerText = totalCount;
+                document.getElementById('total-revenue').innerText = '₹' + totalSale;
+                isFirstLoad = false;
+            });
+        }
 
-      if(snapshot.empty) {
-          container.innerHTML = "<p class='text-center text-muted'>Koi order nahi hai.</p>";
-          return;
-      }
-
-      snapshot.forEach((docSnap) => {
-          const order = docSnap.data();
-          const id = docSnap.id;
-          
-          // Calculate Total Sale (Only for Delivered orders)
-          if(order.status === 'Delivered') {
-              totalSale += order.totalBill;
-          }
-
-          // Build Items HTML
-          let itemsHtml = "";
-          const items = order.items;
-          if(items.chai > 0) itemsHtml += `<div>☕ Chai x ${items.chai}</div>`;
-          if(items.bun > 0) itemsHtml += `<div>🍞 Bun x ${items.bun}</div>`;
-          if(items.mathi > 0) itemsHtml += `<div>🍪 Mathi x ${items.mathi}</div>`;
-          if(items.roll > 0) itemsHtml += `<div>🌯 Roll x ${items.roll}</div>`;
-          if(items.cig && items.cig.qty > 0) itemsHtml += `<div>🚬 ${items.cig.brand} x ${items.cig.qty}</div>`;
-          if(items.pan && items.pan.qty > 0) itemsHtml += `<div>✌️ ${items.pan.brand} x ${items.pan.qty}</div>`;
-          if(items.other) itemsHtml += `<div>📝 ${items.other}</div>`;
-
-          // Determine Class based on status
-          let statusClass = "card-" + order.status.toLowerCase(); // card-pending, card-ready etc.
-
-          html += `
-              <div class="order-card ${statusClass} p-3">
-                  <div class="status-strip"></div>
-                  <div class="card-header-custom">
-                      <div>
-                          <h5 class="m-0 fw-bold">₹${order.totalBill}</h5>
-                          <small class="text-muted">${order.customerName}</small>
-                      </div>
-                      <span class="badge bg-dark">${order.status}</span>
-                  </div>
-                  
-                  <div class="items-box mb-2">
-                      ${itemsHtml}
-                  </div>
-                  
-                  <div class="d-flex justify-content-between align-items-center">
-                      <div class="small text-danger fw-bold"><i class="fas fa-map-marker-alt"></i> ${order.location}</div>
-                      <div>
-                          ${order.status !== 'Delivered' ? `
-                            <button onclick="updateStatus('${id}', 'Accepted')" class="btn btn-primary btn-action">Accept</button>
-                            <button onclick="updateStatus('${id}', 'Ready')" class="btn btn-warning btn-action">Ready</button>
-                            <button onclick="updateStatus('${id}', 'Delivered')" class="btn btn-success btn-action">Done</button>
-                          ` : `<span class="text-success small fw-bold">Completed ✅</span>`}
-                          <button onclick="deleteOrder('${id}')" class="btn btn-link text-danger p-0 ms-2"><i class="fas fa-trash"></i></button>
-                      </div>
-                  </div>
-              </div>
-          `;
-      });
-
-      container.innerHTML = html;
-      document.getElementById('totalSaleDisplay').innerText = "₹" + totalSale;
-  });
-
-  window.updateStatus = async (id, status) => {
-      await updateDoc(doc(db, "orders", id), { status: status });
-  }
-  
-  window.deleteOrder = async (id) => {
-      if(confirm("Pakka delete karna hai?")) await deleteDoc(doc(db, "orders", id));
-  }
-</script>
+        function toggleShopStatus() {
+            const newVal = document.getElementById('shop-toggle').checked;
+            db.collection('settings').doc('shopConfig').set({ isOpen: newVal });
+        }
+        function updateStatus(docId, val) { db.collection('orders').doc(docId).update({ status: val }); }
+        function playSound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
+            osc.connect(g); g.connect(ctx.destination);
+            osc.frequency.value = 600; osc.start(); setTimeout(()=>osc.stop(), 500);
+        }
+    </script>
 </body>
 </html>
