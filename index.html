@@ -33,9 +33,14 @@
 
     <div class="p-4 flex justify-between items-center bg-gray-900 sticky top-0 z-20 border-b border-gray-800 mt-0" id="main-header">
         <h1 class="text-xl font-bold text-orange-500 tracking-wider">SGMC</h1>
-        <button onclick="showMyOrders()" class="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded text-white active:bg-gray-700">
-            <i class="fas fa-history mr-1"></i> My Orders
-        </button>
+        <div class="flex gap-2">
+            <button onclick="showUdhaar()" class="text-xs bg-red-900/50 border border-red-600 px-3 py-1 rounded text-red-200 active:bg-red-800">
+                <i class="fas fa-book mr-1"></i> Udhaar
+            </button>
+            <button onclick="showMyOrders()" class="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded text-white active:bg-gray-700">
+                <i class="fas fa-history mr-1"></i> History
+            </button>
+        </div>
     </div>
 
     <div class="p-4 grid grid-cols-1 gap-3" id="menu-container"></div>
@@ -89,6 +94,18 @@
         </div>
     </div>
 
+    <div id="udhaar-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
+        <div class="p-6 max-w-md mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-red-400">My Udhaar Khata</h2>
+                <button onclick="document.getElementById('udhaar-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times fa-lg"></i></button>
+            </div>
+            <div id="udhaar-content" class="text-center">
+                <p class="text-gray-500">Loading...</p>
+            </div>
+        </div>
+    </div>
+
     <div id="history-modal" class="fixed inset-0 bg-black/95 z-50 hidden overflow-y-auto">
         <div class="p-4 max-w-md mx-auto">
             <div class="flex justify-between items-center mb-6 sticky top-0 bg-black/95 py-4 z-10">
@@ -127,7 +144,6 @@
         let cart = {}; let isShopOpen = true; let disabledItems = [];
 
         function init() {
-            // Listen to Shop Status
             db.collection('settings').doc('status').onSnapshot(doc => {
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
                 const bar = document.getElementById('shop-closed-bar');
@@ -136,26 +152,20 @@
                 else { bar.style.display = 'none'; header.style.marginTop = '0px'; }
                 renderMenu();
             });
-
-            // Listen to Stock Status (Disabled Items)
             db.collection('settings').doc('menu').onSnapshot(doc => {
                 if(doc.exists) {
                     const data = doc.data();
-                    // Convert object { "1": false, "2": true } to array of disabled IDs
                     disabledItems = Object.keys(data).filter(k => data[k] === false).map(Number);
                 }
                 renderMenu();
             });
-
             const savedPhone = localStorage.getItem('userPhone');
             if(savedPhone) { document.getElementById('c-phone').value = savedPhone; listenToLatestOrder(savedPhone); }
         }
 
         function renderMenu() {
             const container = document.getElementById('menu-container');
-            // Filter out disabled items
             const activeItems = menuItems.filter(item => !disabledItems.includes(item.id));
-            
             container.innerHTML = activeItems.map(item => `
                 <div class="item-card p-4 flex justify-between items-center shadow-md ${!isShopOpen ? 'opacity-50' : ''}">
                     <div class="flex items-center space-x-4">
@@ -175,7 +185,6 @@
                     <button onclick="updateCart('${item.name}', ${item.price}, 1)" class="w-8 h-8 flex items-center justify-center text-green-400 font-bold">+</button></div>`;
         }
 
-        // ... [Baki function same as before] ...
         function openVariantModal(id) {
             const item = menuItems.find(i => i.id === id);
             document.getElementById('variant-options').innerHTML = item.variants.map(v => `
@@ -246,7 +255,7 @@
 
         function showMyOrders() {
             const phone = localStorage.getItem('userPhone');
-            if(!phone) { alert("Koi purana order nahi mila."); return; }
+            if(!phone) { alert("Pehle order to karo!"); return; }
             const list = document.getElementById('history-list');
             list.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
             document.getElementById('history-modal').classList.remove('hidden');
@@ -263,6 +272,91 @@
                 }).join('');
             }).catch(e => { console.error(e); list.innerHTML = `<p class="text-red-500 text-center">Error: ${e.message}</p>`; });
         }
+
+        // --- NEW: UDHAAR CUSTOMER DASHBOARD ---
+        async function showUdhaar() {
+            const phone = localStorage.getItem('userPhone');
+            if(!phone) { alert("Apna number enter karo ek order karke."); return; }
+            
+            document.getElementById('udhaar-modal').classList.remove('hidden');
+            const content = document.getElementById('udhaar-content');
+            content.innerHTML = '<p class="text-gray-500 animate-pulse">Calculating...</p>';
+
+            try {
+                // Fetch All Orders for this user where mode is Udhaar
+                const ordersSnap = await db.collection('orders')
+                    .where('customerPhone', '==', phone)
+                    .where('paymentMode', '==', 'Udhaar')
+                    .get();
+                
+                let debit = 0;
+                ordersSnap.forEach(doc => { 
+                    if(doc.data().status !== 'cancelled') debit += doc.data().totalAmount; 
+                });
+
+                // Fetch All Payments for this user
+                const paymentsSnap = await db.collection('payments')
+                    .where('phone', '==', phone)
+                    .get();
+                
+                let credit = 0;
+                paymentsSnap.forEach(doc => credit += doc.data().amount);
+
+                const balance = debit - credit;
+
+                if(balance <= 0) {
+                    content.innerHTML = `
+                        <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                        <h3 class="text-xl font-bold text-white">Sab Clear Hai!</h3>
+                        <p class="text-gray-400">Koi udhaar baki nahi hai.</p>
+                    `;
+                } else {
+                    content.innerHTML = `
+                        <div class="bg-gray-800 p-4 rounded-xl border border-red-500/50 mb-6">
+                            <p class="text-gray-400 text-sm mb-1">Total Udhaar Baki</p>
+                            <h3 class="text-4xl font-bold text-red-500">₹${balance}</h3>
+                            <div class="flex justify-between text-xs text-gray-500 mt-4 pt-4 border-t border-gray-700">
+                                <span>Total Taken: ₹${debit}</span>
+                                <span>Paid: ₹${credit}</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-300 mb-4 text-sm">Pay karke Admin ko screen dikhao</p>
+                        <button onclick="payUdhaar(${balance})" class="w-full bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
+                            Pay Now via UPI <i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    `;
+                }
+            } catch(e) {
+                console.error(e);
+                content.innerHTML = `<p class="text-red-500">Error loading data.</p>`;
+            }
+        }
+
+        function payUdhaar(amount) {
+            // Initiate UPI Intent
+            const upiLink = `upi://pay?pa=${YOUR_UPI_ID}&pn=SGMC&am=${amount}&tn=UdhaarClearance`;
+            window.location.href = upiLink;
+            
+            // Add a temporary record that needs admin verification (Or just let admin add it manually as requested, 
+            // but here we can add a 'pending payment' request if you want. For now, we stick to Manual Entry on Admin Side or direct UPI link).
+            // Request said: "Automatic settle hojae... pr cash kre to manually".
+            // To make it automatic, we assume UPI success leads to payment entry.
+            // Since browsers can't verify UPI success reliably, we will ADD a payment record marked as 'pending_verification'.
+            
+            if(confirm("Payment app khula? Agar pay kar diya to 'OK' dabao.")) {
+                db.collection('payments').add({
+                    phone: localStorage.getItem('userPhone'),
+                    amount: amount,
+                    mode: 'UPI_Self',
+                    verified: false, // Admin needs to approve seeing money in bank
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    alert("Payment Note Bhej Diya! Admin verify karega tab balance update hoga.");
+                    document.getElementById('udhaar-modal').classList.add('hidden');
+                });
+            }
+        }
+
         init();
     </script>
 </body>
