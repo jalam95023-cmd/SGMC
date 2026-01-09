@@ -14,7 +14,7 @@
         .tab-active { border-bottom: 2px solid #F97316; color: #F97316; }
     </style>
 </head>
-<body class="p-4 max-w-2xl mx-auto">
+<body class="p-4 max-w-2xl mx-auto" onclick="enableSound()">
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
@@ -27,14 +27,15 @@
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div class="card p-3 flex flex-col justify-between">
             <div class="text-center">
-                <p class="text-gray-400 text-xs">Sales Today</p>
+                <p class="text-gray-400 text-xs">Sales Today (All)</p>
                 <h2 class="text-xl font-bold text-green-400">₹<span id="total-sales">0</span></h2>
             </div>
-            <button onclick="endDay()" class="mt-2 w-full py-1 text-xs bg-red-900 text-red-200 rounded border border-red-700 hover:bg-red-800">End Day</button>
+            <button onclick="endDay()" class="mt-2 w-full py-1 text-xs bg-red-900 text-red-200 rounded border border-red-700 hover:bg-red-800">End Day (Reset)</button>
         </div>
         <div class="card p-3 text-center flex flex-col justify-center">
             <p class="text-gray-400 text-xs">Active Orders</p>
             <h2 class="text-xl font-bold text-yellow-400" id="pending-count">0</h2>
+            <p class="text-[10px] text-gray-500 mt-1" id="sound-status">Tap screen for Sound 🔇</p>
         </div>
     </div>
 
@@ -45,9 +46,11 @@
     </div>
 
     <div id="view-live" class="space-y-4"></div>
+
     <div id="view-history" class="hidden space-y-4">
         <div id="history-container" class="space-y-2"></div>
     </div>
+
     <div id="view-udhaar" class="hidden space-y-4">
         <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Name..." class="w-full p-2 bg-gray-800 rounded border border-gray-700 mb-2">
         <div id="udhaar-list"></div>
@@ -55,7 +58,7 @@
 
     <div id="menu-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-gray-800 p-6 rounded-xl w-full max-w-sm max-h-[80vh] overflow-y-auto">
-            <h3 class="text-xl font-bold mb-4">Stock</h3>
+            <h3 class="text-xl font-bold mb-4">Stock Management</h3>
             <div id="menu-list-items" class="space-y-3"></div>
             <button onclick="saveMenuStatus()" class="w-full bg-green-600 text-white p-3 rounded font-bold mt-4">Save</button>
             <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-full text-gray-400 p-2">Cancel</button>
@@ -67,11 +70,13 @@
             <h3 class="text-xl font-bold mb-4">Settle Payment</h3>
             <p class="text-gray-400 text-sm mb-2" id="settle-name"></p>
             <p class="text-2xl font-bold text-red-400 mb-4">Due: ₹<span id="settle-due">0</span></p>
-            <input type="number" id="settle-amount" class="w-full p-3 bg-gray-700 rounded text-white mb-4 border border-gray-600 outline-none" placeholder="Amount Recieved">
+            <input type="number" id="settle-amount" class="w-full p-3 bg-gray-700 rounded text-white mb-4 border border-gray-600 outline-none" placeholder="Amount Received">
             <button onclick="submitPayment()" class="w-full bg-green-600 text-white p-3 rounded font-bold mb-2">Settle</button>
             <button onclick="closeSettle()" class="w-full text-gray-400 p-2">Cancel</button>
         </div>
     </div>
+
+    <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
     <script>
         const firebaseConfig = {
@@ -89,46 +94,50 @@
         const adminMenuItems = [ { id: 1, name: "Normal Chai" }, { id: 2, name: "Adrak Chai" }, { id: 3, name: "Cigarette" }, { id: 4, name: "Matthi" }, { id: 5, name: "Veg Roll" }, { id: 6, name: "Biscuit" }, { id: 7, name: "Namkeen" } ];
 
         let isShopOpen = false;
-        let udhaarMap = {}; // { phone: {name, debit, credit} }
+        let udhaarMap = {}; 
         let currentSettlePhone = null; 
         let allHistoryOrders = [];
         let lastResetSeconds = 0;
+        let lastPendingCount = 0;
+        let soundEnabled = false;
 
         function init() {
-            // Config
             db.collection('settings').doc('config').onSnapshot(doc => {
                 if(doc.exists && doc.data().lastReset) lastResetSeconds = doc.data().lastReset.seconds;
                 recalculateData();
             });
-            // Shop Status
+
             db.collection('settings').doc('status').onSnapshot(doc => {
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
                 const btn = document.getElementById('shop-toggle-btn');
                 btn.innerText = isShopOpen ? "OPEN" : "CLOSED";
                 btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white";
             });
-            // Payments Listener
-            db.collection('payments').onSnapshot(snap => {
-                window.paymentsSnapshot = snap;
-                recalculateData();
-            });
-            // Orders Listener
-            db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => {
-                window.ordersSnapshot = snap;
-                recalculateData();
-            });
+
+            db.collection('payments').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
+            db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
         }
 
-        // --- CORE LOGIC: Recalculate everything when either Orders or Payments change ---
+        function enableSound() {
+            if(!soundEnabled) {
+                const audio = document.getElementById('order-sound');
+                audio.play().then(() => {
+                    audio.pause(); audio.currentTime = 0; soundEnabled = true;
+                    document.getElementById('sound-status').innerText = "🔊 Sound Active";
+                    document.getElementById('sound-status').classList.replace("text-gray-500", "text-green-500");
+                }).catch(e => console.log("Interaction needed"));
+            }
+        }
+        function playNotification() {
+            if(soundEnabled) { const audio = document.getElementById('order-sound'); audio.currentTime = 0; audio.play().catch(e => {}); }
+        }
+
         function recalculateData() {
             if(!window.ordersSnapshot) return;
             
-            // 1. Reset Data Maps
-            udhaarMap = {};
-            allHistoryOrders = [];
+            udhaarMap = {}; allHistoryOrders = [];
             let liveHtml = '', sales = 0, activeCount = 0;
 
-            // 2. Process Payments First (Build Credit Map)
             if(window.paymentsSnapshot) {
                 window.paymentsSnapshot.docs.forEach(doc => {
                     const d = doc.data();
@@ -137,36 +146,43 @@
                 });
             }
 
-            // 3. Process Orders
             window.ordersSnapshot.docs.forEach(doc => {
                 const data = doc.data(); const id = doc.id;
                 const orderTime = data.timestamp ? data.timestamp.seconds : 0;
 
-                // For History
                 if(data.status === 'completed' || data.status === 'cancelled') allHistoryOrders.push({id, ...data});
 
-                // Udhaar Logic (Debit)
                 if(data.paymentMode === 'Udhaar' && data.customerPhone) {
                     if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 };
                     if(data.status !== 'cancelled') {
                         udhaarMap[data.customerPhone].debit += data.totalAmount;
-                        udhaarMap[data.customerPhone].name = data.customerName; // Update name
+                        udhaarMap[data.customerPhone].name = data.customerName;
                     }
                 }
 
-                // Sales Counter (Reset Logic)
                 if(orderTime > lastResetSeconds) {
-                    if(data.status === 'completed' && data.paymentMode !== 'Udhaar') sales += data.totalAmount;
+                    if(data.status === 'completed') sales += data.totalAmount;
                 }
 
-                // Live Orders
                 const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
                 if(isActive) {
                     activeCount++;
                     const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
+                    
+                    // Create Item String for WhatsApp
+                    const itemStr = data.items.map(i => `${i.qty} x ${i.name}`).join(', ');
+                    
                     liveHtml += `
                     <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'}">
-                        <div class="flex justify-between"><h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3><h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3></div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3>
+                                <h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3>
+                            </div>
+                            <button onclick="sendWhatsApp('${data.customerName}', '${data.customerPhone}', '${itemStr}', ${data.totalAmount})" class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95">
+                                <i class="fab fa-whatsapp"></i>
+                            </button>
+                        </div>
                         <ul class="text-sm text-gray-300 mt-2 mb-3">${data.items.map(i => `<li>${i.qty} x ${i.name}</li>`).join('')}</ul>
                         ${isUpiPending ? `<div class="bg-yellow-900/50 text-yellow-200 text-xs p-2 rounded mb-2 flex justify-between items-center"><span>UPI Check!</span><button onclick="verifyPayment('${id}')" class="bg-yellow-600 text-white px-2 py-1 rounded">Verify</button></div>` : ''}
                         <div class="flex gap-2 mt-2">
@@ -179,7 +195,9 @@
                 }
             });
 
-            // Update UI
+            if(activeCount > lastPendingCount) playNotification();
+            lastPendingCount = activeCount;
+
             document.getElementById('view-live').innerHTML = liveHtml || '<p class="text-center text-gray-500 mt-10">No active orders.</p>';
             document.getElementById('total-sales').innerText = sales;
             document.getElementById('pending-count').innerText = activeCount;
@@ -187,23 +205,36 @@
             if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
         }
 
+        // --- WHATSAPP FUNCTION ---
+        function sendWhatsApp(name, phone, items, total) {
+            if(!phone) { alert("Customer phone number nahi hai."); return; }
+            // Add 91 if length is 10
+            let p = phone.replace(/\D/g,''); // remove non-digits
+            if(p.length === 10) p = "91" + p;
+            
+            const text = `*SGMC Chai Stall Bill* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you! Visit again.`;
+            const url = `https://wa.me/${p}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
         // --- RENDERERS ---
         function renderUdhaar() {
             const list = document.getElementById('udhaar-list'); 
             const q = document.getElementById('search-udhaar').value.toLowerCase(); 
             let html = '';
-            
             for(let phone in udhaarMap) {
                 const u = udhaarMap[phone]; 
-                const netDue = u.debit - u.credit; // MATH FIX HERE
-                
+                const netDue = u.debit - u.credit;
                 if(netDue > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) {
                     html += `
                     <div class="card p-4 flex justify-between items-center mb-2">
                         <div><h4 class="font-bold text-lg">${u.name}</h4><p class="text-xs text-gray-400">${phone}</p></div>
                         <div class="text-right">
                             <h4 class="text-red-400 font-bold text-xl">₹${netDue}</h4>
-                            <button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-xs px-3 py-1 rounded mt-1">Settle</button>
+                            <div class="flex gap-2 mt-1 justify-end">
+                                <button onclick="sendWhatsApp('${u.name}', '${phone}', 'Udhaar Reminder', ${netDue})" class="bg-green-600 w-6 h-6 rounded flex items-center justify-center text-xs"><i class="fab fa-whatsapp"></i></button>
+                                <button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-xs px-2 py-1 rounded">Settle</button>
+                            </div>
                         </div>
                     </div>`;
                 }
@@ -214,16 +245,12 @@
         function renderHistory() {
             const container = document.getElementById('history-container');
             let groups = {}; 
-            allHistoryOrders.forEach(o => { 
-                const k = o.customerPhone||"Unknown"; 
-                if(!groups[k]) groups[k]={name:o.customerName,orders:[]}; 
-                groups[k].orders.push(o); 
-            });
-            if(Object.keys(groups).length===0) { container.innerHTML="<p class='text-center text-gray-500'>No history.</p>"; return; }
+            allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
+            if(Object.keys(groups).length === 0) { container.innerHTML = "<p class='text-center text-gray-500'>No history.</p>"; return; }
             
             container.innerHTML = Object.keys(groups).map(p => {
                 const g = groups[p]; 
-                const t = g.orders.reduce((s,o) => s+(o.status==='completed'?o.totalAmount:0),0);
+                const t = g.orders.reduce((s, o) => s + (o.status === 'completed' ? o.totalAmount : 0), 0);
                 return `
                 <div class="card overflow-hidden">
                     <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-4 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-700">
@@ -233,10 +260,11 @@
                     <div class="hidden bg-gray-900 p-2 space-y-2 border-t border-gray-700">
                         ${g.orders.map(o => {
                             const dateObj = o.timestamp ? new Date(o.timestamp.toDate()) : new Date();
-                            const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); // TIME ADDED
-                            return `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
-                                <div><span class="text-gray-300 text-xs">${dateStr}</span> <span class="ml-2 font-bold ${o.status==='completed'?'text-green-400':'text-red-400'}">${o.status}</span><p class="text-xs text-gray-500">${o.items.map(i=>i.name).join(', ')}</p></div>
-                                <div class="font-bold text-white">₹${o.totalAmount}</div>
+                            const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            return `
+                            <div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
+                                <div><span class="text-gray-400 text-xs block">${dateStr}</span> <span class="font-bold ${o.status==='completed'?'text-green-400':'text-red-400'}">${o.status}</span><p class="text-xs text-gray-500">${o.items.map(i=>i.name).join(', ')}</p></div>
+                                <div class="flex items-center gap-3"><span class="font-bold text-white">₹${o.totalAmount}</span><button onclick="deleteHistoryItem('${o.id}')" class="text-red-500 hover:text-red-400 p-1"><i class="fas fa-trash"></i></button></div>
                             </div>`;
                         }).join('')}
                     </div>
@@ -244,20 +272,13 @@
             }).join('');
         }
 
-        // --- ACTIONS ---
+        function deleteHistoryItem(id) { if(confirm("Permanently delete?")) db.collection('orders').doc(id).delete(); }
         function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name + " (" + phone + ")"; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = ""; document.getElementById('settle-modal').classList.remove('hidden'); }
         function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
-        function submitPayment() { 
-            const amount = parseInt(document.getElementById('settle-amount').value); 
-            if(!amount) return; 
-            db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Manual_Admin' }).then(() => { closeSettle(); alert("Updated!"); }); 
-        }
-        
+        function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Manual_Admin' }).then(() => { closeSettle(); alert("Updated!"); }); }
         function endDay() { if(confirm("Reset Counter?")) db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); }
-        
         function openMenuControl() { db.collection('settings').doc('menu').get().then(doc => { const s = doc.exists ? doc.data() : {}; document.getElementById('menu-list-items').innerHTML = adminMenuItems.map(i => `<div class="flex justify-between items-center bg-gray-700 p-3 rounded"><span>${i.name}</span><input type="checkbox" id="stock-${i.id}" ${s[i.id]!==false?'checked':''} class="w-5 h-5 accent-green-500"></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }); }
         function saveMenuStatus() { const u = {}; adminMenuItems.forEach(i => u[i.id] = document.getElementById(`stock-${i.id}`).checked); db.collection('settings').doc('menu').set(u).then(() => document.getElementById('menu-modal').classList.add('hidden')); }
-
         function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }); }
         function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }); }
         function markComplete(id) { if(confirm('Complete?')) db.collection('orders').doc(id).update({ status: 'completed' }); }
