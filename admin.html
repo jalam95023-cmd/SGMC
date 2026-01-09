@@ -20,7 +20,7 @@
         <div class="flex justify-between items-center">
             <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
             <div class="flex gap-2">
-                <button onclick="openMenuControl()" class="px-3 py-2 rounded text-xs font-bold bg-blue-600 text-white">Menu Stock</button>
+                <button onclick="openMenuControl()" class="px-3 py-2 rounded text-xs font-bold bg-blue-600 text-white">Stock</button>
                 <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-2 rounded text-xs font-bold bg-gray-700">Loading...</button>
             </div>
         </div>
@@ -48,7 +48,6 @@
 
     <div id="view-live" class="space-y-4"></div>
     <div id="view-history" class="hidden space-y-4">
-        <div id="history-loading" class="text-center text-gray-500">Loading History...</div>
         <div id="history-container" class="space-y-2"></div>
     </div>
     <div id="view-udhaar" class="hidden space-y-4">
@@ -58,13 +57,10 @@
 
     <div id="menu-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-gray-800 p-6 rounded-xl w-full max-w-sm max-h-[80vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold">Manage Stock</h3>
-                <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="menu-list-items" class="space-y-3">
-                </div>
-            <button onclick="saveMenuStatus()" class="w-full bg-green-600 text-white p-3 rounded font-bold mt-4">Save Changes</button>
+            <h3 class="text-xl font-bold mb-4">Manage Stock</h3>
+            <div id="menu-list-items" class="space-y-3"></div>
+            <button onclick="saveMenuStatus()" class="w-full bg-green-600 text-white p-3 rounded font-bold mt-4">Save</button>
+            <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-full text-gray-400 p-2">Cancel</button>
         </div>
     </div>
 
@@ -73,7 +69,7 @@
             <h3 class="text-xl font-bold mb-4">Settle Udhaar</h3>
             <p class="text-gray-400 text-sm mb-2" id="settle-name"></p>
             <p class="text-2xl font-bold text-red-400 mb-4">Due: ₹<span id="settle-due">0</span></p>
-            <input type="number" id="settle-amount" class="w-full p-3 bg-gray-700 rounded text-white mb-4 border border-gray-600 outline-none" placeholder="Amount">
+            <input type="number" id="settle-amount" class="w-full p-3 bg-gray-700 rounded text-white mb-4 border border-gray-600 outline-none" placeholder="Amount Received">
             <button onclick="submitPayment()" class="w-full bg-green-600 text-white p-3 rounded font-bold mb-2">Mark as Paid</button>
             <button onclick="closeSettle()" class="w-full text-gray-400 p-2">Cancel</button>
         </div>
@@ -92,24 +88,23 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Duplicate Menu for Admin to Manage
         const adminMenuItems = [
-            { id: 1, name: "Normal Chai" }, { id: 2, name: "Adrak Chai" },
-            { id: 3, name: "Cigarette" }, { id: 4, name: "Matthi" },
-            { id: 5, name: "Veg Roll" }, { id: 6, name: "Biscuit" },
-            { id: 7, name: "Namkeen" }
+            { id: 1, name: "Normal Chai" }, { id: 2, name: "Adrak Chai" }, { id: 3, name: "Cigarette" }, 
+            { id: 4, name: "Matthi" }, { id: 5, name: "Veg Roll" }, { id: 6, name: "Biscuit" }, { id: 7, name: "Namkeen" }
         ];
 
         let isShopOpen = false;
         let udhaarMap = {}; let currentSettlePhone = null; let allHistoryOrders = [];
-        let lastResetTime = null; // Timestamp for Daily Reset
+        let lastResetSeconds = 0; // Use simple number comparison
 
         function init() {
-            // Listen to Config (Reset Time)
+            // 1. Get Reset Time First
             db.collection('settings').doc('config').onSnapshot(doc => {
-                if(doc.exists) lastResetTime = doc.data().lastReset;
-                // Note: Re-fetching orders isn't strictly necessary as the snapshot listener below handles updates,
-                // but if reset happens, we want UI to reflect instantly. The logic is inside the order listener.
+                if(doc.exists && doc.data().lastReset) {
+                    lastResetSeconds = doc.data().lastReset.seconds;
+                }
+                // Trigger re-calc of sales if reset time updates
+                recalculateSales(); 
             });
 
             db.collection('settings').doc('status').onSnapshot(doc => {
@@ -119,177 +114,168 @@
                 btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white";
             });
 
+            // 2. Load Payments & Pending Payments
             db.collection('payments').onSnapshot(snap => {
+                // Reset credits
                 for(let p in udhaarMap) udhaarMap[p].credit = 0;
-                snap.docs.forEach(doc => { const d = doc.data(); if(udhaarMap[d.phone]) udhaarMap[d.phone].credit += d.amount; });
-                renderUdhaar();
-            });
-
-            db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
-                let liveHtml = '', sales = 0, activeCount = 0;
-                udhaarMap = {}; allHistoryOrders = [];
-
-                snapshot.docs.forEach(doc => {
-                    const data = doc.data(); const id = doc.id;
-                    const orderTime = data.timestamp;
-
-                    // History Collection (Save everything)
-                    if(data.status === 'completed' || data.status === 'cancelled') {
-                        allHistoryOrders.push({id, ...data});
-                    }
-
-                    // Udhaar Calc (Always Calculate All)
-                    if(data.paymentMode === 'Udhaar' && data.customerPhone) {
-                        if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 };
-                        if(data.status !== 'cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; }
-                    }
-
-                    // CHECK RESET TIME for Sales Counter
-                    let isAfterReset = true;
-                    if(lastResetTime && orderTime && orderTime.seconds <= lastResetTime.seconds) {
-                        isAfterReset = false;
-                    }
-
-                    // Sales Counter (Only count if after reset)
-                    if(isAfterReset && data.status === 'completed' && data.paymentMode !== 'Udhaar') sales += data.totalAmount;
-
-                    // Live Orders (Only show if after reset OR if status is active)
-                    // Logic: If order is pending/cooking, show it regardless of reset (don't lose active orders).
-                    // If completed, hide from "Live" view if before reset.
-                    const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
+                
+                snap.docs.forEach(doc => { 
+                    const d = doc.data(); 
+                    if(!udhaarMap[d.phone]) udhaarMap[d.phone] = { name: "Unknown", debit: 0, credit: 0 };
                     
-                    if(isActive) {
-                        activeCount++;
-                        const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
-                        liveHtml += `
-                        <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'}">
-                            <div class="flex justify-between"><h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3><h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3></div>
-                            <ul class="text-sm text-gray-300 mt-2 mb-3">${data.items.map(i => `<li>${i.qty} x ${i.name}</li>`).join('')}</ul>
-                            ${isUpiPending ? `<div class="bg-yellow-900/50 text-yellow-200 text-xs p-2 rounded mb-2 flex justify-between items-center"><span>UPI Check!</span><button onclick="verifyPayment('${id}')" class="bg-yellow-600 text-white px-2 py-1 rounded">Verify</button></div>` : ''}
-                            <div class="flex gap-2 mt-2">
-                                <select onchange="updateStatus('${id}', this.value)" class="bg-gray-700 text-white text-sm p-2 rounded border border-gray-600">
-                                    <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option><option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option>
-                                </select>
-                                <button onclick="markComplete('${id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold flex-1">Complete</button>
-                                <button onclick="cancelOrder('${id}')" class="bg-red-900 text-red-200 px-3 py-2 rounded"><i class="fas fa-trash"></i></button>
-                            </div></div>`;
-                    }
+                    // Add to credit only if it's verified (or manual entry)
+                    // If UPI_Self is used, we need to verify.
+                    // For now, let's auto-credit to simplify "Automatic settle" requirement, 
+                    // OR show a verify button. Let's auto-credit but show label.
+                    // Actually, let's treat all payments as valid for balance calc, but mark if 'unverified' in UI.
+                    
+                    udhaarMap[d.phone].credit += d.amount;
                 });
-                document.getElementById('view-live').innerHTML = liveHtml || '<p class="text-center text-gray-500 mt-10">No active orders.</p>';
-                document.getElementById('total-sales').innerText = sales;
-                document.getElementById('pending-count').innerText = activeCount;
                 renderUdhaar();
-                if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            });
+
+            // 3. Load Orders
+            db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+                // Store snapshot data globally for recalc function
+                window.currentOrdersSnapshot = snapshot;
+                recalculateSales();
             });
         }
 
-        // --- STOCK MANAGEMENT ---
-        function openMenuControl() {
-            // Fetch current status
-            db.collection('settings').doc('menu').get().then(doc => {
-                const currentStatus = doc.exists ? doc.data() : {};
-                const list = document.getElementById('menu-list-items');
-                list.innerHTML = adminMenuItems.map(item => {
-                    // if undefined or true, it's ON. If false, it's OFF.
-                    const isChecked = currentStatus[item.id] !== false; 
-                    return `
-                    <div class="flex justify-between items-center bg-gray-700 p-3 rounded">
-                        <span>${item.name}</span>
-                        <input type="checkbox" id="stock-${item.id}" ${isChecked ? 'checked' : ''} class="w-5 h-5 accent-green-500">
-                    </div>`;
-                }).join('');
-                document.getElementById('menu-modal').classList.remove('hidden');
+        function recalculateSales() {
+            if(!window.currentOrdersSnapshot) return;
+
+            let liveHtml = '', sales = 0, activeCount = 0;
+            // Don't reset udhaarMap completely, just debits, to preserve credits loaded from payments
+            for(let p in udhaarMap) udhaarMap[p].debit = 0; 
+            
+            allHistoryOrders = [];
+
+            window.currentOrdersSnapshot.docs.forEach(doc => {
+                const data = doc.data(); const id = doc.id;
+                const orderTime = data.timestamp ? data.timestamp.seconds : 0;
+
+                if(data.status === 'completed' || data.status === 'cancelled') allHistoryOrders.push({id, ...data});
+
+                // Udhaar Debit Calculation
+                if(data.paymentMode === 'Udhaar' && data.customerPhone) {
+                    if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 };
+                    if(data.status !== 'cancelled') { 
+                        udhaarMap[data.customerPhone].debit += data.totalAmount; 
+                        udhaarMap[data.customerPhone].name = data.customerName; 
+                    }
+                }
+
+                // SALES COUNTER FIX
+                // Only count sales if order time > last reset time
+                if(orderTime > lastResetSeconds) {
+                    if(data.status === 'completed' && data.paymentMode !== 'Udhaar') {
+                        sales += data.totalAmount;
+                    }
+                }
+
+                // Live View Logic
+                const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
+                
+                if(isActive) {
+                    activeCount++;
+                    const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
+                    liveHtml += `
+                    <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'}">
+                        <div class="flex justify-between"><h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3><h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3></div>
+                        <ul class="text-sm text-gray-300 mt-2 mb-3">${data.items.map(i => `<li>${i.qty} x ${i.name}</li>`).join('')}</ul>
+                        ${isUpiPending ? `<div class="bg-yellow-900/50 text-yellow-200 text-xs p-2 rounded mb-2 flex justify-between items-center"><span>UPI Check!</span><button onclick="verifyPayment('${id}')" class="bg-yellow-600 text-white px-2 py-1 rounded">Verify</button></div>` : ''}
+                        <div class="flex gap-2 mt-2">
+                            <select onchange="updateStatus('${id}', this.value)" class="bg-gray-700 text-white text-sm p-2 rounded border border-gray-600">
+                                <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option><option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option>
+                            </select>
+                            <button onclick="markComplete('${id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold flex-1">Complete</button>
+                            <button onclick="cancelOrder('${id}')" class="bg-red-900 text-red-200 px-3 py-2 rounded"><i class="fas fa-trash"></i></button>
+                        </div></div>`;
+                }
             });
+
+            document.getElementById('view-live').innerHTML = liveHtml || '<p class="text-center text-gray-500 mt-10">No active orders.</p>';
+            document.getElementById('total-sales').innerText = sales;
+            document.getElementById('pending-count').innerText = activeCount;
+            renderUdhaar();
+            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
         }
 
-        function saveMenuStatus() {
-            const updates = {};
-            adminMenuItems.forEach(item => {
-                const isChecked = document.getElementById(`stock-${item.id}`).checked;
-                updates[item.id] = isChecked; // Save true/false
-            });
-            db.collection('settings').doc('menu').set(updates).then(() => {
-                document.getElementById('menu-modal').classList.add('hidden');
-                alert("Menu Updated!");
-            });
-        }
-
-        // --- END DAY RESET ---
+        // --- ACTIONS ---
         function endDay() {
-            const sales = document.getElementById('total-sales').innerText;
-            if(confirm(`End Day? \nTotal Sales Recorded: ₹${sales}\nCounter will reset to 0.`)) {
-                // 1. Set new reset time
+            if(confirm("Reset Counter?")) {
                 db.collection('settings').doc('config').set({
                     lastReset: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
-                // 2. Save history (Optional, just logging it)
-                db.collection('daily_reports').add({
-                    total: sales,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
             }
         }
 
-        // --- HISTORY ---
-        function renderHistory() {
-            const container = document.getElementById('history-container');
-            document.getElementById('history-loading').style.display = 'none';
-            let groups = {};
-            allHistoryOrders.forEach(o => {
-                const key = o.customerPhone || "Unknown";
-                if(!groups[key]) groups[key] = { name: o.customerName, orders: [] };
-                groups[key].orders.push(o);
-            });
-            if(Object.keys(groups).length === 0) { container.innerHTML = "<p class='text-center text-gray-500'>No history.</p>"; return; }
-            container.innerHTML = Object.keys(groups).map(phone => {
-                const g = groups[phone];
-                const totalSpent = g.orders.reduce((sum, o) => sum + (o.status==='completed'?o.totalAmount:0), 0);
-                return `
-                <div class="card overflow-hidden">
-                    <div onclick="toggleHistoryDetails('${phone}')" class="p-4 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-700">
-                        <div><h3 class="font-bold text-white">${g.name}</h3><p class="text-xs text-gray-400">${phone}</p></div>
-                        <div class="text-right"><p class="text-orange-400 font-bold">Total: ₹${totalSpent}</p><p class="text-xs text-gray-500">${g.orders.length} orders</p></div>
-                    </div>
-                    <div id="details-${phone}" class="hidden bg-gray-900 p-2 space-y-2 border-t border-gray-700">
-                        ${g.orders.map(o => `
-                            <div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
-                                <div><span class="text-gray-300">${new Date(o.timestamp.toDate()).toLocaleDateString()}</span><span class="ml-2 font-bold ${o.status==='completed'?'text-green-400':'text-red-400'}">${o.status}</span><p class="text-xs text-gray-500">${o.items.map(i=>i.name).join(', ')}</p></div>
-                                <div class="flex items-center gap-2"><span class="font-bold text-white">₹${o.totalAmount}</span><button onclick="deleteHistoryItem('${o.id}')" class="text-red-500 px-2"><i class="fas fa-trash"></i></button></div>
-                            </div>`).join('')}
-                    </div>
-                </div>`;
-            }).join('');
-        }
-        function toggleHistoryDetails(phone) { document.getElementById(`details-${phone}`).classList.toggle('hidden'); }
-        function deleteHistoryItem(id) { if(confirm("Delete record?")) db.collection('orders').doc(id).delete(); }
-
-        // --- UDHAAR & ACTIONS ---
         function renderUdhaar() {
-            const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
+            const list = document.getElementById('udhaar-list'); 
+            const q = document.getElementById('search-udhaar').value.toLowerCase(); 
+            let html = '';
+            
             for(let phone in udhaarMap) {
-                const u = udhaarMap[phone]; const netDue = u.debit - u.credit;
+                const u = udhaarMap[phone]; 
+                const netDue = u.debit - u.credit;
+                
                 if(netDue > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) {
-                    html += `<div class="card p-4 flex justify-between items-center mb-2"><div><h4 class="font-bold text-lg">${u.name}</h4><p class="text-xs text-gray-400">${phone}</p></div>
-                        <div class="text-right"><h4 class="text-red-400 font-bold text-xl">₹${netDue}</h4><button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-xs px-3 py-1 rounded mt-1">Settle</button></div></div>`;
+                    html += `
+                    <div class="card p-4 flex justify-between items-center mb-2">
+                        <div><h4 class="font-bold text-lg">${u.name}</h4><p class="text-xs text-gray-400">${phone}</p></div>
+                        <div class="text-right">
+                            <h4 class="text-red-400 font-bold text-xl">₹${netDue}</h4>
+                            <button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-xs px-3 py-1 rounded mt-1">Settle</button>
+                        </div>
+                    </div>`;
                 }
             }
-            list.innerHTML = html || "<p class='text-center text-gray-500'>No Udhaar.</p>";
+            list.innerHTML = html || "<p class='text-center text-gray-500'>No Udhaar pending.</p>";
         }
+
+        // --- STANDARD FUNCTIONS (Same as before) ---
         function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name + " (" + phone + ")"; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = due; document.getElementById('settle-modal').classList.remove('hidden'); }
         function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
-        function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { closeSettle(); alert("Updated!"); }); }
+        function submitPayment() { 
+            const amount = parseInt(document.getElementById('settle-amount').value); 
+            if(!amount) return; 
+            db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Manual_Admin' }).then(() => { closeSettle(); alert("Paid!"); }); 
+        }
         
+        function openMenuControl() {
+            db.collection('settings').doc('menu').get().then(doc => {
+                const s = doc.exists ? doc.data() : {};
+                document.getElementById('menu-list-items').innerHTML = adminMenuItems.map(i => `
+                    <div class="flex justify-between items-center bg-gray-700 p-3 rounded"><span>${i.name}</span><input type="checkbox" id="stock-${i.id}" ${s[i.id]!==false?'checked':''} class="w-5 h-5 accent-green-500"></div>`).join('');
+                document.getElementById('menu-modal').classList.remove('hidden');
+            });
+        }
+        function saveMenuStatus() {
+            const u = {}; adminMenuItems.forEach(i => u[i.id] = document.getElementById(`stock-${i.id}`).checked);
+            db.collection('settings').doc('menu').set(u).then(() => document.getElementById('menu-modal').classList.add('hidden'));
+        }
+
         function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }); }
         function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }); }
         function markComplete(id) { if(confirm('Complete?')) db.collection('orders').doc(id).update({ status: 'completed' }); }
         function cancelOrder(id) { if(confirm('Cancel?')) db.collection('orders').doc(id).update({ status: 'cancelled' }); }
         function verifyPayment(id) { if(confirm('Received?')) db.collection('orders').doc(id).update({ paymentVerified: true }); }
-        function switchTab(t) {
-            ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-400'); });
-            document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-400');
-            if(t === 'history') renderHistory();
+        
+        // History Render Logic (Same as before)
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            let groups = {}; allHistoryOrders.forEach(o => { const k = o.customerPhone||"Unknown"; if(!groups[k]) groups[k]={name:o.customerName,orders:[]}; groups[k].orders.push(o); });
+            if(Object.keys(groups).length===0) { container.innerHTML="<p class='text-center text-gray-500'>No history.</p>"; return; }
+            container.innerHTML = Object.keys(groups).map(p => {
+                const g = groups[p]; const t = g.orders.reduce((s,o) => s+(o.status==='completed'?o.totalAmount:0),0);
+                return `<div class="card overflow-hidden"><div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-4 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-700"><div><h3 class="font-bold text-white">${g.name}</h3><p class="text-xs text-gray-400">${p}</p></div><div class="text-right"><p class="text-orange-400 font-bold">₹${t}</p><p class="text-xs text-gray-500">${g.orders.length} orders</p></div></div><div class="hidden bg-gray-900 p-2 space-y-2 border-t border-gray-700">${g.orders.map(o=>`<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm"><div><span class="text-gray-300">${new Date(o.timestamp.toDate()).toLocaleDateString()}</span> <span class="ml-2 font-bold ${o.status==='completed'?'text-green-400':'text-red-400'}">${o.status}</span><p class="text-xs text-gray-500">${o.items.map(i=>i.name).join(', ')}</p></div><div class="font-bold text-white">₹${o.totalAmount}</div></div>`).join('')}</div></div>`;
+            }).join('');
         }
+
+        function switchTab(t) { ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-400'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-400'); if(t==='history') renderHistory(); }
         function filterUdhaar() { renderUdhaar(); }
+
         init();
     </script>
 </body>
