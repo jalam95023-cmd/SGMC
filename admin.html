@@ -3,130 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGMC - ADMIN PANEL</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <title>SGMC - Admin Panel</title>
     <style>
-        :root { --primary: #27ae60; --dark: #2c3e50; --light: #f4f6f7; --danger: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: var(--light); color: var(--dark); }
-        .admin-header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .container { max-width: 800px; margin: 20px auto; padding: 0 20px; }
-        .stats-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-around; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .stat-val { font-size: 28px; font-weight: bold; color: var(--primary); }
-        .admin-order-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 5px solid #ccc; position: relative; }
-        .admin-order-card.new { border-left-color: var(--danger); animation: highlight 1s infinite alternate; }
-        @keyframes highlight { from { box-shadow: 0 0 5px rgba(231,76,60,0.2); } to { box-shadow: 0 0 15px rgba(231,76,60,0.5); } }
-        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--primary); }
-        input:checked + .slider:before { transform: translateX(26px); }
-        #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--dark); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .login-box { background: white; padding: 30px; border-radius: 10px; width: 300px; text-align: center; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #1a1a1a; color: white; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: auto; }
+        
+        h1 { color: #f39c12; }
+        
+        /* Dashboard Stats */
+        .stats { display: flex; justify-content: space-around; margin-bottom: 20px; }
+        .stat-box { background: #333; padding: 15px; border-radius: 10px; width: 45%; }
+        .stat-number { font-size: 24px; font-weight: bold; color: #f39c12; }
+
+        /* Shop Toggle Switch */
+        .switch-container { background: #333; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
+        .status-text { font-size: 18px; margin-bottom: 10px; display: block; }
+        button#toggleBtn { padding: 10px 30px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-open { background-color: #2ecc71; color: white; }
+        .btn-closed { background-color: #e74c3c; color: white; }
+
+        /* Order Cards */
+        .order-card { background: #2c3e50; padding: 15px; margin-bottom: 15px; border-radius: 8px; text-align: left; border-left: 5px solid #f39c12; display: flex; justify-content: space-between; align-items: center; }
+        .order-info { flex-grow: 1; }
+        .customer-name { font-size: 18px; font-weight: bold; color: #ecf0f1; }
+        .order-items { color: #bdc3c7; font-size: 14px; margin-top: 5px; }
+        .payment-status { font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 10px; }
+        
+        .pay-udhaar { background: #e74c3c; color: white; }
+        .pay-cash { background: #2ecc71; color: white; }
+
+        /* Done Button */
+        .done-btn { background-color: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 10px; }
+        .done-btn:hover { background-color: #219150; }
+
     </style>
 </head>
 <body>
-    <div id="login-modal">
-        <div class="login-box">
-            <h3>Admin Access</h3>
-            <input type="password" id="admin-pass" placeholder="Enter Password" style="width: 100%; padding: 10px; margin-bottom: 15px; box-sizing: border-box;">
-            <button onclick="checkLogin()" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 5px; width: 100%; cursor: pointer;">Login</button>
-        </div>
-    </div>
 
-    <div id="dashboard" style="display: none;">
-        <div class="admin-header">
-            <h2 style="margin:0;">SGMC Admin</h2>
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span id="shop-status-text" style="font-weight: bold;">Shop Status</span>
-                <label class="switch">
-                    <input type="checkbox" id="shop-toggle" onchange="toggleShopStatus()">
-                    <span class="slider"></span>
-                </label>
+    <div class="container">
+        <h1>🛠️ SGMC Admin</h1>
+        
+        <div class="switch-container">
+            <span id="shopStatusText" class="status-text">Checking Status...</span>
+            <button id="toggleBtn" onclick="toggleShop()">Loading...</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div>Active Orders</div>
+                <div class="stat-number" id="totalOrders">0</div>
+            </div>
+            <div class="stat-box">
+                <div>Pending Udhaar</div>
+                <div class="stat-number" id="udhaarCount">0</div>
             </div>
         </div>
 
-        <div class="container">
-            <div class="stats-card">
-                <div style="text-align:center;"><div class="stat-val" id="total-orders-count">0</div><div>Today's Orders</div></div>
-                <div style="text-align:center;"><div class="stat-val" id="total-revenue">₹0</div><div>Total Sales</div></div>
-            </div>
-
-            <h3 style="color:#555;">Recent Orders (Live)</h3>
-            <div id="admin-orders-list">Loading orders...</div>
+        <h3 style="text-align: left; color: #aaa;">Recent Orders:</h3>
+        <div id="adminOrderList">
+            <p>Loading orders...</p>
         </div>
     </div>
 
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        function checkLogin() {
-            if(document.getElementById('admin-pass').value === 'admin123') {
-                document.getElementById('login-modal').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'block';
-                initAdmin();
-            } else { alert("Wrong Password!"); }
+    <script type="module">
+        // 🔒 Simple Security Check
+        const pass = prompt("Admin Password daalo:");
+        if(pass !== "1234") {
+            document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:50px;'>Galat Password! Access Denied. ❌</h1>";
+            throw new Error("Wrong Password");
         }
 
-        function initAdmin() {
-            // 1. Sync Shop Status
-            db.collection('settings').doc('shopConfig').onSnapshot(doc => {
-                if(doc.exists) {
-                    const isOpen = doc.data().isOpen;
-                    document.getElementById('shop-toggle').checked = isOpen;
-                    const txt = document.getElementById('shop-status-text');
-                    txt.innerText = isOpen ? "Shop is OPEN" : "Shop is CLOSED";
-                    txt.style.color = isOpen ? "green" : "red";
-                }
-            });
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, setDoc, getDoc, query, orderBy } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-            // 2. Listen for Orders
-            let isFirstLoad = true;
-            db.collection('orders').orderBy('timestamp', 'desc').limit(30).onSnapshot(snapshot => {
-                let html = ''; let totalCount = 0; let totalSale = 0;
-                snapshot.forEach(doc => {
-                    const o = doc.data();
-                    totalCount++; totalSale += o.total;
-                    
-                    if(!isFirstLoad && o.status === 'Pending' && !doc.metadata.hasPendingWrites) playSound();
+        const firebaseConfig = {
+            apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+            authDomain: "sgmc-16568.firebaseapp.com",
+            projectId: "sgmc-16568",
+            storageBucket: "sgmc-16568.firebasestorage.app",
+            messagingSenderId: "339041646158",
+            appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
+            measurementId: "G-4996NPF55N"
+        };
 
-                    let itemsStr = o.items.map(i => i.name).join(', ');
-                    html += `
-                    <div class="admin-order-card ${o.status === 'Pending' ? 'new' : ''}">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                            <strong>${o.customer}</strong> <span style="font-weight:bold;">₹${o.total}</span>
-                        </div>
-                        <div style="font-size:13px; color:#555; margin-bottom:8px;">${o.address} <br> 📞 <a href="tel:${o.phone}">${o.phone}</a></div>
-                        <div style="background:#f4f6f7; padding:5px; font-size:13px; border-radius:4px;">${itemsStr}</div>
-                        <select style="width:100%; margin-top:10px; padding:8px; border:1px solid #ddd; border-radius:4px;" onchange="updateStatus('${doc.id}', this.value)">
-                            <option value="Pending" ${o.status === 'Pending'?'selected':''}>Pending (New)</option>
-                            <option value="Preparing" ${o.status === 'Preparing'?'selected':''}>Preparing</option>
-                            <option value="Out for Delivery" ${o.status === 'Out for Delivery'?'selected':''}>Out for Delivery</option>
-                            <option value="Delivered" ${o.status === 'Delivered'?'selected':''}>Delivered</option>
-                        </select>
-                    </div>`;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- 1. SHOP STATUS LOGIC (Open/Close) ---
+        const statusDocRef = doc(db, "shopSettings", "status");
+        let currentStatus = true;
+
+        // Listen to Shop Status
+        onSnapshot(statusDocRef, (docSnap) => {
+            const btn = document.getElementById("toggleBtn");
+            const txt = document.getElementById("shopStatusText");
+
+            if (docSnap.exists()) {
+                currentStatus = docSnap.data().isOpen;
+            } else {
+                // Agar setting exist nahi karti to create kar do
+                setDoc(statusDocRef, { isOpen: true });
+                currentStatus = true;
+            }
+
+            if (currentStatus) {
+                txt.innerText = "🟢 Dukan ABHI KHULI hai";
+                btn.innerText = "Band Karein (Close)";
+                btn.className = "btn-closed"; // Red button to close
+            } else {
+                txt.innerText = "🔴 Dukan ABHI BAND hai";
+                btn.innerText = "Kholein (Open)";
+                btn.className = "btn-open"; // Green button to open
+            }
+        });
+
+        // Function to Toggle Status
+        window.toggleShop = async function() {
+            try {
+                await updateDoc(statusDocRef, {
+                    isOpen: !currentStatus
                 });
-                document.getElementById('admin-orders-list').innerHTML = html;
-                document.getElementById('total-orders-count').innerText = totalCount;
-                document.getElementById('total-revenue').innerText = '₹' + totalSale;
-                isFirstLoad = false;
-            });
+            } catch (error) {
+                console.error("Error updating status:", error);
+                alert("Setting save nahi ho payi.");
+            }
         }
 
-        function toggleShopStatus() {
-            const newVal = document.getElementById('shop-toggle').checked;
-            db.collection('settings').doc('shopConfig').set({ isOpen: newVal });
+        // --- 2. ORDER LIST LOGIC ---
+        const q = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            const listDiv = document.getElementById("adminOrderList");
+            const totalDiv = document.getElementById("totalOrders");
+            const udhaarDiv = document.getElementById("udhaarCount");
+
+            listDiv.innerHTML = "";
+            
+            let total = 0;
+            let udhaar = 0;
+
+            snapshot.forEach((doc) => {
+                const order = doc.data();
+                const orderId = doc.id;
+                total++;
+                
+                const isUdhaar = order.payment.includes("Udhaar");
+                if (isUdhaar) udhaar++;
+
+                const badgeClass = isUdhaar ? "pay-udhaar" : "pay-cash";
+
+                listDiv.innerHTML += `
+                    <div class="order-card">
+                        <div class="order-info">
+                            <span class="customer-name">${order.customer}</span>
+                            <span class="payment-status ${badgeClass}">${order.payment}</span>
+                            <div class="order-items">🛒 ${order.items.join(", ")}</div>
+                        </div>
+                        <button class="done-btn" onclick="deleteOrder('${orderId}')">✅ Done</button>
+                    </div>
+                `;
+            });
+
+            totalDiv.innerText = total;
+            udhaarDiv.innerText = udhaar;
+
+            if(total === 0) {
+                listDiv.innerHTML = "<p style='color:#777;'>Koi naya order nahi hai.</p>";
+            }
+        });
+
+        // Function to Delete Order (Complete)
+        window.deleteOrder = async function(id) {
+            if(confirm("Kya ye order deliver ho gaya? List se hata dun?")) {
+                await deleteDoc(doc(db, "orders", id));
+            }
         }
-        function updateStatus(docId, val) { db.collection('orders').doc(docId).update({ status: val }); }
-        function playSound() {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator(); const g = ctx.createGain();
-            osc.connect(g); g.connect(ctx.destination);
-            osc.frequency.value = 600; osc.start(); setTimeout(()=>osc.stop(), 500);
-        }
+
     </script>
 </body>
 </html>
