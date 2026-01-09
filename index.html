@@ -16,29 +16,39 @@
         .brand-input { width: 90px; font-size: 12px; border: 1px solid #eee; border-radius: 5px; padding: 5px; margin-right: 5px; }
         .total-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
         .btn-order { background: linear-gradient(45deg, #d35400, #e67e22); color: white; border: none; padding: 10px 30px; border-radius: 50px; font-weight: bold; }
-        #liveStatusCard { display: none; margin-bottom: 20px; border-left: 5px solid #2ecc71; }
-        .status-badge { background: #2ecc71; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        #liveStatusCard, #historyCard { display: none; margin-bottom: 20px; }
+        #liveStatusCard { border-left: 5px solid #2ecc71; }
+        .history-item { border-bottom: 1px solid #eee; padding: 10px 0; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    
+    <div class="d-flex justify-content-between mb-3">
+        <h5 class="text-white fw-bold">🔥 SGMC</h5>
+        <button onclick="toggleHistory()" class="btn btn-sm btn-light rounded-pill"><i class="fas fa-history"></i> History</button>
+    </div>
+
     <div id="liveStatusCard" class="glass-card">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="m-0">📦 Your Order</h5>
-            <span id="statusText" class="status-badge">Pending</span>
+            <h5 class="m-0">📦 Current Order</h5>
+            <span id="statusText" class="badge bg-warning text-dark">Pending</span>
         </div>
         <p class="small text-muted mb-1" id="orderIdDisplay">Order ID: ...</p>
         <p class="mb-0 fw-bold" id="liveTotalDisplay">Total: ₹0</p>
-        <button onclick="clearCurrentOrder()" class="btn btn-sm btn-outline-danger mt-3" style="font-size: 11px;">New Order</button>
+        <button onclick="clearCurrentOrder()" class="btn btn-sm btn-outline-danger mt-3" style="font-size: 11px;">Close / New Order</button>
+    </div>
+
+    <div id="historyCard" class="glass-card">
+        <h5 class="fw-bold mb-3">📜 Your Past Orders</h5>
+        <div id="historyList">
+            <p class="text-muted small">No history found.</p>
+        </div>
+        <button onclick="toggleHistory()" class="btn btn-sm btn-secondary mt-3 w-100">Close History</button>
     </div>
 
     <div class="glass-card" id="mainFormCard">
-        <div class="text-center mb-4">
-            <h2 class="fw-bold text-dark">🔥 SGMC Delivery</h2>
-            <p class="text-muted small">Chai • Sutta • Snacks</p>
-        </div>
-
         <form id="orderForm">
             <div class="row g-2 mb-3">
                 <div class="col-12"><input type="tel" id="cPhone" class="form-control" placeholder="📱 Mobile Number" required pattern="[0-9]{10}"></div>
@@ -118,7 +128,7 @@
   }
   inputs.forEach(input => input.addEventListener('input', calculateTotal));
 
-  // 2. Check Existing Order
+  // 2. Check Existing Order & Load History
   const savedOrderId = localStorage.getItem('sgmc_active_order_id');
   if(savedOrderId) trackOrder(savedOrderId);
 
@@ -140,17 +150,26 @@
 
       if(currentTotal === 0 && !items.other) { alert("Order khali hai!"); btn.disabled = false; return; }
 
+      const orderData = {
+          customerName: document.getElementById('cName').value,
+          phone: document.getElementById('cPhone').value,
+          location: document.getElementById('cLoc').value,
+          items: items,
+          totalBill: currentTotal,
+          status: 'Pending',
+          timestamp: serverTimestamp(),
+          dateStr: new Date().toLocaleString()
+      };
+
       try {
-          const docRef = await addDoc(collection(db, "orders"), {
-              customerName: document.getElementById('cName').value,
-              phone: document.getElementById('cPhone').value,
-              location: document.getElementById('cLoc').value,
-              items: items,
-              totalBill: currentTotal,
-              status: 'Pending',
-              timestamp: serverTimestamp()
-          });
+          const docRef = await addDoc(collection(db, "orders"), orderData);
+          
+          // Save active order
           localStorage.setItem('sgmc_active_order_id', docRef.id);
+          
+          // Save to History (Array)
+          saveToHistory(orderData, currentTotal);
+
           trackOrder(docRef.id);
       } catch (error) {
           console.error(error);
@@ -159,7 +178,40 @@
       }
   });
 
-  // 4. Track Order
+  // 4. Save to Local History
+  function saveToHistory(data, total) {
+      let history = JSON.parse(localStorage.getItem('sgmc_history') || "[]");
+      const summary = `₹${total} - ${data.dateStr}`;
+      history.unshift(summary); // Add to top
+      if(history.length > 10) history.pop(); // Keep only last 10
+      localStorage.setItem('sgmc_history', JSON.stringify(history));
+  }
+
+  // 5. Toggle History View
+  window.toggleHistory = () => {
+      const historyCard = document.getElementById('historyCard');
+      const mainCard = document.getElementById('mainFormCard');
+      const historyList = document.getElementById('historyList');
+
+      if (historyCard.style.display === 'none' || !historyCard.style.display) {
+          // Show History
+          historyCard.style.display = 'block';
+          mainCard.style.display = 'none';
+          
+          let history = JSON.parse(localStorage.getItem('sgmc_history') || "[]");
+          if(history.length === 0) {
+              historyList.innerHTML = "<p class='text-muted small'>No past orders.</p>";
+          } else {
+              historyList.innerHTML = history.map(h => `<div class='history-item'><i class='fas fa-receipt text-warning me-2'></i> ${h}</div>`).join('');
+          }
+      } else {
+          // Hide History
+          historyCard.style.display = 'none';
+          mainCard.style.display = 'block';
+      }
+  }
+
+  // 6. Track Order
   function trackOrder(orderId) {
       document.getElementById('mainFormCard').style.display = 'none';
       document.querySelector('.total-bar').style.display = 'none';
@@ -173,14 +225,18 @@
               document.getElementById('orderIdDisplay').innerText = "Order ID: " + orderId.slice(-4).toUpperCase();
               document.getElementById('liveTotalDisplay').innerText = "Total Bill: ₹" + data.totalBill;
               
-              if(data.status === 'Ready') statusText.style.background = '#f1c40f';
-              if(data.status === 'Delivered') { statusText.style.background = '#2ecc71'; statusText.innerText = "Enjoy! ✅"; }
+              if(data.status === 'Ready') { statusText.className = "badge bg-warning text-dark"; }
+              if(data.status === 'Delivered') { 
+                  statusText.className = "badge bg-success"; 
+                  statusText.innerText = "Completed ✅"; 
+              }
           }
       });
   }
 
   window.clearCurrentOrder = () => {
-      if(confirm("New Order?")) { localStorage.removeItem('sgmc_active_order_id'); location.reload(); }
+      localStorage.removeItem('sgmc_active_order_id'); 
+      location.reload();
   }
 </script>
 </body>
