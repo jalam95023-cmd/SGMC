@@ -219,7 +219,7 @@
         function placeOrder() {
             const name = document.getElementById('c-name').value.trim();
             const phone = document.getElementById('c-phone').value.trim();
-            const address = document.getElementById('c-address').value.trim(); // Added Address
+            const address = document.getElementById('c-address').value.trim();
             const mode = document.getElementById('selected-payment').value;
             const total = parseInt(document.getElementById('cart-total').innerText);
             if (!name || !phone || !mode) { alert("Sab details bharo!"); return; }
@@ -229,7 +229,7 @@
             const orderData = { 
                 customerName: name, 
                 customerPhone: phone, 
-                customerAddress: address, // Saved Address
+                customerAddress: address,
                 items: items, 
                 totalAmount: total, 
                 paymentMode: mode, 
@@ -246,7 +246,7 @@
             });
         }
 
-        // --- UDHAAR DASHBOARD & PAYMENT HISTORY ---
+        // --- FIXED UDHAAR FUNCTION (Without Composite Index) ---
         async function showUdhaar() {
             let phone = localStorage.getItem('userPhone');
             if(!phone) { phone = prompt("Apna registered Mobile Number daalo:"); if(phone) localStorage.setItem('userPhone', phone); else return; }
@@ -256,31 +256,34 @@
             const historyContainer = document.getElementById('payment-history-list');
             const historyItems = document.getElementById('p-history-items');
             
-            content.innerHTML = '<p class="text-gray-500 animate-pulse">Calculating...</p>';
+            content.innerHTML = '<p class="text-gray-500 animate-pulse">Checking...</p>';
             historyItems.innerHTML = ''; 
 
             try {
-                // 1. Debits
-                const ordersSnap = await db.collection('orders').where('customerPhone', '==', phone).where('paymentMode', '==', 'Udhaar').get();
+                // 1. Get ALL orders for this phone, then filter for Udhaar in JS
+                // This avoids needing a composite index in Firebase
+                const ordersSnap = await db.collection('orders').where('customerPhone', '==', phone).get();
                 let debit = 0;
-                ordersSnap.forEach(doc => { if(doc.data().status !== 'cancelled') debit += doc.data().totalAmount; });
+                ordersSnap.forEach(doc => { 
+                    const d = doc.data();
+                    if(d.paymentMode === 'Udhaar' && d.status !== 'cancelled') {
+                        debit += d.totalAmount; 
+                    }
+                });
 
-                // 2. Credits (Payments)
-                const paymentsSnap = await db.collection('payments').where('phone', '==', phone).orderBy('timestamp', 'desc').get();
+                // 2. Get Payments (Client side sorting to avoid index error)
+                const paymentsSnap = await db.collection('payments').where('phone', '==', phone).get();
                 let credit = 0;
-                let paymentListHtml = '';
+                let paymentList = [];
                 
                 paymentsSnap.forEach(doc => { 
                     const p = doc.data();
                     credit += p.amount;
-                    // Format Date
-                    const date = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                    paymentListHtml += `
-                        <div class="flex justify-between bg-gray-700 p-2 rounded">
-                            <span class="text-gray-400">${date}</span>
-                            <span class="text-white font-bold">₹${p.amount}</span>
-                        </div>`;
+                    paymentList.push(p);
                 });
+
+                // Sort payments by date (newest first)
+                paymentList.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
 
                 const balance = debit - credit;
 
@@ -302,15 +305,24 @@
                     `;
                 }
 
-                // Show Payment History if exists
-                if(paymentListHtml) {
+                // Render Payment History
+                if(paymentList.length > 0) {
                     historyContainer.classList.remove('hidden');
-                    historyItems.innerHTML = paymentListHtml;
+                    historyItems.innerHTML = paymentList.map(p => {
+                        const date = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A';
+                        return `<div class="flex justify-between bg-gray-700 p-2 rounded">
+                            <span class="text-gray-400">${date}</span>
+                            <span class="text-white font-bold">₹${p.amount}</span>
+                        </div>`;
+                    }).join('');
                 } else {
                     historyContainer.classList.add('hidden');
                 }
 
-            } catch(e) { content.innerHTML = `<p class="text-red-500">Error.</p>`; console.error(e); }
+            } catch(e) { 
+                content.innerHTML = `<p class="text-red-500">Error loading data. Try again.</p>`; 
+                console.error(e); 
+            }
         }
 
         function payUdhaar(amount) {
@@ -320,6 +332,7 @@
 
         // --- HISTORY ---
         function listenToLatestOrder(phone) {
+            // Simplified query to avoid index error
             db.collection('orders').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
                 if(!snap.empty) {
                     const data = snap.docs[0].data();
@@ -334,15 +347,21 @@
                 }
             });
         }
+
         function showMyOrders() {
             const phone = localStorage.getItem('userPhone');
             if(!phone) { alert("No history found."); return; }
             const list = document.getElementById('history-list');
             list.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
             document.getElementById('history-modal').classList.remove('hidden');
+            
+            // Client side sorting
             db.collection('orders').where('customerPhone', '==', phone).get().then(snap => {
                 const orders = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 orders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                
+                if(orders.length === 0) { list.innerHTML = "<p class='text-center text-gray-500'>No orders yet.</p>"; return; }
+
                 list.innerHTML = orders.map(data => {
                     const dateObj = data.timestamp ? new Date(data.timestamp.toDate()) : new Date();
                     const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
