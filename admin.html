@@ -1,54 +1,112 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SGMC – Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body{font-family:Arial;background:#f4f4f4;margin:0;padding:10px}
-    h2{text-align:center}
-    .order{background:#fff;padding:10px;margin-bottom:10px;border-radius:8px}
-    button{padding:6px 10px;margin:3px;border:none;border-radius:5px;color:#fff}
-    .accept{background:#007bff}
-    .reject{background:#dc3545}
-    .prep{background:#ffc107;color:#000}
-    .ready{background:#28a745}
-  </style>
+<meta charset="UTF-8">
+<title>SGMC – Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#f2f2f2}
+header{background:#7b1e1e;color:#fff;padding:12px;text-align:center;font-size:18px}
+.container{padding:10px}
+.card{
+  background:#fff;
+  border-radius:8px;
+  padding:10px;
+  margin-bottom:10px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.1)
+}
+.status{
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+  display:inline-block;
+  margin-bottom:6px;
+}
+.Placed{background:#ffeb3b}
+.Preparing{background:#03a9f4;color:#fff}
+.Ready{background:#4caf50;color:#fff}
+.Delivered{background:#9e9e9e;color:#fff}
+button{
+  padding:8px;
+  margin-top:6px;
+  width:100%;
+  border:none;
+  border-radius:6px;
+  background:#7b1e1e;
+  color:white;
+}
+select{width:100%;padding:6px;margin-top:6px}
+.small{font-size:13px;color:#555}
+</style>
 </head>
+
 <body>
 
-<h2>🧑‍🍳 SGMC – Admin Panel</h2>
+<header>🛠️ SGMC – Admin Panel</header>
 
-<div id="orders"></div>
-
-<script src="firebase.js"></script>
+<div class="container" id="orders"></div>
 
 <script>
-db.collection("orders").orderBy("time","desc")
-.onSnapshot(snap=>{
-  orders.innerHTML="";
-  snap.forEach(doc=>{
-    const o=doc.data();
-    orders.innerHTML+=`
-      <div class="order">
-        <b>${o.name}</b> (${o.phone})<br>
-        Items: ${o.items.map(i=>i.name).join(", ")}<br>
-        Total: ₹${o.total}<br>
-        Status: <b>${o.status}</b><br><br>
+/* 🔥 FIREBASE CONFIG (same as customer) */
+const firebaseConfig = {
+  apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+  authDomain: "sgmc-16568.firebaseapp.com",
+  projectId: "sgmc-16568",
+  storageBucket: "sgmc-16568.firebasestorage.app",
+  messagingSenderId: "339041646158",
+  appId: "1:339041646158:web:85d9a50a3b51b30aae351f"
+};
 
-        <button class="accept" onclick="update('${doc.id}','Accepted')">Accept</button>
-        <button class="reject" onclick="update('${doc.id}','Rejected')">Reject</button><br>
-        <button class="prep" onclick="update('${doc.id}','Preparing')">Preparing</button>
-        <button class="ready" onclick="update('${doc.id}','Ready')">Ready</button>
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const ordersDiv = document.getElementById("orders");
+
+/* 📥 LOAD ORDERS */
+db.ref("orders").on("value", snap=>{
+  ordersDiv.innerHTML="";
+  snap.forEach(child=>{
+    const o = child.val();
+    const id = child.key;
+
+    ordersDiv.innerHTML += `
+      <div class="card">
+        <div class="status ${o.status}">${o.status}</div>
+        <div class="small">🕒 ${o.time}</div>
+        <b>☕ ${o.item}</b><br>
+        Qty: ${o.quantity}<br>
+        💳 ${o.payment}<br>
+        📍 ${o.address}
+
+        <select onchange="updateStatus('${id}',this.value)">
+          <option ${o.status=="Placed"?"selected":""}>Placed</option>
+          <option ${o.status=="Preparing"?"selected":""}>Preparing</option>
+          <option ${o.status=="Ready"?"selected":""}>Ready</option>
+          <option ${o.status=="Delivered"?"selected":""}>Delivered</option>
+        </select>
+
+        <button onclick="openMap(${o.lat},${o.lng})">
+          📍 Open in Google Maps
+        </button>
       </div>
     `;
   });
 });
 
-function update(id,status){
-  db.collection("orders").doc(id).update({status});
+/* 🔄 UPDATE STATUS */
+function updateStatus(id,status){
+  db.ref("orders/"+id+"/status").set(status);
+}
+
+/* 🗺️ OPEN MAP */
+function openMap(lat,lng){
+  window.open(`https://www.google.com/maps?q=${lat},${lng}`);
 }
 </script>
 
 </body>
 </html>
-
