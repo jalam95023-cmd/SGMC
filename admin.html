@@ -46,11 +46,7 @@
     </div>
 
     <div id="view-live" class="space-y-4"></div>
-
-    <div id="view-history" class="hidden space-y-4">
-        <div id="history-container" class="space-y-2"></div>
-    </div>
-
+    <div id="view-history" class="hidden space-y-4"><div id="history-container" class="space-y-2"></div></div>
     <div id="view-udhaar" class="hidden space-y-4">
         <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Name..." class="w-full p-2 bg-gray-800 rounded border border-gray-700 mb-2">
         <div id="udhaar-list"></div>
@@ -64,7 +60,6 @@
             <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-full text-gray-400 p-2">Cancel</button>
         </div>
     </div>
-
     <div id="settle-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-gray-800 p-6 rounded-xl w-full max-w-sm">
             <h3 class="text-xl font-bold mb-4">Settle Payment</h3>
@@ -94,101 +89,51 @@
         const adminMenuItems = [ { id: 1, name: "Normal Chai" }, { id: 2, name: "Adrak Chai" }, { id: 3, name: "Cigarette" }, { id: 4, name: "Matthi" }, { id: 5, name: "Veg Roll" }, { id: 6, name: "Biscuit" }, { id: 7, name: "Namkeen" } ];
 
         let isShopOpen = false;
-        let udhaarMap = {}; 
-        let currentSettlePhone = null; 
-        let allHistoryOrders = [];
-        let lastResetSeconds = 0;
-        let lastPendingCount = 0;
-        let soundEnabled = false;
+        let udhaarMap = {}; let currentSettlePhone = null; let allHistoryOrders = [];
+        let lastResetSeconds = 0; let lastPendingCount = 0; let soundEnabled = false;
 
         function init() {
-            db.collection('settings').doc('config').onSnapshot(doc => {
-                if(doc.exists && doc.data().lastReset) lastResetSeconds = doc.data().lastReset.seconds;
-                recalculateData();
-            });
-
-            db.collection('settings').doc('status').onSnapshot(doc => {
-                isShopOpen = doc.exists ? doc.data().isOpen : true;
-                const btn = document.getElementById('shop-toggle-btn');
-                btn.innerText = isShopOpen ? "OPEN" : "CLOSED";
-                btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white";
-            });
-
+            db.collection('settings').doc('config').onSnapshot(doc => { if(doc.exists && doc.data().lastReset) lastResetSeconds = doc.data().lastReset.seconds; recalculateData(); });
+            db.collection('settings').doc('status').onSnapshot(doc => { isShopOpen = doc.exists ? doc.data().isOpen : true; const btn = document.getElementById('shop-toggle-btn'); btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white"; });
             db.collection('payments').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
         }
 
-        function enableSound() {
-            if(!soundEnabled) {
-                const audio = document.getElementById('order-sound');
-                audio.play().then(() => {
-                    audio.pause(); audio.currentTime = 0; soundEnabled = true;
-                    document.getElementById('sound-status').innerText = "🔊 Sound Active";
-                    document.getElementById('sound-status').classList.replace("text-gray-500", "text-green-500");
-                }).catch(e => console.log("Interaction needed"));
-            }
-        }
-        function playNotification() {
-            if(soundEnabled) { const audio = document.getElementById('order-sound'); audio.currentTime = 0; audio.play().catch(e => {}); }
-        }
+        function enableSound() { if(!soundEnabled) { const audio = document.getElementById('order-sound'); audio.play().then(() => { audio.pause(); audio.currentTime = 0; soundEnabled = true; document.getElementById('sound-status').innerText = "🔊 Sound Active"; document.getElementById('sound-status').classList.replace("text-gray-500", "text-green-500"); }).catch(e => console.log("Init Sound")); } }
+        function playNotification() { if(soundEnabled) { const audio = document.getElementById('order-sound'); audio.currentTime = 0; audio.play().catch(e => {}); } }
 
         function recalculateData() {
             if(!window.ordersSnapshot) return;
-            
-            udhaarMap = {}; allHistoryOrders = [];
-            let liveHtml = '', sales = 0, activeCount = 0;
+            udhaarMap = {}; allHistoryOrders = []; let liveHtml = '', sales = 0, activeCount = 0;
 
-            if(window.paymentsSnapshot) {
-                window.paymentsSnapshot.docs.forEach(doc => {
-                    const d = doc.data();
-                    if(!udhaarMap[d.phone]) udhaarMap[d.phone] = { name: "Unknown", debit: 0, credit: 0 };
-                    udhaarMap[d.phone].credit += d.amount;
-                });
-            }
+            if(window.paymentsSnapshot) { window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(!udhaarMap[d.phone]) udhaarMap[d.phone] = { name: "Unknown", debit: 0, credit: 0 }; udhaarMap[d.phone].credit += d.amount; }); }
 
             window.ordersSnapshot.docs.forEach(doc => {
                 const data = doc.data(); const id = doc.id;
                 const orderTime = data.timestamp ? data.timestamp.seconds : 0;
-
                 if(data.status === 'completed' || data.status === 'cancelled') allHistoryOrders.push({id, ...data});
-
-                if(data.paymentMode === 'Udhaar' && data.customerPhone) {
-                    if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 };
-                    if(data.status !== 'cancelled') {
-                        udhaarMap[data.customerPhone].debit += data.totalAmount;
-                        udhaarMap[data.customerPhone].name = data.customerName;
-                    }
-                }
-
-                if(orderTime > lastResetSeconds) {
-                    if(data.status === 'completed') sales += data.totalAmount;
-                }
+                if(data.paymentMode === 'Udhaar' && data.customerPhone) { if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 }; if(data.status !== 'cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; } }
+                if(orderTime > lastResetSeconds && data.status === 'completed') sales += data.totalAmount;
 
                 const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
                 if(isActive) {
                     activeCount++;
                     const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
-                    
-                    // Create Item String for WhatsApp
                     const itemStr = data.items.map(i => `${i.qty} x ${i.name}`).join(', ');
                     
+                    // Added Address Display
                     liveHtml += `
                     <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'}">
                         <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3>
-                                <h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3>
-                            </div>
-                            <button onclick="sendWhatsApp('${data.customerName}', '${data.customerPhone}', '${itemStr}', ${data.totalAmount})" class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95">
-                                <i class="fab fa-whatsapp"></i>
-                            </button>
+                            <div><h3 class="font-bold text-lg">${data.customerName} <span class="text-sm text-gray-400">(${data.paymentMode})</span></h3>
+                            ${data.customerAddress ? `<p class="text-xs text-orange-200 mb-1"><i class="fas fa-map-marker-alt"></i> ${data.customerAddress}</p>` : ''}
+                            <h3 class="font-bold text-orange-400">₹${data.totalAmount}</h3></div>
+                            <button onclick="sendWhatsApp('${data.customerName}', '${data.customerPhone}', '${itemStr}', ${data.totalAmount})" class="bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg"><i class="fab fa-whatsapp"></i></button>
                         </div>
                         <ul class="text-sm text-gray-300 mt-2 mb-3">${data.items.map(i => `<li>${i.qty} x ${i.name}</li>`).join('')}</ul>
                         ${isUpiPending ? `<div class="bg-yellow-900/50 text-yellow-200 text-xs p-2 rounded mb-2 flex justify-between items-center"><span>UPI Check!</span><button onclick="verifyPayment('${id}')" class="bg-yellow-600 text-white px-2 py-1 rounded">Verify</button></div>` : ''}
                         <div class="flex gap-2 mt-2">
-                            <select onchange="updateStatus('${id}', this.value)" class="bg-gray-700 text-white text-sm p-2 rounded border border-gray-600">
-                                <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option><option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option>
-                            </select>
+                            <select onchange="updateStatus('${id}', this.value)" class="bg-gray-700 text-white text-sm p-2 rounded border border-gray-600"><option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option><option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option></select>
                             <button onclick="markComplete('${id}')" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold flex-1">Complete</button>
                             <button onclick="cancelOrder('${id}')" class="bg-red-900 text-red-200 px-3 py-2 rounded"><i class="fas fa-trash"></i></button>
                         </div></div>`;
@@ -197,46 +142,25 @@
 
             if(activeCount > lastPendingCount) playNotification();
             lastPendingCount = activeCount;
-
             document.getElementById('view-live').innerHTML = liveHtml || '<p class="text-center text-gray-500 mt-10">No active orders.</p>';
             document.getElementById('total-sales').innerText = sales;
             document.getElementById('pending-count').innerText = activeCount;
-            renderUdhaar();
-            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
         }
 
-        // --- WHATSAPP FUNCTION ---
         function sendWhatsApp(name, phone, items, total) {
-            if(!phone) { alert("Customer phone number nahi hai."); return; }
-            // Add 91 if length is 10
-            let p = phone.replace(/\D/g,''); // remove non-digits
-            if(p.length === 10) p = "91" + p;
-            
-            const text = `*SGMC Chai Stall Bill* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you! Visit again.`;
-            const url = `https://wa.me/${p}?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
+            if(!phone) { alert("No Phone."); return; }
+            let p = phone.replace(/\D/g,''); if(p.length === 10) p = "91" + p;
+            const text = `*SGMC Chai Stall* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you!`;
+            window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // --- RENDERERS ---
         function renderUdhaar() {
-            const list = document.getElementById('udhaar-list'); 
-            const q = document.getElementById('search-udhaar').value.toLowerCase(); 
-            let html = '';
+            const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
             for(let phone in udhaarMap) {
-                const u = udhaarMap[phone]; 
-                const netDue = u.debit - u.credit;
+                const u = udhaarMap[phone]; const netDue = u.debit - u.credit;
                 if(netDue > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) {
-                    html += `
-                    <div class="card p-4 flex justify-between items-center mb-2">
-                        <div><h4 class="font-bold text-lg">${u.name}</h4><p class="text-xs text-gray-400">${phone}</p></div>
-                        <div class="text-right">
-                            <h4 class="text-red-400 font-bold text-xl">₹${netDue}</h4>
-                            <div class="flex gap-2 mt-1 justify-end">
-                                <button onclick="sendWhatsApp('${u.name}', '${phone}', 'Udhaar Reminder', ${netDue})" class="bg-green-600 w-6 h-6 rounded flex items-center justify-center text-xs"><i class="fab fa-whatsapp"></i></button>
-                                <button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-xs px-2 py-1 rounded">Settle</button>
-                            </div>
-                        </div>
-                    </div>`;
+                    html += `<div class="card p-4 flex justify-between items-center mb-2"><div><h4 class="font-bold text-lg">${u.name}</h4><p class="text-xs text-gray-400">${phone}</p></div><div class="text-right"><h4 class="text-red-400 font-bold text-xl">₹${netDue}</h4><div class="flex gap-2 mt-1 justify-end"><button onclick="sendWhatsApp('${u.name}', '${phone}', 'Udhaar Reminder', ${netDue})" class="bg-green-600 w-6 h-6 rounded flex items-center justify-center text-xs"><i class="fab fa-whatsapp"></i></button><button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-xs px-2 py-1 rounded">Settle</button></div></div></div>`;
                 }
             }
             list.innerHTML = html || "<p class='text-center text-gray-500'>No Udhaar pending.</p>";
@@ -244,31 +168,14 @@
 
         function renderHistory() {
             const container = document.getElementById('history-container');
-            let groups = {}; 
-            allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
+            let groups = {}; allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
             if(Object.keys(groups).length === 0) { container.innerHTML = "<p class='text-center text-gray-500'>No history.</p>"; return; }
-            
             container.innerHTML = Object.keys(groups).map(p => {
-                const g = groups[p]; 
-                const t = g.orders.reduce((s, o) => s + (o.status === 'completed' ? o.totalAmount : 0), 0);
-                return `
-                <div class="card overflow-hidden">
-                    <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-4 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-700">
-                        <div><h3 class="font-bold text-white">${g.name}</h3><p class="text-xs text-gray-400">${p}</p></div>
-                        <div class="text-right"><p class="text-orange-400 font-bold">Total: ₹${t}</p><p class="text-xs text-gray-500">${g.orders.length} orders</p></div>
-                    </div>
-                    <div class="hidden bg-gray-900 p-2 space-y-2 border-t border-gray-700">
-                        ${g.orders.map(o => {
-                            const dateObj = o.timestamp ? new Date(o.timestamp.toDate()) : new Date();
-                            const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                            return `
-                            <div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
-                                <div><span class="text-gray-400 text-xs block">${dateStr}</span> <span class="font-bold ${o.status==='completed'?'text-green-400':'text-red-400'}">${o.status}</span><p class="text-xs text-gray-500">${o.items.map(i=>i.name).join(', ')}</p></div>
-                                <div class="flex items-center gap-3"><span class="font-bold text-white">₹${o.totalAmount}</span><button onclick="deleteHistoryItem('${o.id}')" class="text-red-500 hover:text-red-400 p-1"><i class="fas fa-trash"></i></button></div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>`;
+                const g = groups[p]; const t = g.orders.reduce((s, o) => s + (o.status === 'completed' ? o.totalAmount : 0), 0);
+                return `<div class="card overflow-hidden"><div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-4 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-700"><div><h3 class="font-bold text-white">${g.name}</h3><p class="text-xs text-gray-400">${p}</p></div><div class="text-right"><p class="text-orange-400 font-bold">Total: ₹${t}</p><p class="text-xs text-gray-500">${g.orders.length} orders</p></div></div><div class="hidden bg-gray-900 p-2 space-y-2 border-t border-gray-700">${g.orders.map(o => {
+                    const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleString() : '';
+                    return `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm"><div><span class="text-gray-400 text-xs block">${dateStr}</span> <span class="font-bold ${o.status==='completed'?'text-green-400':'text-red-400'}">${o.status}</span><p class="text-xs text-gray-500">${o.items.map(i=>i.name).join(', ')}</p></div><div class="flex items-center gap-3"><span class="font-bold text-white">₹${o.totalAmount}</span><button onclick="deleteHistoryItem('${o.id}')" class="text-red-500 hover:text-red-400 p-1"><i class="fas fa-trash"></i></button></div></div>`;
+                }).join('')}</div></div>`;
             }).join('');
         }
 
@@ -286,7 +193,6 @@
         function verifyPayment(id) { if(confirm('Received?')) db.collection('orders').doc(id).update({ paymentVerified: true }); }
         function switchTab(t) { ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-400'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-400'); if(t==='history') renderHistory(); }
         function filterUdhaar() { renderUdhaar(); }
-
         init();
     </script>
 </body>
