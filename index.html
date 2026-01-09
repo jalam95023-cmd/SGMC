@@ -502,7 +502,10 @@
         function payUdhaarViaUPI() {
             const amount = document.getElementById('my-udhaar-amount').innerText;
             const name = userProfile.name;
-            const upiId = "tumhari-upi-id@okicici"; // Replace with YOUR UPI ID
+            
+            // Updated UPI ID
+            const upiId = "9523196156@ybl";
+            
             const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&tn=ClearUdhaar_${name}`;
             window.location.href = link;
         }
