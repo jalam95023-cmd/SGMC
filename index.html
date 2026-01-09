@@ -12,51 +12,33 @@
     <style>
         body { background-color: #121212; color: #e0e0e0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         .item-card { background: #1e1e1e; border-radius: 16px; border: 1px solid #333; transition: 0.2s; }
-        .item-card:active { transform: scale(0.98); }
         .btn-primary { background: linear-gradient(135deg, #FF6B6B, #FF8E53); color: white; }
         .floating-cart { box-shadow: 0 -4px 15px rgba(0,0,0,0.7); background: #1f2937; }
         
-        /* Small Toast Notification */
         #toast {
-            visibility: hidden;
-            min-width: 250px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 50px;
-            padding: 16px;
-            position: fixed;
-            z-index: 100;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-size: 14px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            border: 1px solid #4CAF50;
+            visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center;
+            border-radius: 50px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px;
+            transform: translateX(-50%); font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #4CAF50;
         }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
-        /* Shop Closed Bar */
-        .shop-closed-bar { background: #EF4444; color: white; text-align: center; padding: 5px; font-size: 12px; font-weight: bold; display: none; }
+        
+        .shop-closed-bar { background: #EF4444; color: white; text-align: center; padding: 8px; font-size: 12px; font-weight: bold; display: none; width: 100%; position: fixed; top: 0; z-index: 50; }
     </style>
 </head>
-<body class="pb-32 select-none">
+<body class="pb-32 select-none pt-0">
 
-    <div id="shop-closed-bar" class="shop-closed-bar">
-        ⚠️ Dukan Abhi Band Hai. Orders nahi liye ja rahe.
-    </div>
+    <div id="shop-closed-bar" class="shop-closed-bar">⚠️ Dukan Abhi Band Hai.</div>
 
-    <div class="p-4 flex justify-between items-center bg-gray-900 sticky top-0 z-20 border-b border-gray-800">
+    <div class="p-4 flex justify-between items-center bg-gray-900 sticky top-0 z-20 border-b border-gray-800 mt-0" id="main-header">
         <h1 class="text-xl font-bold text-orange-500 tracking-wider">SGMC</h1>
         <button onclick="showMyOrders()" class="text-xs bg-gray-800 border border-gray-600 px-3 py-1 rounded text-white active:bg-gray-700">
             <i class="fas fa-history mr-1"></i> My Orders
         </button>
     </div>
 
-    <div class="p-4 grid grid-cols-1 gap-3" id="menu-container">
-        </div>
+    <div class="p-4 grid grid-cols-1 gap-3" id="menu-container"></div>
 
     <div id="live-order-tracker" class="hidden m-4 p-4 bg-blue-900/20 border border-blue-500 rounded-xl">
         <h3 class="text-blue-400 font-bold text-sm mb-1"><i class="fas fa-spinner fa-spin mr-2"></i>Live Status</h3>
@@ -80,9 +62,7 @@
                 <span class="text-gray-400 text-xs font-medium uppercase"><span id="cart-count">0</span> Items</span>
                 <span class="text-2xl font-bold text-white">₹<span id="cart-total">0</span></span>
             </div>
-            <button onclick="openCheckout()" class="btn-primary px-8 py-3 rounded-xl font-bold shadow-lg">
-                View Cart <i class="fas fa-shopping-bag ml-2"></i>
-            </button>
+            <button onclick="openCheckout()" class="btn-primary px-8 py-3 rounded-xl font-bold shadow-lg">View Cart</button>
         </div>
     </div>
 
@@ -92,11 +72,9 @@
                 <h2 class="text-2xl font-bold text-white">Checkout</h2>
                 <button onclick="closeCheckout()" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
-            
             <div class="space-y-4">
                 <input type="text" id="c-name" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Apna Naam">
                 <input type="tel" id="c-phone" class="w-full p-3 bg-gray-700 rounded-xl text-white outline-none focus:ring-2 focus:ring-orange-500" placeholder="Mobile Number">
-
                 <div>
                     <label class="text-xs text-gray-400 uppercase ml-1">Payment Method</label>
                     <div class="grid grid-cols-3 gap-3 mt-1">
@@ -106,10 +84,7 @@
                     </div>
                 </div>
                 <input type="hidden" id="selected-payment" value="">
-
-                <button onclick="placeOrder()" id="confirm-btn" class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg mt-2">
-                    Confirm Order
-                </button>
+                <button onclick="placeOrder()" id="confirm-btn" class="w-full bg-green-600 text-white p-4 rounded-xl font-bold text-lg shadow-lg mt-2">Confirm Order</button>
             </div>
         </div>
     </div>
@@ -120,13 +95,12 @@
                 <h2 class="text-2xl font-bold text-white">Order History</h2>
                 <button onclick="document.getElementById('history-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times fa-lg"></i></button>
             </div>
-            <div id="history-list" class="space-y-4 pb-10">
-                </div>
+            <div id="history-list" class="space-y-4 pb-10"></div>
         </div>
     </div>
 
     <script>
-        const YOUR_UPI_ID = "YOUR_UPI_ID_HERE"; // <--- UPI ID HERE
+        const YOUR_UPI_ID = "9523196156@ybl"; // <--- UPI ID HERE
         
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
@@ -143,117 +117,98 @@
         const menuItems = [
             { id: 1, name: "Normal Chai", price: 10, icon: "☕", type: "simple" },
             { id: 2, name: "Adrak Chai", price: 15, icon: "🍵", type: "simple" },
-            { id: 3, name: "Cigarette", price: 0, icon: "🚬", type: "variant", 
-              variants: [ {name: "Chhoti Gold", price: 10}, {name: "Advance", price: 18}, {name: "Marlboro", price: 20} ] 
-            },
+            { id: 3, name: "Cigarette", price: 0, icon: "🚬", type: "variant", variants: [ {name: "Chhoti Gold", price: 10}, {name: "Advance", price: 18}, {name: "Marlboro", price: 20} ] },
             { id: 4, name: "Matthi", price: 5, icon: "🍘", type: "simple" },
             { id: 5, name: "Veg Roll", price: 10, icon: "🌯", type: "simple" },
             { id: 6, name: "Biscuit", price: 5, icon: "🍪", type: "simple" },
             { id: 7, name: "Namkeen", price: 10, icon: "🥡", type: "simple" }
         ];
 
-        let cart = {}; 
-        let isShopOpen = true;
+        let cart = {}; let isShopOpen = true; let disabledItems = [];
 
         function init() {
-            // Check Shop Status
+            // Listen to Shop Status
             db.collection('settings').doc('status').onSnapshot(doc => {
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
                 const bar = document.getElementById('shop-closed-bar');
-                if(!isShopOpen) {
-                    bar.style.display = 'block';
-                    document.body.style.paddingTop = '30px';
-                } else {
-                    bar.style.display = 'none';
-                    document.body.style.paddingTop = '0px';
-                }
-                renderMenu(); // Re-render to disable buttons
+                const header = document.getElementById('main-header');
+                if(!isShopOpen) { bar.style.display = 'block'; header.style.marginTop = '30px'; } 
+                else { bar.style.display = 'none'; header.style.marginTop = '0px'; }
+                renderMenu();
             });
 
-            // Restore User & Listen
+            // Listen to Stock Status (Disabled Items)
+            db.collection('settings').doc('menu').onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    // Convert object { "1": false, "2": true } to array of disabled IDs
+                    disabledItems = Object.keys(data).filter(k => data[k] === false).map(Number);
+                }
+                renderMenu();
+            });
+
             const savedPhone = localStorage.getItem('userPhone');
-            if(savedPhone) {
-                document.getElementById('c-phone').value = savedPhone;
-                listenToLatestOrder(savedPhone);
-            }
+            if(savedPhone) { document.getElementById('c-phone').value = savedPhone; listenToLatestOrder(savedPhone); }
         }
 
         function renderMenu() {
             const container = document.getElementById('menu-container');
-            container.innerHTML = menuItems.map(item => `
+            // Filter out disabled items
+            const activeItems = menuItems.filter(item => !disabledItems.includes(item.id));
+            
+            container.innerHTML = activeItems.map(item => `
                 <div class="item-card p-4 flex justify-between items-center shadow-md ${!isShopOpen ? 'opacity-50' : ''}">
                     <div class="flex items-center space-x-4">
                         <span class="text-3xl">${item.icon}</span>
-                        <div>
-                            <h3 class="font-bold text-lg text-white">${item.name}</h3>
-                            <p class="text-orange-400 font-medium">${item.type === 'variant' ? 'Choose Type' : '₹'+item.price}</p>
-                        </div>
+                        <div><h3 class="font-bold text-lg text-white">${item.name}</h3><p class="text-orange-400 font-medium">${item.type === 'variant' ? 'Choose Type' : '₹'+item.price}</p></div>
                     </div>
                     ${renderAddButton(item)}
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
         function renderAddButton(item) {
             const disabled = !isShopOpen ? 'disabled style="pointer-events:none;"' : '';
-            if(item.type === 'variant') {
-                return `<button onclick="openVariantModal(${item.id})" ${disabled} class="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-orange-400 font-bold text-sm">Select</button>`;
-            } else {
-                return `
-                <div class="flex items-center bg-gray-800 rounded-lg overflow-hidden border border-gray-600" ${disabled}>
+            if(item.type === 'variant') return `<button onclick="openVariantModal(${item.id})" ${disabled} class="px-4 py-2 bg-gray-800 border border-gray-600 rounded text-orange-400 font-bold text-sm">Select</button>`;
+            return `<div class="flex items-center bg-gray-800 rounded-lg overflow-hidden border border-gray-600" ${disabled}>
                     <button onclick="updateCart('${item.name}', ${item.price}, -1)" class="w-8 h-8 flex items-center justify-center text-red-400 font-bold">-</button>
                     <span id="qty-${item.name.replace(/\s/g, '')}" class="w-6 text-center text-sm font-bold text-white">0</span>
-                    <button onclick="updateCart('${item.name}', ${item.price}, 1)" class="w-8 h-8 flex items-center justify-center text-green-400 font-bold">+</button>
-                </div>`;
-            }
+                    <button onclick="updateCart('${item.name}', ${item.price}, 1)" class="w-8 h-8 flex items-center justify-center text-green-400 font-bold">+</button></div>`;
         }
 
-        // --- VARIANT & CART LOGIC ---
+        // ... [Baki function same as before] ...
         function openVariantModal(id) {
             const item = menuItems.find(i => i.id === id);
             document.getElementById('variant-options').innerHTML = item.variants.map(v => `
-                <button onclick="addVariantToCart('${v.name}', ${v.price})" class="p-4 bg-gray-700 rounded-xl hover:bg-orange-600">
-                    <p class="font-bold text-white">${v.name}</p>
-                    <p class="text-orange-300 text-sm">₹${v.price}</p>
-                </button>
-            `).join('');
+                <button onclick="addVariantToCart('${v.name}', ${v.price})" class="p-4 bg-gray-700 rounded-xl hover:bg-orange-600"><p class="font-bold text-white">${v.name}</p><p class="text-orange-300 text-sm">₹${v.price}</p></button>`).join('');
             document.getElementById('variant-modal').classList.remove('hidden');
         }
         function closeVariantModal() { document.getElementById('variant-modal').classList.add('hidden'); }
-        function addVariantToCart(name, price) { updateCart(name, price, 1); closeVariantModal(); }
+        function addVariantToCart(n, p) { updateCart(n, p, 1); closeVariantModal(); }
 
         function updateCart(name, price, change) {
             if (!cart[name]) cart[name] = { price: price, qty: 0 };
             cart[name].qty += change;
             if (cart[name].qty <= 0) delete cart[name];
-            
-            const safeName = name.replace(/\s/g, '');
-            const qtyEl = document.getElementById(`qty-${safeName}`);
+            const qtyEl = document.getElementById(`qty-${name.replace(/\s/g, '')}`);
             if(qtyEl) qtyEl.innerText = cart[name] ? cart[name].qty : 0;
             renderCartSummary();
         }
 
         function renderCartSummary() {
             let total = 0, count = 0;
-            for (const key in cart) { total += cart[key].price * cart[key].qty; count += cart[key].qty; }
+            for (const k in cart) { total += cart[k].price * cart[k].qty; count += cart[k].qty; }
             document.getElementById('cart-total').innerText = total;
             document.getElementById('cart-count').innerText = count;
-            const cartBar = document.getElementById('cart-bar');
-            if (count > 0) cartBar.classList.remove('hidden'); else cartBar.classList.add('hidden');
+            const bar = document.getElementById('cart-bar');
+            if (count > 0) bar.classList.remove('hidden'); else bar.classList.add('hidden');
         }
 
-        // --- CHECKOUT ---
         function openCheckout() { document.getElementById('checkout-modal').classList.remove('hidden'); }
         function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
-        
         function selectPayment(mode) {
             document.getElementById('selected-payment').value = mode;
-            document.querySelectorAll('.pay-btn').forEach(b => {
-                b.classList.remove('bg-orange-600', 'text-white', 'border-transparent');
-                b.classList.add('bg-gray-700', 'border-gray-600');
-            });
-            event.target.classList.remove('bg-gray-700', 'border-gray-600');
-            event.target.classList.add('bg-orange-600', 'text-white', 'border-transparent');
+            document.querySelectorAll('.pay-btn').forEach(b => { b.classList.remove('bg-orange-600', 'text-white', 'border-transparent'); b.classList.add('bg-gray-700', 'border-gray-600'); });
+            event.target.classList.remove('bg-gray-700', 'border-gray-600'); event.target.classList.add('bg-orange-600', 'text-white', 'border-transparent');
         }
 
         function placeOrder() {
@@ -261,97 +216,53 @@
             const phone = document.getElementById('c-phone').value.trim();
             const mode = document.getElementById('selected-payment').value;
             const total = parseInt(document.getElementById('cart-total').innerText);
-
             if (!name || !phone || !mode) { alert("Sab details bharo!"); return; }
-            
             localStorage.setItem('userPhone', phone);
-            const items = [];
-            for (const key in cart) { items.push({ name: key, qty: cart[key].qty, price: cart[key].price }); }
-
-            const orderData = {
-                customerName: name, customerPhone: phone, items: items, totalAmount: total,
-                paymentMode: mode, paymentVerified: (mode === 'Cash'), status: 'pending',
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
+            const items = []; for (const k in cart) { items.push({ name: k, qty: cart[k].qty, price: cart[k].price }); }
+            const orderData = { customerName: name, customerPhone: phone, items: items, totalAmount: total, paymentMode: mode, paymentVerified: (mode === 'Cash'), status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() };
             db.collection('orders').add(orderData).then(() => {
-                closeCheckout();
-                cart = {}; renderCartSummary();
-                
-                // Show Small Toast
-                const toast = document.getElementById("toast");
-                toast.className = "show";
-                setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
-
+                closeCheckout(); cart = {}; renderCartSummary();
+                const toast = document.getElementById("toast"); toast.className = "show"; setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
                 if (mode === 'UPI') { window.location.href = `upi://pay?pa=${YOUR_UPI_ID}&pn=SGMC&am=${total}&tn=Order`; }
                 listenToLatestOrder(phone);
-            }).catch(err => alert("Error: " + err.message));
+            });
         }
 
-        // --- LIVE TRACKING & HISTORY ---
         function listenToLatestOrder(phone) {
-            db.collection('orders').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(1)
-                .onSnapshot(snapshot => {
-                    if(!snapshot.empty) {
-                        const data = snapshot.docs[0].data();
-                        if(data.status !== 'completed' && data.status !== 'cancelled') {
-                            document.getElementById('live-order-tracker').classList.remove('hidden');
-                            let statusText = "Order Received";
-                            if(data.status === 'cooking') statusText = "Ban Raha Hai 🍳";
-                            if(data.status === 'ready') statusText = "Ready Hai! Le jao ✅";
-                            document.getElementById('live-status-text').innerText = statusText;
-                            
-                            const payEl = document.getElementById('live-payment-status');
-                            if(data.paymentMode === 'UPI') {
-                                payEl.innerHTML = data.paymentVerified ? "<span class='text-green-400'>Confirmed ✅</span>" : "<span class='text-yellow-400'>Waiting for Admin...</span>";
-                            } else { payEl.innerText = data.paymentMode; }
-                        } else {
-                            document.getElementById('live-order-tracker').classList.add('hidden');
-                        }
-                    }
-                });
+            db.collection('orders').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(1).onSnapshot(snap => {
+                if(!snap.empty) {
+                    const data = snap.docs[0].data();
+                    if(data.status !== 'completed' && data.status !== 'cancelled') {
+                        document.getElementById('live-order-tracker').classList.remove('hidden');
+                        let st = "Order Received"; if(data.status==='cooking') st="Ban Raha Hai 🍳"; if(data.status==='ready') st="Ready Hai! Le jao ✅";
+                        document.getElementById('live-status-text').innerText = st;
+                        const pEl = document.getElementById('live-payment-status');
+                        if(data.paymentMode === 'UPI') pEl.innerHTML = data.paymentVerified ? "<span class='text-green-400'>Confirmed ✅</span>" : "<span class='text-yellow-400'>Waiting for Admin...</span>";
+                        else pEl.innerText = data.paymentMode;
+                    } else document.getElementById('live-order-tracker').classList.add('hidden');
+                }
+            });
         }
 
         function showMyOrders() {
             const phone = localStorage.getItem('userPhone');
             if(!phone) { alert("Koi purana order nahi mila."); return; }
-            
-            // Explicitly clearing list first
-            document.getElementById('history-list').innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
+            const list = document.getElementById('history-list');
+            list.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
             document.getElementById('history-modal').classList.remove('hidden');
-
-            db.collection('orders').where('customerPhone', '==', phone).orderBy('timestamp', 'desc').limit(20).get()
-            .then(snap => {
-                if(snap.empty) {
-                    document.getElementById('history-list').innerHTML = '<p class="text-center text-gray-500">No Orders Found</p>';
-                    return;
-                }
-                const list = document.getElementById('history-list');
-                list.innerHTML = snap.docs.map(doc => {
-                    const data = doc.data();
+            db.collection('orders').where('customerPhone', '==', phone).get().then(snap => {
+                if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500">No Orders Found</p>'; return; }
+                const orders = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                orders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                list.innerHTML = orders.map(data => {
                     const date = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '';
-                    let statusColor = 'text-gray-400';
-                    if(data.status === 'completed') statusColor = 'text-green-400';
-                    if(data.status === 'pending') statusColor = 'text-yellow-400';
-
-                    return `
-                        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <span class="block text-xs text-gray-500">${date}</span>
-                                    <span class="font-bold text-lg text-white">₹${data.totalAmount}</span>
-                                </div>
-                                <span class="text-xs font-bold uppercase border border-gray-600 px-2 py-1 rounded ${statusColor}">${data.status}</span>
-                            </div>
-                            <p class="text-gray-300 text-sm border-t border-gray-700 pt-2 mt-2">${data.items.map(i => `${i.qty} ${i.name}`).join(', ')}</p>
-                        </div>
-                    `;
+                    let color = data.status === 'completed' ? 'text-green-400' : 'text-yellow-400';
+                    return `<div class="bg-gray-800 p-4 rounded-xl border border-gray-700 shadow-sm">
+                            <div class="flex justify-between items-start mb-2"><div><span class="block text-xs text-gray-500">${date}</span><span class="font-bold text-lg text-white">₹${data.totalAmount}</span></div><span class="text-xs font-bold uppercase border border-gray-600 px-2 py-1 rounded ${color}">${data.status}</span></div>
+                            <p class="text-gray-300 text-sm border-t border-gray-700 pt-2 mt-2">${data.items.map(i => `${i.qty} ${i.name}`).join(', ')}</p></div>`;
                 }).join('');
-            }).catch(e => {
-                document.getElementById('history-list').innerHTML = `<p class="text-red-500 text-center">Error loading history</p>`;
-            });
+            }).catch(e => { console.error(e); list.innerHTML = `<p class="text-red-500 text-center">Error: ${e.message}</p>`; });
         }
-
         init();
     </script>
 </body>
