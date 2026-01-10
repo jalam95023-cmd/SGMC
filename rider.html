@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGMC Rider</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style> body { background-color: #000; color: white; font-family: sans-serif; } </style>
+</head>
+<body class="p-4">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-xl font-bold text-blue-500">Rider App</h1>
+        <div class="text-right">
+            <p class="text-[10px] text-gray-400 uppercase">Cash Collected</p>
+            <p class="text-xl font-bold text-green-500">₹<span id="cash-hand">0</span></p>
+        </div>
+    </div>
+
+    <div id="orders-container" class="space-y-4">
+        <p class="text-center text-gray-600 mt-10">No deliveries pending.</p>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
+            authDomain: "sgmc-16568.firebaseapp.com",
+            projectId: "sgmc-16568",
+            storageBucket: "sgmc-16568.firebasestorage.app",
+            messagingSenderId: "339041646158",
+            appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
+            measurementId: "G-4996NPF55N"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        db.collection('settings').doc('rider_stats').onSnapshot(doc => {
+            document.getElementById('cash-hand').innerText = doc.data()?.cashInHand || 0;
+        });
+
+        db.collection('orders').where('status', 'in', ['ready', 'on_the_way']).onSnapshot(snap => {
+            const list = document.getElementById('orders-container');
+            if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-600 mt-10">No deliveries pending.</p>'; return; }
+            
+            list.innerHTML = snap.docs.map(doc => {
+                const d = doc.data();
+                const isReady = d.status === 'ready';
+                return `
+                <div class="bg-[#111] border border-gray-800 p-4 rounded-xl">
+                    <div class="flex justify-between mb-2">
+                        <h3 class="font-bold">${d.customerName}</h3>
+                        <span class="text-orange-500 font-bold">₹${d.totalAmount}</span>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-2">${d.customerAddress}</p>
+                    <p class="text-xs bg-gray-900 inline-block px-2 py-1 rounded text-gray-500 mb-4">${d.paymentMode}</p>
+                    
+                    <div class="flex gap-2">
+                        <button onclick="window.open('https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d.customerAddress)}')" class="flex-1 bg-gray-800 py-3 rounded-lg text-xs font-bold">MAP</button>
+                        ${isReady ? 
+                            `<button onclick="updateStatus('${doc.id}', 'on_the_way')" class="flex-1 bg-blue-600 py-3 rounded-lg text-xs font-bold">PICK UP</button>` : 
+                            `<button onclick="deliver('${doc.id}', ${d.totalAmount}, '${d.paymentMode}')" class="flex-1 bg-green-600 py-3 rounded-lg text-xs font-bold">DELIVERED</button>`
+                        }
+                    </div>
+                </div>`;
+            }).join('');
+        });
+
+        function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }); }
+        function deliver(id, amt, mode) {
+            if(confirm("Order Delivered?")) {
+                db.collection('orders').doc(id).update({ status: 'completed' });
+                if(mode === 'Cash') db.collection('settings').doc('rider_stats').update({ cashInHand: firebase.firestore.FieldValue.increment(amt) });
+            }
+        }
+    </script>
+</body>
+</html>
