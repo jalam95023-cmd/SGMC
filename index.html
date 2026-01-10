@@ -554,7 +554,7 @@
         // NEW: UPI Fallback Functions
         function attemptDeepLink() {
             const total = parseInt(document.getElementById('checkout-total').innerText);
-            const upiLink = `upi://pay?pa=9523196156@ybl&pn=SGMC&am=${total}&cu=INR`;
+            const upiLink = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${total}&cu=INR`;
             window.location.href = upiLink;
         }
 
@@ -740,7 +740,7 @@
         function payUdhaarViaUPI() {
             const amount = document.getElementById('my-udhaar-amount').innerText;
             const name = userProfile.name;
-            const upiId = "9523196156@ybl";
+            const upiId = "7065821697@ybl";
             const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&cu=INR`;
             window.location.href = link;
         }
