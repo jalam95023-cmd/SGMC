@@ -14,10 +14,11 @@
         .tab-active { border-bottom: 3px solid #F97316; color: #F97316; font-weight: bold; }
         .modal-overlay { background: rgba(0,0,0,0.92); backdrop-filter: blur(10px); z-index: 100; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        
-        /* Smooth Fade In */
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Toast Animation */
+        .toast-enter { transform: translateY(100%); opacity: 0; }
+        .toast-enter-active { transform: translateY(0); opacity: 1; transition: all 0.3s ease-out; }
+        .toast-exit { transform: translateY(0); opacity: 1; }
+        .toast-exit-active { transform: translateY(100%); opacity: 0; transition: all 0.3s ease-in; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-24" onclick="enableSound()">
@@ -27,13 +28,11 @@
             <h1 class="text-2xl font-bold text-orange-500">SGMC <span class="text-white text-sm">Manager</span></h1>
             <p id="shop-badge" class="text-[10px] uppercase font-bold text-gray-500">Loading...</p>
         </div>
-        <button id="shop-toggle-btn" onclick="toggleShop()" class="px-4 py-2 rounded-xl text-[10px] font-bold bg-gray-800 border border-gray-700 shadow-lg transition-all active:scale-95">
-            LOADING...
-        </button>
+        <button id="shop-toggle-btn" onclick="toggleShop()" class="px-4 py-2 rounded-xl text-[10px] font-bold bg-gray-800 border border-gray-700 shadow-lg active:scale-95 transition">LOADING...</button>
     </div>
 
     <div class="grid grid-cols-2 gap-3 mb-4">
-        <div class="card p-4 relative overflow-hidden">
+        <div class="card p-4 relative overflow-hidden" onclick="openSalesReport()">
             <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Today's Sales</p>
             <h2 class="text-3xl font-bold text-green-500 mt-1">₹<span id="total-sales">0</span></h2>
             <i class="fas fa-chart-line absolute -right-2 -bottom-2 opacity-10 text-5xl text-green-500"></i>
@@ -53,7 +52,7 @@
             <i class="fas fa-file-invoice-dollar mb-2 text-xl block"></i> REPORTS & RESET
         </button>
         <button onclick="switchTab('rider')" class="bg-purple-900/20 border border-purple-500/30 text-purple-400 p-3 rounded-xl text-[10px] font-bold hover:bg-purple-900/40 transition">
-            <i class="fas fa-motorcycle mb-2 text-xl block"></i> RIDER
+            <i class="fas fa-motorcycle mb-2 text-xl block"></i> RIDER MGMT
         </button>
     </div>
 
@@ -63,49 +62,53 @@
         <button onclick="switchTab('udhaar')" id="tab-udhaar" class="flex-1 py-3 text-gray-500 text-xs tracking-wider transition-colors">UDHAAR</button>
     </div>
 
-    <div id="view-live" class="space-y-3 min-h-[200px] fade-in"></div>
-
-    <div id="view-history" class="hidden space-y-3 fade-in"></div>
-
-    <div id="view-udhaar" class="hidden space-y-3 fade-in">
+    <div id="view-live" class="space-y-3 min-h-[200px]"></div>
+    <div id="view-history" class="hidden space-y-3"></div>
+    
+    <div id="view-udhaar" class="hidden space-y-3">
         <div class="relative mb-4">
             <i class="fas fa-search absolute left-4 top-3.5 text-gray-500 text-sm"></i>
             <input type="text" id="search-udhaar" onkeyup="renderUdhaar()" placeholder="Search Customer..." class="w-full pl-10 p-3 bg-[#141414] rounded-xl border border-gray-800 text-sm focus:border-orange-500 outline-none transition">
         </div>
         <div id="udhaar-list" class="space-y-2"></div>
     </div>
-    
-    <div id="view-rider" class="hidden space-y-4 fade-in">
-        <div class="card p-6 text-center bg-gradient-to-br from-purple-900/30 to-black border-purple-500/30">
-            <div class="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-wallet text-2xl text-purple-400"></i>
+
+    <div id="view-rider" class="hidden space-y-6">
+        <div class="card p-5 bg-gradient-to-br from-purple-900/20 to-black border-purple-500/30">
+            <h3 class="text-sm font-bold text-purple-400 mb-4 uppercase tracking-widest"><i class="fas fa-wallet mr-2"></i> Cash Management</h3>
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-400">Rider currently holds</p>
+                    <h2 class="text-3xl font-bold text-white mt-1">₹<span id="rider-cash-val">0</span></h2>
+                </div>
+                <button onclick="settleRiderCash()" class="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg transition">
+                    RECEIVE CASH
+                </button>
             </div>
-            <p class="text-xs text-gray-400 uppercase tracking-widest">Cash with Rider</p>
-            <h1 class="text-4xl font-bold text-white mt-2 mb-4">₹<span id="rider-cash-val">0</span></h1>
-            <button onclick="settleRiderCash()" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-bold text-xs shadow-lg shadow-purple-900/40 transition">
-                COLLECT CASH & SETTLE
-            </button>
         </div>
-        <p class="text-center text-gray-600 text-xs mt-4">Manage Rider Deliveries & Cash here.</p>
+
+        <div>
+            <h3 class="text-sm font-bold text-gray-400 mb-3 uppercase tracking-widest px-1">Ready for Handover</h3>
+            <div id="handover-list" class="space-y-3">
+                <p class="text-center text-gray-600 py-4 text-xs">No orders waiting for pickup</p>
+            </div>
+        </div>
     </div>
 
     <div id="inventory-modal" class="fixed inset-0 modal-overlay hidden flex flex-col justify-end sm:justify-center">
-        <div class="bg-[#111] w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl border-t sm:border border-gray-800 p-6 max-h-[90vh] flex flex-col shadow-2xl animate-[slideUp_0.3s_ease-out]">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-4">
-                <h2 class="text-xl font-bold text-white"><i class="fas fa-edit text-blue-500 mr-2"></i>Manage Stock</h2>
-                <button onclick="closeModal('inventory-modal')" class="bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times text-gray-400"></i></button>
+        <div class="bg-[#111] w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl border-t sm:border border-gray-800 p-6 max-h-[90vh] flex flex-col shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white"><i class="fas fa-boxes text-blue-500 mr-2"></i>Inventory</h2>
+                <button onclick="closeModal('inventory-modal')" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div id="inventory-list" class="space-y-3 overflow-y-auto flex-1 pr-1 mb-4">
-                </div>
-
-            <div class="pt-4 border-t border-gray-800 bg-[#111]">
+            <div id="inventory-list" class="space-y-3 overflow-y-auto flex-1 pr-1 mb-4"></div>
+            <div class="pt-4 border-t border-gray-800">
                 <p class="text-[10px] text-gray-500 uppercase font-bold mb-2">Add New Item</p>
                 <div class="flex gap-2 mb-2">
                     <input id="new-p-name" placeholder="Item Name" class="flex-1 bg-black border border-gray-800 p-3 rounded-lg text-sm outline-none focus:border-blue-500">
                 </div>
                 <div class="flex gap-2">
-                    <input id="new-p-price" type="number" placeholder="Price (₹)" class="w-1/2 bg-black border border-gray-800 p-3 rounded-lg text-sm outline-none focus:border-blue-500">
+                    <input id="new-p-price" type="number" placeholder="Price" class="w-1/2 bg-black border border-gray-800 p-3 rounded-lg text-sm outline-none focus:border-blue-500">
                     <input id="new-p-stock" type="number" placeholder="Qty" class="w-1/2 bg-black border border-gray-800 p-3 rounded-lg text-sm outline-none focus:border-blue-500">
                     <button onclick="addNewProduct()" class="bg-blue-600 w-12 rounded-lg flex items-center justify-center text-white shadow-lg"><i class="fas fa-plus"></i></button>
                 </div>
@@ -115,20 +118,14 @@
 
     <div id="reports-modal" class="fixed inset-0 modal-overlay hidden flex flex-col justify-end sm:justify-center">
         <div class="bg-[#111] w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl border-t sm:border border-gray-800 p-6 max-h-[90vh] flex flex-col shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-white"><i class="fas fa-history text-red-500 mr-2"></i>Sales Reports</h2>
-                <button onclick="closeModal('reports-modal')" class="bg-gray-800 w-8 h-8 rounded-full flex items-center justify-center"><i class="fas fa-times text-gray-400"></i></button>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white"><i class="fas fa-history text-red-500 mr-2"></i>Reports</h2>
+                <button onclick="closeModal('reports-modal')" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="reports-list">
-                </div>
-
-            <div class="mt-6 pt-4 border-t border-gray-800 text-center">
+            <div id="reports-list" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
+            <div class="mt-4 pt-4 border-t border-gray-800 text-center">
                 <p class="text-xs text-gray-500 mb-3">Today's Sales: <span class="text-white font-bold" id="modal-today-sales">₹0</span></p>
-                <button onclick="performResetDay()" class="w-full bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-bold text-sm shadow-lg shadow-red-900/30 flex items-center justify-center gap-2">
-                    <i class="fas fa-power-off"></i> RESET DAY & ARCHIVE
-                </button>
-                <p class="text-[10px] text-gray-600 mt-2">This will save today's data and reset counter to 0.</p>
+                <button onclick="performResetDay()" class="w-full bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-bold text-sm shadow-lg">RESET DAY NOW</button>
             </div>
         </div>
     </div>
@@ -137,23 +134,19 @@
         <div class="bg-[#1a1a1a] w-full max-w-xs p-6 rounded-2xl border border-gray-700 shadow-2xl">
             <h3 class="text-lg font-bold mb-1 text-white">Settle Udhaar</h3>
             <p class="text-gray-400 text-sm mb-4" id="settle-name"></p>
-            <div class="text-center mb-6">
-                <p class="text-xs text-gray-500 uppercase">Current Due</p>
-                <p class="text-3xl font-bold text-red-400">₹<span id="settle-due">0</span></p>
-            </div>
-            <input type="number" id="settle-amount" class="w-full p-3 bg-black rounded-lg text-white mb-4 border border-gray-700 text-center font-bold text-lg outline-none focus:border-green-500" placeholder="Amount Received">
+            <h2 class="text-3xl font-bold text-center text-red-400 mb-6">₹<span id="settle-due">0</span></h2>
+            <input type="number" id="settle-amount" class="w-full p-3 bg-black rounded-lg text-white mb-4 border border-gray-700 text-center font-bold text-lg outline-none focus:border-green-500" placeholder="Amount">
             <div class="flex gap-3">
-                <button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="flex-1 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-xs">Cancel</button>
-                <button onclick="submitPayment()" class="flex-1 py-2 rounded-lg bg-green-600 text-white font-bold text-xs shadow-lg">Confirm Settle</button>
+                <button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="flex-1 py-2 rounded-lg bg-gray-800 text-xs font-bold text-gray-400">Cancel</button>
+                <button onclick="submitPayment()" class="flex-1 py-2 rounded-lg bg-green-600 text-white text-xs font-bold shadow-lg">Confirm</button>
             </div>
         </div>
     </div>
 
-    <div id="toast-container" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2"></div>
+    <div id="toast-container" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 w-max max-w-[90vw]"></div>
     <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
     <script>
-        // --- CONFIG (Paste your Firebase Config here) ---
         const firebaseConfig = {
             apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
             authDomain: "sgmc-16568.firebaseapp.com",
@@ -165,17 +158,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-
-        // Default Items to ensure they always show in inventory
-        const defaultItems = [
-            { id: 'chai_norm', name: 'Normal Chai', price: 10 },
-            { id: 'chai_adrak', name: 'Adrak Chai', price: 15 },
-            { id: 'cig_gold', name: 'Cigarette (Gold)', price: 18 },
-            { id: 'matthi', name: 'Matthi', price: 5 },
-            { id: 'veg_roll', name: 'Veg Roll', price: 10 },
-            { id: 'biscuit', name: 'Biscuit', price: 5 },
-            { id: 'namkeen', name: 'Namkeen', price: 10 }
-        ];
 
         let isShopOpen = false;
         let udhaarMap = {};
@@ -189,9 +171,8 @@
             listenConfig();
             listenStatus();
             listenOrders();
-            listenPayments();
-            listenRider();
-            initProductsIfEmpty();
+            listenRiderStats();
+            listenInventory();
         }
 
         function enableSound() { 
@@ -199,11 +180,11 @@
                 document.getElementById('order-sound').play().then(() => { 
                     document.getElementById('order-sound').pause(); 
                     soundEnabled = true; 
-                }).catch(()=>{});
+                }).catch(()=>{}); 
             } 
         }
 
-        // --- SHOP STATUS ---
+        // --- SHOP TOGGLE ---
         function listenStatus() {
             db.collection('settings').doc('status').onSnapshot(doc => {
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
@@ -222,75 +203,89 @@
                 }
             });
         }
-        function toggleShop() {
-            db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened"));
-        }
+        function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened")); }
 
-        // --- ORDERS & SALES LOGIC ---
+        // --- ORDERS ---
         function listenConfig() {
             db.collection('settings').doc('config').onSnapshot(doc => {
-                if(doc.exists) lastResetSeconds = doc.data().lastReset?.seconds || 0;
-                // Re-trigger order listener when reset changes
-                listenOrders();
+                if(doc.exists) {
+                    lastResetSeconds = doc.data().lastReset?.seconds || 0;
+                    listenOrders(); // Reload orders based on new reset time
+                }
             });
         }
 
         function listenOrders() {
+            // FIX: Removed complex where clause that might fail without index
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => {
-                const liveContainer = document.getElementById('view-live');
-                const historyContainer = document.getElementById('view-history');
+                const liveEl = document.getElementById('view-live');
+                const histEl = document.getElementById('view-history');
+                const handoverEl = document.getElementById('handover-list');
                 
-                let liveHtml = '';
-                let historyHtml = '';
-                let pending = 0;
-                salesToday = 0;
-                itemsSoldToday = {};
+                let liveHtml = '', histHtml = '', handoverHtml = '';
+                let pendingCount = 0;
+                salesToday = 0; itemsSoldToday = {};
+                
+                // Reset Udhaar Map
+                udhaarMap = {};
 
                 snap.docs.forEach(doc => {
                     const d = doc.data();
                     const id = doc.id;
                     const ts = d.timestamp?.seconds || 0;
 
-                    // Calc Sales Since Last Reset
+                    // Sales Calc (Since last reset)
                     if(ts > lastResetSeconds && d.status === 'completed') {
                         salesToday += d.totalAmount;
-                        d.items.forEach(i => { itemsSoldToday[i.name] = (itemsSoldToday[i.name] || 0) + i.qty; });
+                        d.items.forEach(i => itemsSoldToday[i.name] = (itemsSoldToday[i.name] || 0) + i.qty);
                     }
 
-                    // Live Orders
+                    // Udhaar Calc
+                    if(d.paymentMode === 'Udhaar' && d.status !== 'cancelled') {
+                        if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone] = { name: d.customerName, debit: 0, credit: 0 };
+                        udhaarMap[d.customerPhone].debit += d.totalAmount;
+                        udhaarMap[d.customerPhone].name = d.customerName;
+                    }
+
+                    // Separation Logic
                     if(['pending', 'cooking', 'ready'].includes(d.status)) {
-                        pending++;
-                        liveHtml += createOrderCard(id, d, true);
+                        pendingCount++;
+                        liveHtml += makeOrderCard(id, d, true);
+                        
+                        // Add to Handover list if Ready
+                        if(d.status === 'ready') {
+                            handoverHtml += `
+                            <div class="bg-[#1a1a1a] p-3 rounded-xl border border-gray-700 flex justify-between items-center">
+                                <div><p class="text-sm font-bold">${d.customerName}</p><p class="text-xs text-gray-500">${d.customerAddress || 'No Address'}</p></div>
+                                <button onclick="handoverOrder('${id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-lg">HANDOVER <i class="fas fa-arrow-right ml-1"></i></button>
+                            </div>`;
+                        }
                     } else {
-                        // History
-                        historyHtml += createOrderCard(id, d, false);
+                        histHtml += makeOrderCard(id, d, false);
                     }
                 });
 
+                // Update UI
+                liveEl.innerHTML = liveHtml || '<p class="text-center text-gray-600 py-10">No active orders</p>';
+                histEl.innerHTML = histHtml || '<p class="text-center text-gray-600 py-10">No history</p>';
+                handoverEl.innerHTML = handoverHtml || '<p class="text-center text-gray-600 py-4 text-xs">No orders waiting for pickup</p>';
+                
                 document.getElementById('total-sales').innerText = salesToday;
                 document.getElementById('modal-today-sales').innerText = "₹" + salesToday;
-                document.getElementById('pending-count').innerText = pending;
-                
-                liveContainer.innerHTML = liveHtml || '<div class="text-center text-gray-600 mt-10">No active orders</div>';
-                historyContainer.innerHTML = historyHtml || '<div class="text-center text-gray-600 mt-10">No history</div>';
-                
-                // Udhaar Calc
-                calculateUdhaar(snap.docs);
+                document.getElementById('pending-count').innerText = pendingCount;
+
+                // Trigger Udhaar Render
+                fetchPaymentsAndRenderUdhaar();
             });
         }
 
-        function createOrderCard(id, d, isLive) {
+        function makeOrderCard(id, d, isLive) {
             const itemsStr = d.items.map(i => `<span class="text-orange-400 font-bold">${i.qty}</span> ${i.name}`).join(', ');
-            const statusColor = d.status==='completed'?'text-green-500':(d.status==='cancelled'?'text-red-500':'text-yellow-500');
-            
             if(isLive) {
                 return `
-                <div class="card p-4 border-l-4 ${d.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'} animate-[fadeIn_0.3s]">
+                <div class="card p-4 border-l-4 ${d.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'}">
                     <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h3 class="font-bold text-lg">${d.customerName}</h3>
-                            <span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-400">${d.paymentMode}</span>
-                        </div>
+                        <div><h3 class="font-bold text-lg">${d.customerName}</h3><span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-400">${d.paymentMode}</span></div>
                         <h3 class="font-bold text-xl text-white">₹${d.totalAmount}</h3>
                     </div>
                     <p class="text-sm text-gray-300 mb-3">${itemsStr}</p>
@@ -298,50 +293,49 @@
                         <select onchange="updateStatus('${id}', this.value)" class="bg-gray-800 text-xs p-2 rounded outline-none border border-gray-700 flex-1">
                             <option value="pending" ${d.status==='pending'?'selected':''}>Pending</option>
                             <option value="cooking" ${d.status==='cooking'?'selected':''}>Cooking</option>
-                            <option value="ready" ${d.status==='ready'?'selected':''}>Ready</option>
+                            <option value="ready" ${d.status==='ready'?'selected':''}>Ready (Handover)</option>
                         </select>
                         <button onclick="markComplete('${id}')" class="bg-green-600 px-3 rounded text-xs font-bold text-white shadow-lg">DONE</button>
+                        <button onclick="cancelOrder('${id}')" class="bg-red-900/50 text-red-400 px-3 rounded"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>`;
             } else {
-                const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-                return `
-                <div class="card p-3 border-l-2 border-gray-700 opacity-80">
-                    <div class="flex justify-between">
-                        <div><span class="text-xs text-gray-500">${date}</span> <span class="font-bold text-sm ml-2">${d.customerName}</span></div>
-                        <span class="text-xs font-bold ${statusColor} uppercase">${d.status}</span>
-                    </div>
-                    <p class="text-xs text-gray-400 truncate mt-1">${itemsStr}</p>
-                </div>`;
+                return `<div class="card p-3 border-l-2 border-gray-700 opacity-70"><div class="flex justify-between"><div><span class="text-xs text-gray-500">${new Date(d.timestamp?.toDate()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span> <span class="font-bold text-sm ml-2">${d.customerName}</span></div><span class="text-xs font-bold uppercase ${d.status==='completed'?'text-green-500':'text-red-500'}">${d.status}</span></div><p class="text-xs text-gray-400 truncate mt-1">${itemsStr}</p></div>`;
             }
         }
 
-        function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }); }
+        function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }).then(() => showToast("Status Updated")); }
         function markComplete(id) { if(confirm("Mark Delivered?")) db.collection('orders').doc(id).update({ status: 'completed' }); }
-
-        // --- UDHAAR SYSTEM (FIXED) ---
-        function listenPayments() {
-            db.collection('payments').onSnapshot(() => { /* triggers recalc via global var if needed, mostly handled in recalc */ });
+        function cancelOrder(id) { if(confirm("Cancel Order?")) db.collection('orders').doc(id).update({ status: 'cancelled' }); }
+        
+        // --- RIDER LOGIC ---
+        function listenRiderStats() {
+            db.collection('settings').doc('rider_stats').onSnapshot(doc => {
+                document.getElementById('rider-cash-val').innerText = doc.data()?.cashInHand || 0;
+            });
+        }
+        function handoverOrder(id) {
+            db.collection('orders').doc(id).update({ status: 'on_the_way' }).then(() => showToast("Handed to Rider"));
+        }
+        function settleRiderCash() {
+            const val = document.getElementById('rider-cash-val').innerText;
+            if(val == 0) return showToast("No cash to settle");
+            if(confirm(`Received ₹${val} from Rider? This will reset balance.`)) {
+                db.collection('settings').doc('rider_stats').update({ cashInHand: 0 });
+                showToast("Cash Collected Successfully");
+            }
         }
 
-        function calculateUdhaar(orderDocs) {
-            udhaarMap = {};
-            // Sum Debits
-            orderDocs.forEach(doc => {
-                const d = doc.data();
-                if(d.paymentMode === 'Udhaar' && d.status !== 'cancelled') {
-                    if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone] = { name: d.customerName, debit: 0, credit: 0 };
-                    udhaarMap[d.customerPhone].debit += d.totalAmount;
-                    udhaarMap[d.customerPhone].name = d.customerName; // Update name
-                }
-            });
-
-            // Sum Credits
+        // --- UDHAAR LOGIC ---
+        function fetchPaymentsAndRenderUdhaar() {
             db.collection('payments').get().then(snap => {
+                // Reset credits before recalc to avoid duplication on re-render
+                for(let p in udhaarMap) udhaarMap[p].credit = 0;
+                
                 snap.forEach(doc => {
                     const p = doc.data();
                     if(!udhaarMap[p.phone]) udhaarMap[p.phone] = { name: "Unknown", debit: 0, credit: 0 };
-                    udhaarMap[p.phone].credit += p.amount;
+                    udhaarMap[p.phone].credit = (udhaarMap[p.phone].credit || 0) + p.amount;
                 });
                 renderUdhaar();
             });
@@ -357,11 +351,8 @@
                 const due = u.debit - u.credit;
                 if(due > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) {
                     html += `
-                    <div class="card p-3 flex justify-between items-center">
-                        <div>
-                            <h4 class="font-bold text-white">${u.name}</h4>
-                            <p class="text-xs text-gray-500">${phone}</p>
-                        </div>
+                    <div class="card p-3 flex justify-between items-center bg-[#1a1a1a]">
+                        <div><h4 class="font-bold text-white">${u.name}</h4><p class="text-xs text-gray-500">${phone}</p></div>
                         <div class="text-right">
                             <h4 class="text-red-400 font-bold text-lg">₹${due}</h4>
                             <button onclick="openSettle('${phone}', '${u.name}', ${due})" class="bg-blue-600 text-white text-[10px] px-3 py-1 rounded-full font-bold mt-1 shadow">SETTLE</button>
@@ -391,23 +382,11 @@
             }).then(() => {
                 document.getElementById('settle-modal').classList.add('hidden');
                 showToast("Payment Recorded");
-                // Trigger re-fetch logic handled by listeners
-                location.reload(); // Simple reload to refresh all counts cleanly
+                listenOrders(); // Refresh
             });
         }
 
-        // --- INVENTORY MANAGEMENT (NEW) ---
-        // Seed default products if not present
-        function initProductsIfEmpty() {
-            db.collection('products').get().then(snap => {
-                if(snap.empty) {
-                    defaultItems.forEach(item => {
-                        db.collection('products').doc(item.id).set({ ...item, stock: 100 });
-                    });
-                }
-            });
-        }
-
+        // --- INVENTORY ---
         function openInventory() {
             document.getElementById('inventory-modal').classList.remove('hidden');
             db.collection('products').orderBy('name').onSnapshot(snap => {
@@ -415,7 +394,7 @@
                 list.innerHTML = snap.docs.map(doc => {
                     const p = doc.data();
                     return `
-                    <div class="bg-[#1a1a1a] p-3 rounded-xl border border-gray-800 flex justify-between items-center animate-[fadeIn_0.2s]">
+                    <div class="bg-[#1a1a1a] p-3 rounded-xl border border-gray-800 flex justify-between items-center">
                         <div class="flex-1">
                             <p class="text-sm font-bold text-white">${p.name}</p>
                             <div class="flex items-center mt-1">
@@ -424,103 +403,74 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="updateStock('${doc.id}', -1)" class="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-bold transition">-</button>
+                            <button onclick="updateStock('${doc.id}', -1)" class="w-8 h-8 rounded-lg bg-gray-800 font-bold hover:bg-gray-700">-</button>
                             <span class="text-sm font-bold w-6 text-center">${p.stock || 0}</span>
-                            <button onclick="updateStock('${doc.id}', 1)" class="w-8 h-8 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold transition shadow-lg shadow-orange-900/50">+</button>
+                            <button onclick="updateStock('${doc.id}', 1)" class="w-8 h-8 rounded-lg bg-orange-600 font-bold hover:bg-orange-500">+</button>
+                            <button onclick="if(confirm('Delete?')) db.collection('products').doc('${doc.id}').delete()" class="ml-2 text-red-900"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>`;
                 }).join('');
             });
         }
-
-        function updatePrice(id, val) { db.collection('products').doc(id).update({ price: parseInt(val) }); }
-        function updateStock(id, chg) { db.collection('products').doc(id).update({ stock: firebase.firestore.FieldValue.increment(chg) }); }
-        
+        function updatePrice(id, v) { db.collection('products').doc(id).update({ price: parseInt(v) }); }
+        function updateStock(id, c) { db.collection('products').doc(id).update({ stock: firebase.firestore.FieldValue.increment(c) }); }
         function addNewProduct() {
-            const name = document.getElementById('new-p-name').value;
-            const price = parseInt(document.getElementById('new-p-price').value);
-            const stock = parseInt(document.getElementById('new-p-stock').value);
-            if(!name || !price) return alert("Enter Name & Price");
-            db.collection('products').add({ name, price, stock: stock||0 }).then(() => {
-                document.getElementById('new-p-name').value = '';
-                document.getElementById('new-p-price').value = '';
+            const n=document.getElementById('new-p-name').value, p=document.getElementById('new-p-price').value, s=document.getElementById('new-p-stock').value;
+            if(!n || !p) return showToast("Fill details");
+            db.collection('products').add({ name:n, price:parseInt(p), stock:parseInt(s)||0 }).then(()=>{
+                document.getElementById('new-p-name').value=''; document.getElementById('new-p-price').value=''; document.getElementById('new-p-stock').value='';
+                showToast("Item Added");
             });
         }
 
-        // --- SALES REPORTS & RESET (NEW AESTHETIC) ---
+        // --- SALES & RESET ---
         function openSalesReport() {
             document.getElementById('reports-modal').classList.remove('hidden');
-            // Load history
             db.collection('daily_reports').orderBy('timestamp', 'desc').limit(10).get().then(snap => {
                 const list = document.getElementById('reports-list');
-                if(snap.empty) list.innerHTML = '<p class="text-center text-gray-600 mt-10">No past reports</p>';
-                else {
-                    list.innerHTML = snap.docs.map(doc => {
-                        const r = doc.data();
-                        return `
-                        <div class="bg-[#1a1a1a] p-3 rounded-xl border border-gray-800 flex justify-between items-center">
-                            <div>
-                                <p class="text-xs font-bold text-gray-400">${r.date}</p>
-                                <p class="text-[10px] text-gray-600">Top: ${r.topSelling}</p>
-                            </div>
-                            <span class="text-green-500 font-bold text-sm">₹${r.totalAmount}</span>
-                        </div>`;
-                    }).join('');
-                }
+                list.innerHTML = snap.empty ? '<p class="text-center text-gray-500 mt-10">No archives</p>' : snap.docs.map(doc => {
+                    const r = doc.data();
+                    return `<div class="bg-[#1a1a1a] p-3 rounded-xl border border-gray-800 flex justify-between items-center"><div><p class="text-xs font-bold text-gray-400">${r.date}</p><p class="text-[10px] text-gray-600">Top: ${r.topSelling}</p></div><span class="text-green-500 font-bold text-sm">₹${r.totalAmount}</span></div>`;
+                }).join('');
             });
         }
-
         function performResetDay() {
-            if(!confirm("CONFIRM RESET? This will archive today's sales and reset counter.")) return;
-            
-            // Calculate Top Item
+            if(!confirm("Reset Day? This will archive sales.")) return;
             const topItem = Object.keys(itemsSoldToday).reduce((a, b) => itemsSoldToday[a] > itemsSoldToday[b] ? a : b, "None");
-
             db.collection('daily_reports').add({
-                date: new Date().toLocaleDateString(),
-                totalAmount: salesToday,
-                topSelling: topItem,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                date: new Date().toLocaleDateString(), totalAmount: salesToday, topSelling: topItem, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 db.collection('settings').doc('config').update({ lastReset: firebase.firestore.FieldValue.serverTimestamp() });
                 closeModal('reports-modal');
-                showToast("Day Reset & Archived!");
-                setTimeout(() => location.reload(), 1000);
+                showToast("Day Reset Successful");
             });
-        }
-
-        // --- RIDER ---
-        function listenRider() {
-            db.collection('settings').doc('rider_stats').onSnapshot(doc => {
-                document.getElementById('rider-cash-val').innerText = doc.data()?.cashInHand || 0;
-            });
-            // Handover logic can be added here
-        }
-        function settleRiderCash() {
-            if(confirm("Collect cash from Rider?")) {
-                db.collection('settings').doc('rider_stats').update({ cashInHand: 0 });
-                showToast("Rider Cash Settled");
-            }
         }
 
         // --- UTILS ---
         function switchTab(t) {
-            ['live', 'history', 'udhaar'].forEach(x => {
+            ['live', 'history', 'udhaar', 'rider'].forEach(x => { // Added 'rider' to fixed list
                 document.getElementById(`view-${x}`).classList.add('hidden');
-                document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white');
-                document.getElementById(`tab-${x}`).classList.add('text-gray-500');
+                const btn = document.getElementById(`tab-${x}`);
+                if(btn) { btn.classList.remove('tab-active', 'text-white'); btn.classList.add('text-gray-500'); }
             });
             document.getElementById(`view-${t}`).classList.remove('hidden');
-            document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white');
-            document.getElementById(`tab-${t}`).classList.remove('text-gray-500');
+            if(t !== 'rider') { // Rider doesn't have a top tab button usually, but if it did...
+                document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white');
+                document.getElementById(`tab-${t}`).classList.remove('text-gray-500');
+            }
         }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function showToast(msg) {
             const t = document.createElement('div');
-            t.className = "bg-gray-800 text-white px-4 py-2 rounded-full text-xs shadow-lg border border-gray-700 fade-in";
+            t.className = "bg-gray-800 text-white px-4 py-2 rounded-full text-xs shadow-lg border border-gray-700 toast-enter";
             t.innerText = msg;
-            document.getElementById('toast-container').appendChild(t);
-            setTimeout(() => t.remove(), 2000);
+            const con = document.getElementById('toast-container');
+            con.appendChild(t);
+            requestAnimationFrame(() => t.classList.add('toast-enter-active'));
+            setTimeout(() => {
+                t.classList.remove('toast-enter-active'); t.classList.add('toast-exit-active');
+                setTimeout(() => t.remove(), 300);
+            }, 2500);
         }
 
         init();
