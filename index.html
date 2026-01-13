@@ -12,45 +12,61 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
-        .card { background: #1a1a1a; border-radius: 16px; border: 1px solid #333; overflow: hidden; }
+        body { background-color: #050505; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
+        
+        /* Modern Glass Card */
+        .glass-card { 
+            background: rgba(30, 30, 30, 0.6); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 16px; 
+            overflow: hidden; 
+            transition: transform 0.2s;
+        }
+        .glass-card:active { transform: scale(0.98); }
+
         .btn-primary { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); color: white; font-weight: bold; }
-        .item-row { transition: all 0.2s; }
-        .item-row:active { transform: scale(0.98); background: #222; }
         
-        /* Tab Bar */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px; padding-bottom: 20px; z-index: 50; }
+        /* Categories Scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Bottom Nav */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 10px; padding-bottom: 20px; z-index: 50; }
         .nav-item { color: #666; text-align: center; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .nav-item i { font-size: 18px; margin-bottom: 2px; }
+        .nav-item i { font-size: 18px; margin-bottom: 2px; transition: 0.2s; }
         .nav-item.active { color: #F97316; }
-        
-        /* Modal & Profile */
-        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
-        .profile-avatar { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; items-center; justify-center; font-weight: bold; color: #F97316; border: 1px solid #F97316; }
-        
-        /* Aesthetics */
-        .animate-pop { animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        
+        .nav-item.active i { transform: translateY(-2px); }
+
         /* Broadcast Ticker */
-        .ticker-wrap { position: fixed; top: 60px; left: 0; right: 0; background: #F97316; color: white; font-size: 12px; overflow: hidden; height: 24px; line-height: 24px; z-index: 30; }
-        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; font-weight: bold; }
+        .ticker-wrap { position: fixed; top: 60px; left: 0; right: 0; background: linear-gradient(90deg, #F97316, #ec4899); color: white; font-size: 11px; overflow: hidden; height: 24px; line-height: 24px; z-index: 30; box-shadow: 0 2px 10px rgba(249, 115, 22, 0.3); }
+        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+
+        /* Cooking Animation Screen */
+        #cooking-screen { position: fixed; inset: 0; background: #0f0f0f; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        #cooking-screen.active { transform: translateY(0); }
+        .steam { animation: steamUp 2s infinite; opacity: 0; }
+        @keyframes steamUp { 0% { transform: translateY(0); opacity: 0; } 50% { opacity: 0.5; } 100% { transform: translateY(-20px); opacity: 0; } }
+
+        /* Search Input */
+        .search-box:focus-within { border-color: #F97316; box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.2); }
     </style>
 </head>
 <body>
 
-    <div class="fixed top-0 left-0 right-0 bg-[#0f0f0f]/95 backdrop-blur z-40 px-4 py-3 flex justify-between items-center border-b border-gray-800">
+    <div class="fixed top-0 left-0 right-0 bg-[#050505]/90 backdrop-blur-md z-40 px-4 py-3 flex justify-between items-center border-b border-white/5">
         <div>
-            <h1 class="text-xl font-bold text-orange-500">SGMC <span class="text-white text-sm font-normal">Chai Stall</span></h1>
-            <p class="text-[10px] text-green-500" id="shop-status-badge">● Open</p>
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-white text-sm font-normal">Chai</span></h1>
+            <p class="text-[10px] text-green-500 font-bold tracking-wide" id="shop-status-badge">● LIVE</p>
         </div>
         <div class="flex items-center gap-2" onclick="openProfileEdit()">
             <div class="text-right">
                 <p class="text-xs font-bold text-white" id="header-name">Guest</p>
-                <p class="text-[10px] text-gray-400" id="header-phone">Tap to setup</p>
+                <p class="text-[10px] text-gray-400" id="header-phone">Setup Profile</p>
             </div>
-            <div class="profile-avatar" id="header-avatar"><i class="fas fa-user"></i></div>
+            <div class="w-9 h-9 bg-gray-800 rounded-full flex items-center justify-center text-orange-500 border border-gray-700" id="header-avatar"><i class="fas fa-user"></i></div>
         </div>
     </div>
 
@@ -58,200 +74,207 @@
         <div class="ticker" id="broadcast-msg">Welcome to SGMC!</div>
     </div>
 
-    <div class="h-16"></div> <div id="view-menu" class="p-4 space-y-4">
-        <div id="closed-banner" class="hidden bg-red-900/20 border border-red-500/50 text-red-200 p-4 rounded-xl text-center mb-4">
-            <h3 class="font-bold mb-1"><i class="fas fa-store-slash"></i> Shop is Closed</h3>
-            <p class="text-xs">Orders allow nahi hain. Please wait.</p>
+    <div class="h-20"></div>
+
+    <div id="view-menu" class="pb-10">
+        
+        <div class="sticky top-[60px] z-30 bg-[#050505]/95 backdrop-blur pt-2 pb-1 px-4 border-b border-white/5">
+            <div class="relative mb-3">
+                <i class="fas fa-search absolute left-3 top-3 text-gray-500"></i>
+                <input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search chai, snacks..." class="w-full bg-gray-900 border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white outline-none search-box placeholder-gray-600 transition-all">
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="category-container">
+                <button onclick="setCategory('All')" class="cat-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-white text-black transition-all" id="cat-All">All</button>
+                <button onclick="setCategory('Chai')" class="cat-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-800 text-gray-400 border border-gray-700 transition-all" id="cat-Chai">☕ Chai</button>
+                <button onclick="setCategory('Snacks')" class="cat-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-800 text-gray-400 border border-gray-700 transition-all" id="cat-Snacks">🍪 Snacks</button>
+                <button onclick="setCategory('Sutta')" class="cat-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-800 text-gray-400 border border-gray-700 transition-all" id="cat-Sutta">🚬 Sutta</button>
+            </div>
         </div>
 
-        <div id="menu-container" class="space-y-3 pb-10">
-            <div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500"></i></div>
+        <div id="closed-banner" class="hidden mx-4 mt-4 bg-red-900/20 border border-red-500/30 text-red-200 p-4 rounded-2xl text-center">
+            <div class="text-2xl mb-1">😴</div>
+            <h3 class="font-bold text-sm">Shop is Closed</h3>
+            <p class="text-[10px] opacity-70">Orders are currently paused.</p>
+        </div>
+
+        <div id="menu-container" class="space-y-3 p-4 pt-2">
+            <div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500 text-xl"></i></div>
         </div>
     </div>
 
     <div id="view-orders" class="hidden p-4">
-        <h2 class="text-lg font-bold mb-4">My Orders</h2>
-        <p class="text-xs text-gray-500 mb-2">Tap on an order to view full details</p>
+        <h2 class="text-xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">My Orders</h2>
         <div id="orders-list" class="space-y-3"></div>
     </div>
 
     <div id="view-udhaar" class="hidden p-4">
-        <div class="card p-6 text-center mb-6 bg-gradient-to-br from-gray-800 to-slate-900 border-blue-900/30">
-            <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Total Udhaar Pending</p>
-            <h1 class="text-4xl font-bold text-blue-500 mb-1">₹<span id="my-udhaar-amount">0</span></h1>
-            <p class="text-[10px] text-gray-500">Please clear your dues via UPI</p>
-            <div id="upi-pay-btn" class="mt-4 hidden">
-                <button onclick="payUdhaarViaUPI()" class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-900/50">Pay Now via UPI</button>
+        <div class="glass-card p-6 text-center mb-6 border-blue-500/20 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-full blur-xl -mr-5 -mt-5"></div>
+            <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Pending Dues</p>
+            <h1 class="text-5xl font-bold text-blue-400 mb-2 font-mono">₹<span id="my-udhaar-amount">0</span></h1>
+            <p class="text-[10px] text-gray-500">Pay via UPI to clear</p>
+            <div id="upi-pay-btn" class="mt-5 hidden">
+                <button onclick="payUdhaarViaUPI()" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-blue-900/50 transition">Pay Now</button>
             </div>
         </div>
-        <h3 class="font-bold text-gray-400 text-sm mb-3">Transaction History</h3>
+        <h3 class="font-bold text-gray-400 text-sm mb-3 pl-1">Transaction History</h3>
         <div id="udhaar-history" class="space-y-2"></div>
     </div>
 
-    <div id="cart-bar" class="fixed bottom-20 left-4 right-4 bg-orange-600 text-white p-4 rounded-xl shadow-2xl flex justify-between items-center z-40 hidden cursor-pointer" onclick="openCheckout()">
+    <div id="cart-bar" class="fixed bottom-20 left-4 right-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white p-3 px-5 rounded-2xl shadow-2xl shadow-orange-900/40 flex justify-between items-center z-40 hidden cursor-pointer transform hover:scale-[1.02] transition-all" onclick="openCheckout()">
         <div class="flex items-center gap-3">
-            <div class="bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="cart-count">0</div>
-            <div>
-                <p class="text-xs text-orange-200">Total</p>
-                <p class="font-bold">₹<span id="cart-total">0</span></p>
+            <div class="bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm" id="cart-count">0</div>
+            <div class="flex flex-col">
+                <span class="text-[10px] uppercase text-orange-100 font-bold tracking-wide">Total</span>
+                <span class="font-bold text-lg leading-none">₹<span id="cart-total">0</span></span>
             </div>
         </div>
-        <span class="font-bold text-sm">View Cart <i class="fas fa-chevron-right ml-1"></i></span>
+        <span class="font-bold text-sm flex items-center gap-2">Checkout <i class="fas fa-arrow-right bg-white/20 p-1.5 rounded-full text-xs"></i></span>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu">
-            <i class="fas fa-utensils"></i> Menu
-        </div>
-        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders">
-            <i class="fas fa-clock"></i> History
-        </div>
-        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar">
-            <i class="fas fa-wallet"></i> Udhaar
+        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu"><i class="fas fa-th-large"></i> Menu</div>
+        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders"><i class="fas fa-receipt"></i> Orders</div>
+        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet"></i> Udhaar</div>
+    </div>
+
+    <div id="cooking-screen">
+        <div class="text-center">
+            <div class="relative mb-6">
+                <i class="fas fa-mug-hot text-6xl text-orange-500"></i>
+                <div class="absolute -top-4 left-2 text-2xl text-gray-500 steam"><i class="fas fa-smog"></i></div>
+                <div class="absolute -top-6 left-8 text-2xl text-gray-400 steam" style="animation-delay: 0.5s"><i class="fas fa-smog"></i></div>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Order Placed!</h2>
+            <p class="text-gray-400 text-sm">Preparing your chai...</p>
         </div>
     </div>
 
-    <div id="login-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
-        <div class="bg-[#1f1f1f] w-full max-w-xs p-6 rounded-2xl border border-gray-700 shadow-2xl">
-            <div class="text-center mb-6">
-                <div class="w-16 h-16 bg-gray-800 rounded-full mx-auto flex items-center justify-center mb-3">
-                    <i class="fas fa-user-edit text-2xl text-orange-500"></i>
-                </div>
-                <h2 class="text-xl font-bold text-white">Setup Profile</h2>
-                <p class="text-xs text-gray-400">Enter details for faster checkout</p>
-            </div>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-xs text-gray-500 ml-1">Your Name</label>
-                    <input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none" placeholder="e.g. Rahul Kumar">
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 ml-1">Phone Number</label>
-                    <input type="tel" id="user-phone" maxlength="10" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-orange-500 outline-none" placeholder="e.g. 9876543210">
-                </div>
-                <button onclick="saveProfile()" class="w-full btn-primary py-3 rounded-xl mt-2 shadow-lg shadow-orange-900/20">Save & Continue</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="cig-modal" class="fixed inset-0 modal-overlay flex items-end sm:items-center justify-center z-[60] hidden">
-        <div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-t-2xl sm:rounded-2xl border-t sm:border border-gray-700 shadow-2xl animate-slide-up max-h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                <h3 class="text-lg font-bold">Select Cigarettes</h3>
-                <button onclick="closeCigModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="cig-options-list" class="space-y-3 overflow-y-auto mb-4 flex-1"></div>
-            <button onclick="confirmCigSelection()" class="w-full btn-primary py-3 rounded-xl shadow-lg">Add All to Cart</button>
-        </div>
-    </div>
-
-    <div id="checkout-modal" class="fixed inset-0 modal-overlay flex items-end sm:items-center justify-center z-50 hidden">
-        <div class="bg-[#1f1f1f] w-full max-w-md p-6 rounded-t-2xl sm:rounded-2xl border-t sm:border border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-4">
-                <h2 class="text-xl font-bold">Checkout</h2>
-                <button onclick="closeCheckout()" class="text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+    <div id="checkout-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 hidden">
+        <div class="bg-[#151515] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t sm:border border-gray-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white">Checkout</h2>
+                <button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center"><i class="fas fa-times"></i></button>
             </div>
 
-            <div id="checkout-items" class="space-y-2 mb-4 max-h-40 overflow-y-auto"></div>
+            <div id="checkout-items" class="space-y-3 mb-6 max-h-48 overflow-y-auto pr-1"></div>
             
-            <div class="border-t border-gray-800 pt-4 space-y-3">
-                <div class="flex justify-between font-bold text-lg">
-                    <span>Total To Pay</span>
-                    <span class="text-orange-500">₹<span id="checkout-total">0</span></span>
+            <div class="space-y-4">
+                <div class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">
+                    <label class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2 block"><i class="fas fa-comment-alt mr-1"></i> Instructions</label>
+                    <textarea id="order-note" rows="2" class="w-full bg-transparent text-sm text-white placeholder-gray-600 outline-none resize-none" placeholder="Cheeni kam, ya kadak chai? Write here..."></textarea>
                 </div>
 
                 <div>
-                    <label class="text-xs text-orange-500 ml-1 font-bold">Delivery Address (Required)*</label>
-                    <input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white focus:border-orange-500 outline-none" placeholder="Room no, Floor, or Landmark...">
-                </div>
-
-                <div>
-                    <label class="text-xs text-gray-400 ml-1">Select Payment Mode</label>
-                    <div class="grid grid-cols-3 gap-2 mt-1">
-                        <button onclick="setPayment('Cash')" id="pay-cash" class="p-2 rounded border border-gray-600 text-sm hover:bg-gray-700 payment-opt">Cash</button>
-                        <button onclick="setPayment('UPI')" id="pay-upi" class="p-2 rounded border border-gray-600 text-sm hover:bg-gray-700 payment-opt">UPI</button>
-                        <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-2 rounded border border-gray-600 text-sm hover:bg-gray-700 payment-opt">Udhaar</button>
+                    <label class="text-[10px] text-orange-500 uppercase font-bold tracking-wider mb-1 block">Deliver To *</label>
+                    <div class="relative">
+                        <i class="fas fa-map-marker-alt absolute left-3 top-3.5 text-gray-500"></i>
+                        <input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:border-orange-500 outline-none transition" placeholder="Room No, Table No...">
                     </div>
                 </div>
 
-                <button onclick="handlePlaceOrderClick()" class="w-full btn-primary py-3 rounded-xl font-bold text-lg shadow-lg mt-2" id="place-order-btn">Place Order</button>
-            </div>
-        </div>
-    </div>
+                <div>
+                    <label class="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-2 block">Payment Mode</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button onclick="setPayment('Cash')" id="pay-cash" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 hover:bg-gray-700 payment-opt">Cash</button>
+                        <button onclick="setPayment('UPI')" id="pay-upi" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 hover:bg-gray-700 payment-opt">UPI</button>
+                        <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 hover:bg-gray-700 payment-opt">Udhaar</button>
+                    </div>
+                </div>
 
-    <div id="alert-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[70] hidden">
-        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-red-900/50 shadow-2xl w-full max-w-xs animate-pop">
-            <div class="w-14 h-14 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-3 text-red-500 text-2xl">
-                <i class="fas fa-map-marker-alt"></i>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">Address Missing</h3>
-            <p class="text-gray-400 text-xs mb-4">Bhai, address toh daalo taaki chai sahi jagah pahuche!</p>
-            <button onclick="document.getElementById('alert-popup').classList.add('hidden'); document.getElementById('order-address').focus();" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg font-bold text-sm transition">Okay, Daalta hu</button>
-        </div>
-    </div>
-    
-    <div id="limit-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[70] hidden">
-        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-purple-900/50 shadow-2xl w-full max-w-xs animate-pop">
-            <div class="w-14 h-14 bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 text-purple-500 text-2xl">
-                <i class="fas fa-lock"></i>
-            </div>
-            <h3 class="text-lg font-bold text-white mb-1">Limit Reached</h3>
-            <p class="text-gray-400 text-xs mb-4">Aapki Udhaar Limit cross ho gayi hai. Please purana hisaab clear karein.</p>
-            <button onclick="document.getElementById('limit-popup').classList.add('hidden')" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg font-bold text-sm transition">Okay</button>
-        </div>
-    </div>
-
-    <div id="upi-confirm-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[60] hidden">
-        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-yellow-600 shadow-2xl w-full max-w-sm">
-            <div class="w-16 h-16 bg-yellow-600/20 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-500 text-3xl">
-                <i class="fas fa-qrcode"></i>
-            </div>
-            <h2 class="text-lg font-bold text-white mb-2">Pay via UPI</h2>
-            
-            <div class="bg-black/30 p-3 rounded-lg mb-4 text-left">
-                <p class="text-xs text-gray-400 mb-1">Total Amount:</p>
-                <p class="text-xl font-bold text-orange-500">₹<span id="upi-modal-amount">0</span></p>
-                <p class="text-xs text-gray-400 mt-3 mb-1">UPI ID:</p>
-                <div class="flex justify-between items-center bg-black/50 p-2 rounded border border-gray-700">
-                    <span class="text-sm font-mono text-white select-all">9523196156@ybl</span>
-                    <button onclick="copyToClipboard('9523196156@ybl')" class="text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600">Copy</button>
+                <div class="flex justify-between items-center pt-2 border-t border-gray-800">
+                    <div>
+                        <p class="text-xs text-gray-500">Total Bill</p>
+                        <p class="text-xl font-bold text-white">₹<span id="checkout-total">0</span></p>
+                    </div>
+                    <button onclick="handlePlaceOrderClick()" class="bg-orange-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-orange-900/30 flex items-center gap-2" id="place-order-btn">
+                        Place Order <i class="fas fa-chevron-right text-xs"></i>
+                    </button>
                 </div>
             </div>
+        </div>
+    </div>
 
+    <div id="login-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 z-50 hidden">
+        <div class="bg-[#151515] w-full max-w-xs p-8 rounded-3xl border border-gray-800 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-yellow-500"></div>
+            <div class="w-20 h-20 bg-gray-800 rounded-full mx-auto flex items-center justify-center mb-5 text-3xl text-orange-500 shadow-inner">
+                <i class="fas fa-mug-hot"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-1">Welcome!</h2>
+            <p class="text-xs text-gray-500 mb-6">Setup your profile to order chai.</p>
+            <div class="space-y-4 text-left">
+                <input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white text-sm focus:border-orange-500 outline-none" placeholder="Your Name">
+                <input type="tel" id="user-phone" maxlength="10" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white text-sm focus:border-orange-500 outline-none" placeholder="Phone Number">
+                <button onclick="saveProfile()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold shadow-lg mt-2">Get Started</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cig-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] hidden">
+        <div class="bg-[#151515] w-full max-w-sm p-6 rounded-t-2xl sm:rounded-2xl border border-gray-800 shadow-2xl flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
+                <h3 class="font-bold">Select Brand</h3>
+                <button onclick="closeCigModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="cig-options-list" class="space-y-3 overflow-y-auto mb-4 flex-1"></div>
+            <button onclick="confirmCigSelection()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Add to Cart</button>
+        </div>
+    </div>
+
+    <div id="limit-popup" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[70] hidden">
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-purple-900/50 shadow-2xl w-full max-w-xs animate-pop">
+            <div class="w-14 h-14 bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 text-purple-500 text-2xl"><i class="fas fa-lock"></i></div>
+            <h3 class="text-lg font-bold text-white mb-1">Limit Reached</h3>
+            <p class="text-gray-400 text-xs mb-4">Aapki Udhaar Limit cross ho gayi hai. Please clear dues.</p>
+            <button onclick="document.getElementById('limit-popup').classList.add('hidden')" class="w-full bg-gray-800 text-white py-2 rounded-lg font-bold text-sm">Okay</button>
+        </div>
+    </div>
+
+    <div id="upi-confirm-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[60] hidden">
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-yellow-600/30 shadow-2xl w-full max-w-sm">
+            <h2 class="text-lg font-bold text-white mb-4">Pay via UPI</h2>
+            <div class="bg-black/30 p-4 rounded-xl mb-4">
+                <p class="text-xs text-gray-400 mb-1">Amount</p>
+                <p class="text-2xl font-bold text-orange-500">₹<span id="upi-modal-amount">0</span></p>
+                <div class="flex justify-between items-center bg-gray-800 p-2 rounded mt-3 border border-gray-700">
+                    <span class="text-xs font-mono text-gray-300">9523196156@ybl</span>
+                    <button onclick="copyToClipboard('9523196156@ybl')" class="text-xs bg-gray-700 px-2 py-1 rounded">Copy</button>
+                </div>
+            </div>
             <div class="space-y-2">
-                <button onclick="attemptDeepLink()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg text-sm">
-                    Open UPI App <i class="fas fa-external-link-alt ml-1"></i>
-                </button>
-                <button onclick="finalizeOrder('UPI')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold shadow-lg text-sm">
-                    I Have Made Payment
-                </button>
+                <button onclick="attemptDeepLink()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-sm">Open UPI App</button>
+                <button onclick="finalizeOrder('UPI')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold text-sm">Payment Done</button>
             </div>
-            <button onclick="document.getElementById('upi-confirm-modal').classList.add('hidden')" class="mt-4 text-gray-500 text-xs underline">Cancel</button>
+            <button onclick="document.getElementById('upi-confirm-modal').classList.add('hidden')" class="mt-4 text-gray-500 text-xs">Cancel</button>
         </div>
     </div>
 
-    <div id="order-detail-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[60] hidden">
-        <div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-2xl border border-gray-700 shadow-2xl relative">
-            <button onclick="closeOrderDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
-            <h2 class="text-xl font-bold mb-1">Order Details</h2>
-            <p id="od-date" class="text-xs text-gray-500 mb-4">Date here</p>
+    <div id="alert-popup" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[70] hidden">
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-red-900/50 w-full max-w-xs">
+            <div class="text-red-500 text-3xl mb-2"><i class="fas fa-map-marker-alt"></i></div>
+            <h3 class="font-bold text-white mb-1">Address Required</h3>
+            <p class="text-gray-400 text-xs mb-4">Please enter room number or landmark.</p>
+            <button onclick="document.getElementById('alert-popup').classList.add('hidden'); document.getElementById('order-address').focus();" class="w-full bg-gray-800 text-white py-2 rounded-lg font-bold text-sm">Okay</button>
+        </div>
+    </div>
+
+    <div id="order-detail-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[60] hidden">
+        <div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-2xl border border-gray-700 relative">
+            <button onclick="closeOrderDetail()" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times"></i></button>
+            <h2 class="text-lg font-bold mb-1">Order Details</h2>
+            <p id="od-date" class="text-xs text-gray-500 mb-4"></p>
             <div class="bg-gray-900 rounded-xl p-4 mb-4 max-h-48 overflow-y-auto" id="od-items"></div>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between text-gray-400"><span>Payment Mode</span><span id="od-payment" class="text-white font-bold tracking-wide"></span></div>
+            <div id="od-note-container" class="hidden mb-4 bg-yellow-900/20 p-2 rounded border border-yellow-800/30">
+                <p class="text-[10px] text-yellow-500 font-bold">Instruction:</p>
+                <p class="text-xs text-gray-300 italic" id="od-note"></p>
+            </div>
+            <div class="space-y-1 text-sm border-t border-gray-700 pt-3">
+                <div class="flex justify-between text-gray-400"><span>Mode</span><span id="od-payment" class="text-white font-bold"></span></div>
                 <div class="flex justify-between text-gray-400"><span>Status</span><span id="od-status" class="uppercase font-bold"></span></div>
-                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold"><span>Total Bill</span><span class="text-orange-500" id="od-total"></span></div>
+                <div class="flex justify-between text-lg font-bold mt-2"><span>Total</span><span class="text-orange-500" id="od-total"></span></div>
             </div>
-        </div>
-    </div>
-
-    <div id="success-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
-        <div class="bg-[#1f1f1f] p-8 rounded-2xl text-center border border-green-900/50 shadow-2xl transform scale-95 transition-transform duration-200" id="success-box">
-            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-black text-4xl shadow-lg shadow-green-500/50">
-                <i class="fas fa-check"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-white mb-2">Order Placed!</h2>
-            <p class="text-gray-400 text-sm mb-6">Thank you, <span id="success-name"></span>!</p>
-            <button onclick="closeSuccess()" class="bg-gray-800 text-white px-8 py-2 rounded-lg font-bold">Okay</button>
         </div>
     </div>
 
@@ -272,16 +295,19 @@
         // --- STATE ---
         let cart = {};
         let baseMenuItems = [
-            { id: 1, name: "Normal Chai", price: 10 },
-            { id: 2, name: "Adrak Chai", price: 15 },
-            { id: 3, name: "Cigarettes", isSpecial: true },
-            { id: 4, name: "Matthi", price: 5 },
-            { id: 5, name: "Cream Roll", price: 10 },
-            { id: 6, name: "Biscuit", price: 5 },
-            { id: 7, name: "Namkeen", price: 10 }
+            { id: 1, name: "Normal Chai", price: 10, category: "Chai" },
+            { id: 2, name: "Adrak Chai", price: 15, category: "Chai" },
+            { id: 3, name: "Cigarettes", isSpecial: true, category: "Sutta" },
+            { id: 4, name: "Matthi", price: 5, category: "Snacks" },
+            { id: 5, name: "Cream Roll", price: 10, category: "Snacks" },
+            { id: 6, name: "Biscuit", price: 5, category: "Snacks" },
+            { id: 7, name: "Namkeen", price: 10, category: "Snacks" }
         ];
         
-        let displayMenuItems = [...baseMenuItems];
+        let displayMenuItems = [];
+        let currentCategory = 'All';
+        let searchQuery = '';
+
         let cigaretteOptions = [
             { id: 'cig_marlboro', name: 'Marlboro Advance', price: 20 },
             { id: 'cig_goldflake', name: 'Gold Flake Ind.', price: 20 },
@@ -300,88 +326,25 @@
             loadProfile();
             loadMenuData();
             listenToShopStatus();
-            listenToBroadcast(); // NEW: Broadcast Listener
+            listenToBroadcast(); 
             loadCartFromStorage(); 
             const lastTab = localStorage.getItem('activeTab') || 'menu';
             switchTab(lastTab);
         }
 
-        // --- CART PERSISTENCE ---
-        function loadCartFromStorage() {
-            const saved = localStorage.getItem('sgmc_cart');
-            if(saved) { cart = JSON.parse(saved); updateCartUI(); }
-        }
-        function saveCartToStorage() { localStorage.setItem('sgmc_cart', JSON.stringify(cart)); }
-
-        // --- PROFILE SYSTEM ---
-        function loadProfile() {
-            const stored = localStorage.getItem('sgmc_customer_profile');
-            if(stored) {
-                userProfile = JSON.parse(stored);
-                updateHeaderProfile();
-            } else {
-                setTimeout(() => document.getElementById('login-modal').classList.remove('hidden'), 1000);
-            }
-        }
-        function saveProfile() {
-            const name = document.getElementById('user-name').value.trim();
-            const phone = document.getElementById('user-phone').value.trim();
-            if(!name || phone.length < 10) { alert("Please enter valid Name and 10-digit Phone."); return; }
-            userProfile = { name, phone };
-            localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
-            updateHeaderProfile();
-            document.getElementById('login-modal').classList.add('hidden');
-        }
-        function updateHeaderProfile() {
-            document.getElementById('header-name').innerText = userProfile.name;
-            document.getElementById('header-phone').innerText = userProfile.phone;
-            document.getElementById('header-avatar').innerHTML = userProfile.name.charAt(0).toUpperCase();
-        }
-        function openProfileEdit() {
-            document.getElementById('user-name').value = userProfile.name;
-            document.getElementById('user-phone').value = userProfile.phone;
-            document.getElementById('login-modal').classList.remove('hidden');
+        // --- HELPER: GET ICON ---
+        function getItemIcon(name) {
+            const n = name.toLowerCase();
+            if(n.includes('chai')) return '<i class="fas fa-mug-hot text-orange-400"></i>';
+            if(n.includes('coffee')) return '<i class="fas fa-coffee text-amber-700"></i>';
+            if(n.includes('roll') || n.includes('bun')) return '<i class="fas fa-bread-slice text-yellow-600"></i>';
+            if(n.includes('cig') || n.includes('gold') || n.includes('marlboro')) return '<i class="fas fa-smoking text-gray-400"></i>';
+            if(n.includes('biscuit') || n.includes('matthi')) return '<i class="fas fa-cookie text-yellow-700"></i>';
+            if(n.includes('namkeen') || n.includes('chips')) return '<i class="fas fa-cookie-bite text-yellow-500"></i>';
+            return '<i class="fas fa-utensils text-gray-500"></i>';
         }
 
-        // --- BROADCAST & STATUS ---
-        function listenToShopStatus() {
-            db.collection('settings').doc('status').onSnapshot(doc => {
-                isShopOpen = doc.exists ? doc.data().isOpen : true;
-                const banner = document.getElementById('closed-banner');
-                const badge = document.getElementById('shop-status-badge');
-                if(!isShopOpen) {
-                    banner.classList.remove('hidden');
-                    badge.innerText = "● Closed";
-                    badge.className = "text-[10px] text-red-500";
-                    document.getElementById('cart-bar').classList.add('hidden');
-                } else {
-                    banner.classList.add('hidden');
-                    badge.innerText = "● Open";
-                    badge.className = "text-[10px] text-green-500";
-                    updateCartUI();
-                }
-            });
-        }
-        
-        // NEW: Listen for Broadcast Messages
-        function listenToBroadcast() {
-            db.collection('settings').doc('config').onSnapshot(doc => {
-                const bar = document.getElementById('broadcast-bar');
-                const msgEl = document.getElementById('broadcast-msg');
-                if(doc.exists && doc.data().broadcastMessage) {
-                    msgEl.innerText = doc.data().broadcastMessage;
-                    bar.classList.remove('hidden');
-                    // Adjust spacing so it doesn't overlap header
-                    document.querySelector('.h-16').classList.add('h-24');
-                    document.querySelector('.h-16').classList.remove('h-16');
-                } else {
-                    bar.classList.add('hidden');
-                    document.querySelector('.h-24')?.classList.add('h-16');
-                    document.querySelector('.h-24')?.classList.remove('h-24');
-                }
-            });
-        }
-
+        // --- MENU LOGIC (UPDATED WITH SEARCH & CATEGORY) ---
         function loadMenuData() {
             db.collection('settings').doc('menu_data').onSnapshot(doc => {
                 let stockMap = {}; let priceOverrides = {}; let customItems = [];
@@ -391,42 +354,257 @@
                     priceOverrides = data.prices || {};
                     customItems = data.customItems || [];
                 }
-                displayMenuItems = baseMenuItems.map(item => {
-                    return { ...item, price: priceOverrides[item.id] !== undefined ? parseInt(priceOverrides[item.id]) : item.price };
-                });
-                if(customItems && customItems.length > 0) {
-                     const formattedCustom = customItems.map(i => ({ ...i, price: priceOverrides[i.id] !== undefined ? parseInt(priceOverrides[i.id]) : parseInt(i.price) }));
-                     displayMenuItems = [...displayMenuItems, ...formattedCustom];
+                
+                // Merge Base Items
+                let merged = baseMenuItems.map(item => ({ 
+                    ...item, 
+                    price: priceOverrides[item.id] !== undefined ? parseInt(priceOverrides[item.id]) : item.price 
+                }));
+
+                // Merge Custom Items (Auto-assign category 'Snacks' if unknown, or guess based on name)
+                if(customItems.length > 0) {
+                     const formattedCustom = customItems.map(i => {
+                         let cat = 'Snacks';
+                         const ln = i.name.toLowerCase();
+                         if(ln.includes('chai') || ln.includes('coffee')) cat = 'Chai';
+                         else if(ln.includes('cig') || ln.includes('sutta')) cat = 'Sutta';
+                         
+                         return { 
+                             ...i, 
+                             category: cat,
+                             price: priceOverrides[i.id] !== undefined ? parseInt(priceOverrides[i.id]) : parseInt(i.price) 
+                         };
+                     });
+                     merged = [...merged, ...formattedCustom];
                 }
-                renderMenu(stockMap);
+
+                // Attach Stock Info
+                merged.forEach(i => { i.inStock = stockMap[i.id] !== false; });
+                
+                displayMenuItems = merged;
+                renderMenu();
             });
         }
 
-        function renderMenu(stockStatus) {
+        function setCategory(cat) {
+            currentCategory = cat;
+            // Update UI Chips
+            document.querySelectorAll('.cat-chip').forEach(el => {
+                el.className = "cat-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-gray-800 text-gray-400 border border-gray-700 transition-all";
+            });
+            const activeBtn = document.getElementById('cat-' + cat);
+            if(activeBtn) activeBtn.className = "cat-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-white text-black transition-all shadow-lg";
+            
+            renderMenu();
+        }
+
+        function filterMenu() {
+            searchQuery = document.getElementById('search-input').value.toLowerCase();
+            renderMenu();
+        }
+
+        function renderMenu() {
             const container = document.getElementById('menu-container');
-            container.innerHTML = displayMenuItems.map(item => {
-                if(stockStatus[item.id] === false) return '';
+            
+            // Filter Logic
+            const filtered = displayMenuItems.filter(item => {
+                const matchesCat = currentCategory === 'All' || item.category === currentCategory;
+                const matchesSearch = item.name.toLowerCase().includes(searchQuery);
+                return matchesCat && matchesSearch && item.inStock;
+            });
+
+            if(filtered.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 mt-10"><p>No items found.</p></div>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(item => {
+                const icon = getItemIcon(item.name);
+                
                 if(item.isSpecial) {
                     return `
-                    <div class="card p-3 flex justify-between items-center item-row bg-gray-800/50">
-                        <div><h3 class="font-bold text-white">Cigarettes</h3><p class="text-xs text-orange-400">Multiple Brands</p></div>
-                        <button onclick="openCigModal()" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg border border-gray-600 font-bold active:bg-orange-600 active:border-orange-500 transition">Add <i class="fas fa-plus ml-1"></i></button>
+                    <div class="glass-card p-4 flex justify-between items-center item-row mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-lg shadow-inner">${icon}</div>
+                            <div>
+                                <h3 class="font-bold text-white text-sm">Cigarettes</h3>
+                                <p class="text-[10px] text-gray-400">Multiple Brands</p>
+                            </div>
+                        </div>
+                        <button onclick="openCigModal()" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg border border-gray-600 font-bold active:bg-orange-600 transition">Select</button>
                     </div>`;
                 }
+
                 return `
-                <div class="card p-3 flex justify-between items-center item-row">
-                    <div><h3 class="font-bold text-white">${item.name}</h3><p class="text-orange-400 font-bold text-sm">₹${item.price}</p></div>
-                    <div class="flex items-center gap-3 bg-gray-800 rounded-lg p-1">
-                        <button onclick="updateCart('${item.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold text-lg">-</button>
-                        <span class="font-bold w-4 text-center" id="qty-${item.id}">0</span>
-                        <button onclick="updateCart('${item.id}', 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold text-lg">+</button>
+                <div class="glass-card p-3 flex justify-between items-center item-row mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-lg shadow-inner">${icon}</div>
+                        <div>
+                            <h3 class="font-bold text-white text-sm">${item.name}</h3>
+                            <p class="text-orange-400 font-bold text-xs">₹${item.price}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 bg-black/40 rounded-lg p-1 border border-white/5">
+                        <button onclick="updateCart('${item.id}', -1)" class="w-7 h-7 rounded bg-gray-700 text-white flex items-center justify-center font-bold text-sm hover:bg-gray-600">-</button>
+                        <span class="font-bold w-4 text-center text-sm" id="qty-${item.id}">0</span>
+                        <button onclick="updateCart('${item.id}', 1)" class="w-7 h-7 rounded bg-orange-600 text-white flex items-center justify-center font-bold text-sm hover:bg-orange-500">+</button>
                     </div>
                 </div>`;
             }).join('');
-            for(let id in cart) { if(document.getElementById(`qty-${id}`)) document.getElementById(`qty-${id}`).innerText = cart[id].qty; }
+            
+            // Restore quantities
+            for(let id in cart) {
+                if(document.getElementById(`qty-${id}`)) {
+                    document.getElementById(`qty-${id}`).innerText = cart[id].qty;
+                }
+            }
         }
 
-        // --- CIGARETTE MODAL ---
+        // --- CART PERSISTENCE & UI ---
+        function loadCartFromStorage() {
+            const saved = localStorage.getItem('sgmc_cart');
+            if(saved) { cart = JSON.parse(saved); updateCartUI(); }
+        }
+        function saveCartToStorage() { localStorage.setItem('sgmc_cart', JSON.stringify(cart)); }
+        
+        function updateCart(id, change) {
+            if(!isShopOpen) { alert("Shop is closed now."); return; }
+            if(!cart[id]) {
+                const item = displayMenuItems.find(i => i.id == id);
+                if(!item) return;
+                cart[id] = { id: item.id, name: item.name, price: item.price, qty: 0 };
+            }
+            cart[id].qty += change;
+            if(cart[id].qty <= 0) delete cart[id];
+            
+            if(document.getElementById(`qty-${id}`)) document.getElementById(`qty-${id}`).innerText = cart[id] ? cart[id].qty : 0;
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const activeTab = localStorage.getItem('activeTab') || 'menu';
+            if(activeTab !== 'menu') { document.getElementById('cart-bar').classList.add('hidden'); return; }
+            let count = 0; let total = 0;
+            for(let id in cart) { count += cart[id].qty; total += cart[id].qty * cart[id].price; }
+            const bar = document.getElementById('cart-bar');
+            if(count > 0 && isShopOpen) {
+                bar.classList.remove('hidden'); bar.classList.add('flex');
+                document.getElementById('cart-count').innerText = count; 
+                document.getElementById('cart-total').innerText = total;
+            } else { bar.classList.add('hidden'); }
+            saveCartToStorage(); 
+        }
+
+        // --- CHECKOUT ---
+        function openCheckout() {
+            const container = document.getElementById('checkout-items');
+            let html = ''; let total = 0;
+            for(let id in cart) {
+                const item = cart[id]; const itemTotal = item.qty * item.price; total += itemTotal;
+                html += `<div class="flex justify-between items-center bg-gray-800/50 p-3 rounded-xl border border-gray-700 mb-2">
+                    <span class="text-sm text-gray-300">${item.name} <span class="text-orange-400 font-bold">x${item.qty}</span></span>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-white text-sm">₹${itemTotal}</span>
+                        <button onclick="removeItem('${id}')" class="text-red-500 text-xs ml-2 opacity-70 hover:opacity-100"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }
+            container.innerHTML = html;
+            document.getElementById('checkout-total').innerText = total;
+            document.getElementById('order-note').value = ""; // Clear note
+            
+            // Pre-fill address
+            if(userProfile.lastAddress) document.getElementById('order-address').value = userProfile.lastAddress;
+            
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            setPayment('Cash');
+        }
+        function removeItem(id) { delete cart[id]; updateCartUI(); if(Object.keys(cart).length === 0) closeCheckout(); else openCheckout(); }
+        function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
+        function setPayment(mode) {
+            selectedPayment = mode;
+            document.querySelectorAll('.payment-opt').forEach(b => { b.classList.remove('bg-orange-600', 'text-white', 'border-transparent'); b.classList.add('text-gray-300', 'bg-gray-800'); });
+            const btn = document.getElementById('pay-' + mode.toLowerCase());
+            btn.classList.add('bg-orange-600', 'text-white', 'border-transparent'); btn.classList.remove('bg-gray-800', 'text-gray-300');
+        }
+
+        // --- ORDER PLACEMENT (UPDATED WITH ANIMATION & NOTE) ---
+        function handlePlaceOrderClick() {
+            if(Object.keys(cart).length === 0) return;
+            if(!userProfile.phone) { alert("Please setup profile first."); openProfileEdit(); return; }
+            const address = document.getElementById('order-address').value.trim();
+            if(!address) { document.getElementById('alert-popup').classList.remove('hidden'); return; }
+            
+            const total = parseInt(document.getElementById('checkout-total').innerText);
+            
+            if(selectedPayment === 'UPI') {
+                document.getElementById('upi-modal-amount').innerText = total;
+                document.getElementById('checkout-modal').classList.add('hidden');
+                document.getElementById('upi-confirm-modal').classList.remove('hidden');
+            } else { finalizeOrder(selectedPayment); }
+        }
+
+        async function finalizeOrder(paymentMode) {
+            const address = document.getElementById('order-address').value.trim();
+            const note = document.getElementById('order-note').value.trim(); // Get Instructions
+            const total = parseInt(document.getElementById('checkout-total').innerText);
+
+            // Limit Check Logic (Same as before)
+            if(paymentMode === 'Udhaar') {
+                try {
+                    const limitDoc = await db.collection('user_limits').doc(userProfile.phone).get();
+                    const limit = limitDoc.exists ? limitDoc.data().limit : 99999;
+                    let currentDue = 0;
+                    const ordersSnap = await db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get();
+                    ordersSnap.forEach(d => { if(d.data().status !== 'cancelled') currentDue += d.data().totalAmount; });
+                    const paymentsSnap = await db.collection('payments').where('phone', '==', userProfile.phone).get();
+                    paymentsSnap.forEach(d => { currentDue -= d.data().amount; });
+                    if((currentDue + total) > limit) {
+                        document.getElementById('checkout-modal').classList.add('hidden');
+                        document.getElementById('limit-popup').classList.remove('hidden');
+                        return;
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            // Save Address for next time
+            userProfile.lastAddress = address;
+            localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
+
+            const orderData = {
+                items: Object.values(cart),
+                totalAmount: total,
+                paymentMode: paymentMode,
+                paymentVerified: false,
+                status: 'pending',
+                customerName: userProfile.name,
+                customerPhone: userProfile.phone,
+                customerAddress: address,
+                orderNote: note, // Save Note
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Loading state
+            if(document.getElementById('place-order-btn')) document.getElementById('place-order-btn').innerText = "Processing...";
+
+            db.collection('orders').add(orderData).then(() => {
+                cart = {}; saveCartToStorage(); renderMenu(); updateCartUI();
+                closeCheckout(); 
+                document.getElementById('upi-confirm-modal').classList.add('hidden');
+                if(document.getElementById('place-order-btn')) document.getElementById('place-order-btn').innerText = "Place Order";
+                
+                // SHOW COOKING ANIMATION
+                const screen = document.getElementById('cooking-screen');
+                screen.classList.add('active');
+                setTimeout(() => {
+                    screen.classList.remove('active');
+                    switchTab('orders'); // Auto switch to orders
+                }, 3000); // 3 seconds animation
+
+            }).catch(e => { alert("Error: " + e.message); });
+        }
+
+        // --- CIGARETTE MODAL & OTHER STANDARD FUNCS ---
         function openCigModal() {
             if(!isShopOpen) { alert("Shop is closed."); return; }
             tempCigQuantities = {}; cigaretteOptions.forEach(opt => tempCigQuantities[opt.id] = 0);
@@ -435,17 +613,15 @@
                 <div class="p-3 rounded-xl flex justify-between items-center bg-gray-800/50 border border-gray-700">
                     <div><p class="font-bold text-sm text-white">${opt.name}</p><p class="text-xs text-gray-500">₹${opt.price}</p></div>
                     <div class="flex items-center gap-3 bg-gray-900 rounded-lg p-1">
-                        <button onclick="updateTempCigQty('${opt.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold">-</button>
+                        <button onclick="updateTempCigQty('${opt.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white font-bold">-</button>
                         <span class="font-bold w-4 text-center" id="temp-qty-${opt.id}">0</span>
-                        <button onclick="updateTempCigQty('${opt.id}', 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold">+</button>
+                        <button onclick="updateTempCigQty('${opt.id}', 1)" class="w-8 h-8 rounded bg-orange-600 text-white font-bold">+</button>
                     </div>
                 </div>`).join('');
             document.getElementById('cig-modal').classList.remove('hidden');
         }
         function updateTempCigQty(id, change) {
-            if(!tempCigQuantities[id]) tempCigQuantities[id] = 0;
-            tempCigQuantities[id] += change;
-            if(tempCigQuantities[id] < 0) tempCigQuantities[id] = 0;
+            if(!tempCigQuantities[id]) tempCigQuantities[id] = 0; tempCigQuantities[id] += change; if(tempCigQuantities[id] < 0) tempCigQuantities[id] = 0;
             document.getElementById(`temp-qty-${id}`).innerText = tempCigQuantities[id];
         }
         function confirmCigSelection() {
@@ -460,205 +636,64 @@
                     }
                 }
             }
-            if(!added) { alert("Please add at least one item."); return; }
+            if(!added) { alert("Please select item"); return; }
             closeCigModal(); updateCartUI();
         }
         function closeCigModal() { document.getElementById('cig-modal').classList.add('hidden'); }
 
-        // --- CART LOGIC ---
-        function updateCart(id, change) {
-            if(!isShopOpen) { alert("Shop is closed now."); return; }
-            if(!cart[id]) {
-                const item = displayMenuItems.find(i => i.id == id);
-                if(!item) return;
-                cart[id] = { id: item.id, name: item.name, price: item.price, qty: 0 };
-            }
-            cart[id].qty += change;
-            if(cart[id].qty <= 0) delete cart[id];
-            if(document.getElementById(`qty-${id}`)) document.getElementById(`qty-${id}`).innerText = cart[id] ? cart[id].qty : 0;
-            updateCartUI();
+        // --- STANDARD UTILS ---
+        function loadProfile() {
+            const stored = localStorage.getItem('sgmc_customer_profile');
+            if(stored) { userProfile = JSON.parse(stored); updateHeaderProfile(); } else { setTimeout(() => document.getElementById('login-modal').classList.remove('hidden'), 1000); }
         }
-        function updateCartUI() {
-            const activeTab = localStorage.getItem('activeTab') || 'menu';
-            if(activeTab !== 'menu') { document.getElementById('cart-bar').classList.add('hidden'); return; }
-            let count = 0; let total = 0;
-            for(let id in cart) { count += cart[id].qty; total += cart[id].qty * cart[id].price; }
-            const bar = document.getElementById('cart-bar');
-            if(count > 0 && isShopOpen) {
-                bar.classList.remove('hidden'); bar.classList.add('flex');
-                document.getElementById('cart-count').innerText = count; document.getElementById('cart-total').innerText = total;
-            } else { bar.classList.add('hidden'); }
-            saveCartToStorage(); 
+        function saveProfile() {
+            const name = document.getElementById('user-name').value.trim(); const phone = document.getElementById('user-phone').value.trim();
+            if(!name || phone.length < 10) { alert("Invalid details."); return; }
+            userProfile = { name, phone }; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
+            updateHeaderProfile(); document.getElementById('login-modal').classList.add('hidden');
         }
-
-        // --- CHECKOUT ---
-        function openCheckout() {
-            const container = document.getElementById('checkout-items');
-            let html = ''; let total = 0;
-            for(let id in cart) {
-                const item = cart[id]; const itemTotal = item.qty * item.price; total += itemTotal;
-                html += `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm"><span>${item.name} <span class="text-orange-400">x${item.qty}</span></span><div class="flex items-center gap-3"><span class="font-bold">₹${itemTotal}</span><button onclick="removeItem('${id}')" class="text-red-500 text-xs ml-2"><i class="fas fa-trash"></i></button></div></div>`;
-            }
-            container.innerHTML = html;
-            document.getElementById('checkout-total').innerText = total;
-            document.getElementById('checkout-modal').classList.remove('hidden');
-            setPayment('Cash');
-        }
-        function removeItem(id) { delete cart[id]; updateCartUI(); if(Object.keys(cart).length === 0) closeCheckout(); else openCheckout(); }
-        function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
-        function setPayment(mode) {
-            selectedPayment = mode;
-            document.querySelectorAll('.payment-opt').forEach(b => { b.classList.remove('bg-orange-600', 'text-white', 'border-transparent'); b.classList.add('border-gray-600'); });
-            const btn = document.getElementById('pay-' + mode.toLowerCase());
-            btn.classList.add('bg-orange-600', 'text-white', 'border-transparent'); btn.classList.remove('border-gray-600');
-        }
-
-        // --- MAIN ORDER LOGIC ---
-        function handlePlaceOrderClick() {
-            if(Object.keys(cart).length === 0) return;
-            if(!userProfile.phone) { alert("Please setup profile first."); openProfileEdit(); return; }
-            const address = document.getElementById('order-address').value.trim();
-            if(!address) { document.getElementById('alert-popup').classList.remove('hidden'); return; }
-            const total = parseInt(document.getElementById('checkout-total').innerText);
-            
-            if(selectedPayment === 'UPI') {
-                document.getElementById('upi-modal-amount').innerText = total;
-                document.getElementById('checkout-modal').classList.add('hidden');
-                document.getElementById('upi-confirm-modal').classList.remove('hidden');
-            } else { finalizeOrder(selectedPayment); }
-        }
-
-        function attemptDeepLink() { const total = parseInt(document.getElementById('checkout-total').innerText); const upiLink = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${total}&cu=INR`; window.location.href = upiLink; }
-        function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { alert("UPI ID Copied! Pay via any app."); }); }
-
-        // UPDATED: Finalize Order with UDHAAR LIMIT CHECK
-        async function finalizeOrder(paymentMode) {
-            const address = document.getElementById('order-address').value.trim();
-            const total = parseInt(document.getElementById('checkout-total').innerText);
-
-            // UI Loading
-            if(document.getElementById('place-order-btn')) {
-                document.getElementById('place-order-btn').innerText = "Processing...";
-                document.getElementById('place-order-btn').disabled = true;
-            }
-
-            // --- UDHAAR LIMIT CHECK ---
-            if(paymentMode === 'Udhaar') {
-                try {
-                    // Fetch user's limit
-                    const limitDoc = await db.collection('user_limits').doc(userProfile.phone).get();
-                    const limit = limitDoc.exists ? limitDoc.data().limit : 99999; // Default high if no limit set
-
-                    // Fetch current due amount (Simplified check)
-                    let currentDue = 0;
-                    const ordersSnap = await db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get();
-                    ordersSnap.forEach(d => { if(d.data().status !== 'cancelled') currentDue += d.data().totalAmount; });
-                    
-                    const paymentsSnap = await db.collection('payments').where('phone', '==', userProfile.phone).get();
-                    paymentsSnap.forEach(d => { currentDue -= d.data().amount; });
-
-                    if((currentDue + total) > limit) {
-                        // Limit Exceeded
-                        document.getElementById('checkout-modal').classList.add('hidden');
-                        document.getElementById('limit-popup').classList.remove('hidden');
-                        if(document.getElementById('place-order-btn')) {
-                            document.getElementById('place-order-btn').innerText = "Place Order";
-                            document.getElementById('place-order-btn').disabled = false;
-                        }
-                        return; // STOP ORDER
-                    }
-
-                } catch(e) {
-                    console.error("Limit Check Failed", e);
-                    // Continue if error (Fail safe: allow order)
-                }
-            }
-
-            const orderData = {
-                items: Object.values(cart),
-                totalAmount: total,
-                paymentMode: paymentMode,
-                paymentVerified: false,
-                status: 'pending',
-                customerName: userProfile.name,
-                customerPhone: userProfile.phone,
-                customerAddress: address,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            db.collection('orders').add(orderData).then(() => {
-                cart = {}; saveCartToStorage(); renderMenu({}); updateCartUI();
-                closeCheckout(); document.getElementById('upi-confirm-modal').classList.add('hidden');
-                if(document.getElementById('place-order-btn')) { document.getElementById('place-order-btn').innerText = "Place Order"; document.getElementById('place-order-btn').disabled = false; }
-                document.getElementById('success-name').innerText = userProfile.name;
-                const popup = document.getElementById('success-popup'); popup.classList.remove('hidden'); document.getElementById('success-box').classList.add('scale-100');
-                if(document.getElementById('nav-orders').classList.contains('active')) fetchMyHistory();
-            }).catch(e => {
-                alert("Error: " + e.message);
-                document.getElementById('upi-confirm-modal').classList.add('hidden');
-            });
-        }
+        function updateHeaderProfile() { document.getElementById('header-name').innerText = userProfile.name; document.getElementById('header-phone').innerText = userProfile.phone; }
+        function openProfileEdit() { document.getElementById('user-name').value = userProfile.name; document.getElementById('user-phone').value = userProfile.phone; document.getElementById('login-modal').classList.remove('hidden'); }
+        function listenToShopStatus() { db.collection('settings').doc('status').onSnapshot(doc => { isShopOpen = doc.exists ? doc.data().isOpen : true; const banner = document.getElementById('closed-banner'); const badge = document.getElementById('shop-status-badge'); if(!isShopOpen) { banner.classList.remove('hidden'); badge.innerText = "● CLOSED"; badge.className = "text-[10px] text-red-500 font-bold tracking-wide"; document.getElementById('cart-bar').classList.add('hidden'); } else { banner.classList.add('hidden'); badge.innerText = "● LIVE"; badge.className = "text-[10px] text-green-500 font-bold tracking-wide"; updateCartUI(); } }); }
+        function listenToBroadcast() { db.collection('settings').doc('config').onSnapshot(doc => { const bar = document.getElementById('broadcast-bar'); const msgEl = document.getElementById('broadcast-msg'); if(doc.exists && doc.data().broadcastMessage) { msgEl.innerText = doc.data().broadcastMessage; bar.classList.remove('hidden'); } else { bar.classList.add('hidden'); } }); }
+        function switchTab(tab) { localStorage.setItem('activeTab', tab); ['menu', 'orders', 'udhaar'].forEach(t => { document.getElementById('view-' + t).classList.add('hidden'); document.getElementById('nav-' + t).classList.remove('active'); }); document.getElementById('view-' + tab).classList.remove('hidden'); document.getElementById('nav-' + tab).classList.add('active'); updateCartUI(); if(tab === 'orders') fetchMyHistory(); if(tab === 'udhaar') fetchMyUdhaar(); }
         
-        function closeSuccess() { document.getElementById('success-popup').classList.add('hidden'); }
-
-        // --- TABS & HISTORY ---
-        function switchTab(tab) {
-            localStorage.setItem('activeTab', tab);
-            ['menu', 'orders', 'udhaar'].forEach(t => { document.getElementById('view-' + t).classList.add('hidden'); document.getElementById('nav-' + t).classList.remove('active'); });
-            document.getElementById('view-' + tab).classList.remove('hidden'); document.getElementById('nav-' + tab).classList.add('active');
-            updateCartUI();
-            if(tab === 'orders') fetchMyHistory(); if(tab === 'udhaar') fetchMyUdhaar();
-        }
-        function formatDate(timestamp) { if(!timestamp) return ''; const d = timestamp.toDate(); return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`; }
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
-            list.innerHTML = '<p class="text-center text-gray-500 mt-10"><i class="fas fa-circle-notch fa-spin"></i> Loading history...</p>';
+            list.innerHTML = '<p class="text-center text-gray-500 mt-10"><i class="fas fa-circle-notch fa-spin"></i> Loading...</p>';
             db.collection('orders').where('customerPhone', '==', userProfile.phone).get().then(snap => {
                   if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
                   const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
                   cachedOrders = {}; 
                   list.innerHTML = docs.map(doc => {
-                      const d = doc.data(); cachedOrders[doc.id] = d; 
-                      return `<div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} cursor-pointer hover:bg-gray-800 transition" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400">${formatDate(d.timestamp)}</p><p class="font-bold text-sm text-white">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div></div>`;
+                      const d = doc.data(); cachedOrders[doc.id] = d; const dateStr = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(d.timestamp.toDate()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+                      return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} cursor-pointer mb-3" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-[10px] text-gray-400 font-bold uppercase">${dateStr}</p><p class="font-bold text-sm text-white mt-1">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400 text-lg">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold tracking-wider ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div></div>`;
                   }).join('');
               });
         }
+
         function openOrderDetail(orderId) {
             const data = cachedOrders[orderId]; if(!data) return;
-            document.getElementById('od-date').innerText = formatDate(data.timestamp);
+            document.getElementById('od-date').innerText = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '';
             document.getElementById('od-payment').innerText = data.paymentMode || 'Cash'; 
             document.getElementById('od-status').innerText = data.status;
             document.getElementById('od-status').className = "uppercase font-bold " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
             document.getElementById('od-total').innerText = '₹' + data.totalAmount;
+            
+            // Note
+            const noteContainer = document.getElementById('od-note-container');
+            if(data.orderNote) { document.getElementById('od-note').innerText = data.orderNote; noteContainer.classList.remove('hidden'); } else { noteContainer.classList.add('hidden'); }
+
             document.getElementById('od-items').innerHTML = data.items.map(i => `<div class="flex justify-between items-center mb-2 border-b border-gray-800 pb-1 last:border-0 last:pb-0"><div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div><p class="font-bold text-orange-400 text-sm">₹${i.qty * i.price}</p></div>`).join('');
             document.getElementById('order-detail-modal').classList.remove('hidden');
         }
         function closeOrderDetail() { document.getElementById('order-detail-modal').classList.add('hidden'); }
-        
-        function fetchMyUdhaar() {
-            if(!userProfile.phone) return;
-            const upiBtn = document.getElementById('upi-pay-btn'); const amtEl = document.getElementById('my-udhaar-amount'); const historyContainer = document.getElementById('udhaar-history');
-            historyContainer.innerHTML = '<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>';
-            db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get().then(orderSnap => {
-                let debit = 0; let transactions = [];
-                orderSnap.forEach(doc => { const d = doc.data(); if(d.status !== 'cancelled') { debit += d.totalAmount; transactions.push({ type: 'purchase', amount: d.totalAmount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 }); } });
-                db.collection('payments').where('phone', '==', userProfile.phone).get().then(paySnap => {
-                    let credit = 0;
-                    paySnap.forEach(doc => { const d = doc.data(); credit += d.amount; transactions.push({ type: 'paid', amount: d.amount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 }); });
-                    const netDue = debit - credit; amtEl.innerText = netDue;
-                    if(netDue > 0) upiBtn.classList.remove('hidden'); else upiBtn.classList.add('hidden');
-                    transactions.sort((a, b) => b.seconds - a.seconds);
-                    if(transactions.length === 0) { historyContainer.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">No transactions yet.</p>'; return; }
-                    historyContainer.innerHTML = transactions.map(t => {
-                        const dateStr = formatDate(t.timestamp);
-                        if(t.type === 'purchase') { return `<div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Purchase</p></div><span class="text-red-400 font-bold text-lg">-₹${t.amount}</span></div>`; } 
-                        else { return `<div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Paid</p></div><span class="text-green-500 font-bold text-lg">+₹${t.amount}</span></div>`; }
-                    }).join('');
-                });
-            });
-        }
-        function payUdhaarViaUPI() { const amount = document.getElementById('my-udhaar-amount').innerText; const upiId = "7065821697@ybl"; const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&cu=INR`; window.location.href = link; }
+        function attemptDeepLink() { const total = parseInt(document.getElementById('checkout-total').innerText); window.location.href = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${total}&cu=INR`; }
+        function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => alert("Copied!")); }
+        function fetchMyUdhaar() { if(!userProfile.phone) return; const upiBtn = document.getElementById('upi-pay-btn'); const amtEl = document.getElementById('my-udhaar-amount'); const historyContainer = document.getElementById('udhaar-history'); historyContainer.innerHTML = '<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>'; db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get().then(orderSnap => { let debit = 0; let transactions = []; orderSnap.forEach(doc => { const d = doc.data(); if(d.status !== 'cancelled') { debit += d.totalAmount; transactions.push({ type: 'purchase', amount: d.totalAmount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 }); } }); db.collection('payments').where('phone', '==', userProfile.phone).get().then(paySnap => { let credit = 0; paySnap.forEach(doc => { const d = doc.data(); credit += d.amount; transactions.push({ type: 'paid', amount: d.amount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 }); }); const netDue = debit - credit; amtEl.innerText = netDue; if(netDue > 0) upiBtn.classList.remove('hidden'); else upiBtn.classList.add('hidden'); transactions.sort((a, b) => b.seconds - a.seconds); if(transactions.length === 0) { historyContainer.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">No transactions.</p>'; return; } historyContainer.innerHTML = transactions.map(t => { const dateStr = t.timestamp ? new Date(t.timestamp.toDate()).toLocaleDateString() : ''; if(t.type === 'purchase') { return `<div class="flex justify-between items-center p-3 bg-gray-900 border border-gray-800 rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Purchase</p></div><span class="text-red-400 font-bold text-lg">-₹${t.amount}</span></div>`; } else { return `<div class="flex justify-between items-center p-3 bg-gray-900 border border-gray-800 rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Paid</p></div><span class="text-green-500 font-bold text-lg">+₹${t.amount}</span></div>`; } }).join(''); }); }); }
+        function payUdhaarViaUPI() { const amount = document.getElementById('my-udhaar-amount').innerText; window.location.href = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${amount}&cu=INR`; }
+
         init();
     </script>
 </body>
