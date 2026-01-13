@@ -23,6 +23,8 @@
         #custom-confirm { backdrop-filter: blur(5px); }
         .confirm-box { transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .confirm-box.open { transform: scale(1); }
+        /* Blur background when modals are open */
+        .modal-active { overflow: hidden; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-24" onclick="enableSound()">
@@ -30,7 +32,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
         <div class="flex gap-2">
-            <button onclick="setBroadcast()" class="w-8 h-8 rounded bg-gray-800 text-yellow-500 border border-gray-600 flex items-center justify-center shadow"><i class="fas fa-bullhorn text-xs"></i></button>
+            <button onclick="openBroadcastModal()" class="w-8 h-8 rounded bg-gray-800 text-yellow-500 border border-gray-600 flex items-center justify-center shadow"><i class="fas fa-bullhorn text-xs"></i></button>
             <button onclick="openMenuControl()" class="px-3 py-2 rounded text-xs font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/50">Stock</button>
             <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-2 rounded text-xs font-bold bg-gray-700 shadow-lg">Loading...</button>
         </div>
@@ -39,8 +41,11 @@
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div class="card p-3 flex flex-col justify-between relative overflow-hidden">
             <div class="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-full -mr-8 -mt-8"></div>
-            <div class="text-center z-10">
-                <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
+            <div class="text-center z-10 relative">
+                <div class="flex justify-center items-center gap-2">
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
+                    <button onclick="toggleSalesPrivacy()" class="text-gray-600 hover:text-white text-[10px]"><i class="fas fa-eye" id="privacy-icon"></i></button>
+                </div>
                 <h2 class="text-2xl font-bold text-green-400 mt-1">₹<span id="total-sales">0</span></h2>
             </div>
             <button onclick="confirmAction('Reset Day Sales?', endDay)" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
@@ -120,6 +125,38 @@
         </div>
     </div>
 
+    <div id="broadcast-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i> Broadcast</h3>
+                <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+            <p class="text-xs text-gray-400 mb-3">Yeh message sabhi customers ke app ke upar chalega.</p>
+            <textarea id="broadcast-input" rows="3" class="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-sm focus:border-orange-500 outline-none" placeholder="e.g. Aaj 4 baje shop band rahegi..."></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="saveBroadcast('')" class="flex-1 py-2 rounded-lg bg-red-900/50 text-red-400 font-bold text-xs border border-red-900">Clear Message</button>
+                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-xs shadow-lg">Publish</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="limit-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-1">Set Udhaar Limit</h3>
+            <p class="text-sm text-gray-400 mb-4" id="limit-modal-name">User</p>
+            
+            <div class="bg-gray-800 p-4 rounded-xl mb-4 border border-gray-700">
+                <label class="text-xs text-gray-500 mb-1 block">Max Amount Allowed (₹)</label>
+                <input type="number" id="limit-input" class="w-full bg-transparent text-white text-2xl font-bold outline-none border-b border-gray-600 focus:border-orange-500 pb-1" placeholder="500">
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button>
+                <button onclick="saveLimit()" class="flex-1 py-3 rounded-lg bg-purple-600 text-white font-bold text-sm shadow-lg shadow-purple-900/50">Set Limit</button>
+            </div>
+        </div>
+    </div>
+
     <div id="custom-confirm" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs confirm-box shadow-2xl">
             <h3 class="text-lg font-bold text-white mb-2" id="confirm-title">Confirm?</h3>
@@ -167,6 +204,10 @@
         let soundEnabled = false;
         let pendingAction = null; 
         let currentMenuData = { stock: {}, prices: {}, customItems: [] };
+        
+        // New State for Modals
+        let currentLimitPhone = null;
+        let salesHidden = false;
 
         // --- INITIALIZATION ---
         function init() {
@@ -186,13 +227,17 @@
             });
             db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
+
+            // Restore Last Active Tab
+            const lastTab = localStorage.getItem('admin_active_tab') || 'live';
+            switchTab(lastTab);
         }
 
-        // --- UPDATED SOUND LOGIC (LOOP) ---
+        // --- SOUND LOGIC ---
         function enableSound() { 
             if(!soundEnabled) { 
                 const audio = document.getElementById('order-sound'); 
-                audio.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; // Louder Bell
+                audio.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; 
                 audio.play().then(() => { 
                     audio.pause(); audio.currentTime = 0; 
                     soundEnabled = true; 
@@ -204,14 +249,9 @@
         function playNotification() { 
             if(soundEnabled) { 
                 const audio = document.getElementById('order-sound'); 
-                audio.loop = true; // LOOP ENABLED
+                audio.loop = true; 
                 audio.play().catch(e => {}); 
-                
-                // Add one-time listener to stop on click
-                document.body.addEventListener('click', () => {
-                    audio.pause();
-                    audio.currentTime = 0;
-                }, { once: true });
+                document.body.addEventListener('click', () => { audio.pause(); audio.currentTime = 0; }, { once: true });
             } 
         }
 
@@ -263,16 +303,68 @@
                 }
             });
 
-            if(activeCount > lastPendingCount) playNotification(); // SOUND TRIGGER
+            if(activeCount > lastPendingCount) playNotification();
             lastPendingCount = activeCount;
             document.getElementById('view-live').innerHTML = liveHtml || '<div class="flex flex-col items-center justify-center pt-20 opacity-50"><i class="fas fa-mug-hot text-4xl mb-2 text-gray-600"></i><p class="text-gray-500">No active orders</p></div>';
-            document.getElementById('total-sales').innerText = sales;
+            
+            // Sales Privacy Logic
+            const salesEl = document.getElementById('total-sales');
+            salesEl.innerText = salesHidden ? "****" : sales;
+            salesEl.dataset.realValue = sales; // Store for toggling
+            
             document.getElementById('pending-count').innerText = activeCount;
             renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
             if(!document.getElementById('settle-modal').classList.contains('hidden') && currentSettlePhone) renderSettleHistory(currentSettlePhone);
         }
 
-        // --- UPDATED UDHAAR RENDER (Add Lock Icon) ---
+        function toggleSalesPrivacy() {
+            salesHidden = !salesHidden;
+            const salesEl = document.getElementById('total-sales');
+            const icon = document.getElementById('privacy-icon');
+            
+            if(salesHidden) {
+                salesEl.innerText = "****";
+                icon.className = "fas fa-eye-slash";
+            } else {
+                salesEl.innerText = salesEl.dataset.realValue;
+                icon.className = "fas fa-eye";
+            }
+        }
+
+        // --- NEW AESTHETIC MODAL FUNCTIONS ---
+        
+        // Broadcast
+        function openBroadcastModal() {
+            document.getElementById('broadcast-modal').classList.remove('hidden');
+        }
+        function saveBroadcast(msg) {
+            db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true })
+            .then(() => {
+                document.getElementById('broadcast-modal').classList.add('hidden');
+                showToast(msg ? "Broadcast Active" : "Broadcast Removed");
+            });
+        }
+
+        // Udhaar Limit
+        function openLimitModal(phone, name) {
+            currentLimitPhone = phone;
+            document.getElementById('limit-modal-name').innerText = name + " (" + phone + ")";
+            document.getElementById('limit-input').value = ""; // Reset
+            document.getElementById('limit-modal').classList.remove('hidden');
+            document.getElementById('limit-input').focus();
+        }
+
+        function saveLimit() {
+            const val = document.getElementById('limit-input').value;
+            if(!val) { showToast("Enter a value", "error"); return; }
+            db.collection('user_limits').doc(currentLimitPhone).set({ limit: parseInt(val) }, { merge: true })
+            .then(() => {
+                document.getElementById('limit-modal').classList.add('hidden');
+                showToast("Limit Set Successfully");
+            });
+        }
+
+        // --- RENDERERS ---
         function renderUdhaar() {
             const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
             for(let phone in udhaarMap) {
@@ -283,7 +375,7 @@
                         <div>
                             <div class="flex items-center gap-2">
                                 <h4 class="font-bold text-white">${u.name}</h4>
-                                <button onclick="setLimit('${phone}', '${u.name}')" class="text-gray-500 hover:text-white text-xs"><i class="fas fa-lock"></i></button>
+                                <button onclick="openLimitModal('${phone}', '${u.name}')" class="text-gray-500 hover:text-white text-xs"><i class="fas fa-lock"></i></button>
                             </div>
                             <p class="text-xs text-gray-400 tracking-wide">${phone}</p>
                         </div>
@@ -298,21 +390,6 @@
                 }
             }
             list.innerHTML = html || "<p class='text-center text-gray-500 text-sm mt-10'>No Udhaar pending.</p>";
-        }
-
-        // --- NEW FEATURES: LIMIT & BROADCAST ---
-        function setLimit(phone, name) {
-            const limit = prompt(`Set Max Udhaar Limit for ${name}:`, "500");
-            if(limit && !isNaN(limit)) {
-                db.collection('user_limits').doc(phone).set({ limit: parseInt(limit) }, { merge: true })
-                .then(() => showToast("Limit Set: ₹" + limit));
-            }
-        }
-
-        function setBroadcast() {
-            const msg = prompt("Enter Broadcast Message (Leave empty to remove):");
-            db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true })
-            .then(() => showToast(msg ? "Broadcast Active" : "Broadcast Removed"));
         }
 
         function renderHistory() {
@@ -374,7 +451,23 @@
         function markComplete(id) { confirmAction('Mark as Delivered?', () => { db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); }); }
         function cancelOrder(id) { db.collection('orders').doc(id).update({ status: 'cancelled' }).then(() => showToast("Order Cancelled")); }
         function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
-        function switchTab(t) { ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-500'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); if(t==='history') renderHistory(); }
+        
+        // --- TAB LOGIC WITH MEMORY ---
+        function switchTab(t) { 
+            // Save state to browser memory
+            localStorage.setItem('admin_active_tab', t);
+            
+            ['live', 'history', 'udhaar'].forEach(x => { 
+                document.getElementById(`view-${x}`).classList.add('hidden'); 
+                document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); 
+                document.getElementById(`tab-${x}`).classList.add('text-gray-500'); 
+            }); 
+            document.getElementById(`view-${t}`).classList.remove('hidden'); 
+            document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); 
+            document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); 
+            if(t==='history') renderHistory(); 
+        }
+
         function filterUdhaar() { renderUdhaar(); }
         
         // --- MENU MANAGEMENT ---
