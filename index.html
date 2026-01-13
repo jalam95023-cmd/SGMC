@@ -27,6 +27,10 @@
         /* Modal & Profile */
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
         .profile-avatar { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; items-center; justify-center; font-weight: bold; color: #F97316; border: 1px solid #F97316; }
+        
+        /* New Aesthetic Alert */
+        .animate-pop { animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -53,7 +57,7 @@
             <p class="text-xs">Orders allow nahi hain. Please wait.</p>
         </div>
 
-        <div id="menu-container" class="space-y-3">
+        <div id="menu-container" class="space-y-3 pb-10">
             <div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500"></i></div>
         </div>
     </div>
@@ -129,10 +133,7 @@
                 <h3 class="text-lg font-bold">Select Cigarettes</h3>
                 <button onclick="closeCigModal()" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
-            
-            <div id="cig-options-list" class="space-y-3 overflow-y-auto mb-4 flex-1">
-                </div>
-
+            <div id="cig-options-list" class="space-y-3 overflow-y-auto mb-4 flex-1"></div>
             <button onclick="confirmCigSelection()" class="w-full btn-primary py-3 rounded-xl shadow-lg">Add All to Cart</button>
         </div>
     </div>
@@ -171,6 +172,17 @@
         </div>
     </div>
 
+    <div id="alert-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[70] hidden">
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-red-900/50 shadow-2xl w-full max-w-xs animate-pop">
+            <div class="w-14 h-14 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-3 text-red-500 text-2xl">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">Address Missing</h3>
+            <p class="text-gray-400 text-xs mb-4">Bhai, address toh daalo taaki chai sahi jagah pahuche!</p>
+            <button onclick="document.getElementById('alert-popup').classList.add('hidden'); document.getElementById('order-address').focus();" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg font-bold text-sm transition">Okay, Daalta hu</button>
+        </div>
+    </div>
+
     <div id="upi-confirm-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[60] hidden">
         <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-yellow-600 shadow-2xl w-full max-w-sm">
             <div class="w-16 h-16 bg-yellow-600/20 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-500 text-3xl">
@@ -181,7 +193,6 @@
             <div class="bg-black/30 p-3 rounded-lg mb-4 text-left">
                 <p class="text-xs text-gray-400 mb-1">Total Amount:</p>
                 <p class="text-xl font-bold text-orange-500">₹<span id="upi-modal-amount">0</span></p>
-                
                 <p class="text-xs text-gray-400 mt-3 mb-1">UPI ID:</p>
                 <div class="flex justify-between items-center bg-black/50 p-2 rounded border border-gray-700">
                     <span class="text-sm font-mono text-white select-all">9523196156@ybl</span>
@@ -197,7 +208,6 @@
                     I Have Made Payment
                 </button>
             </div>
-            
             <button onclick="document.getElementById('upi-confirm-modal').classList.add('hidden')" class="mt-4 text-gray-500 text-xs underline">Cancel</button>
         </div>
     </div>
@@ -243,15 +253,19 @@
 
         // --- STATE ---
         let cart = {};
-        let menuItems = [
+        // BASE ITEMS (Default)
+        let baseMenuItems = [
             { id: 1, name: "Normal Chai", price: 10 },
             { id: 2, name: "Adrak Chai", price: 15 },
             { id: 3, name: "Cigarettes", isSpecial: true },
             { id: 4, name: "Matthi", price: 5 },
-            { id: 5, name: "Veg Roll", price: 10 },
+            { id: 5, name: "Cream Roll", price: 10 }, // Renamed from Veg Roll
             { id: 6, name: "Biscuit", price: 5 },
             { id: 7, name: "Namkeen", price: 10 }
         ];
+        
+        // This will hold the FINAL merged menu
+        let displayMenuItems = [...baseMenuItems];
 
         let cigaretteOptions = [
             { id: 'cig_marlboro', name: 'Marlboro Advance', price: 20 },
@@ -269,7 +283,7 @@
         // --- INIT ---
         function init() {
             loadProfile();
-            loadMenuStatus();
+            loadMenuData(); // New function to load items + prices + stock
             listenToShopStatus();
             loadCartFromStorage(); 
             const lastTab = localStorage.getItem('activeTab') || 'menu';
@@ -322,7 +336,7 @@
             document.getElementById('login-modal').classList.remove('hidden');
         }
 
-        // --- MENU LOGIC ---
+        // --- MENU LOGIC (UPDATED) ---
         function listenToShopStatus() {
             db.collection('settings').doc('status').onSnapshot(doc => {
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
@@ -342,18 +356,51 @@
             });
         }
 
-        function loadMenuStatus() {
-            db.collection('settings').doc('menu').onSnapshot(doc => {
-                renderMenu(doc.exists ? doc.data() : {});
+        function loadMenuData() {
+            // We listen to 'settings/menu_data' which contains everything
+            db.collection('settings').doc('menu_data').onSnapshot(doc => {
+                let stockMap = {};
+                let priceOverrides = {};
+                let customItems = [];
+
+                if(doc.exists) {
+                    const data = doc.data();
+                    stockMap = data.stock || {};
+                    priceOverrides = data.prices || {};
+                    customItems = data.customItems || [];
+                }
+
+                // MERGE DATA
+                displayMenuItems = baseMenuItems.map(item => {
+                    return {
+                        ...item,
+                        // If admin changed price, use that, else use default
+                        price: priceOverrides[item.id] !== undefined ? parseInt(priceOverrides[item.id]) : item.price
+                    };
+                });
+
+                // Append Custom Items
+                if(customItems && customItems.length > 0) {
+                     // Ensure custom items also respect price overrides if any (though usually they are fresh)
+                     const formattedCustom = customItems.map(i => ({
+                         ...i,
+                         price: priceOverrides[i.id] !== undefined ? parseInt(priceOverrides[i.id]) : parseInt(i.price)
+                     }));
+                     displayMenuItems = [...displayMenuItems, ...formattedCustom];
+                }
+
+                renderMenu(stockMap);
             });
         }
 
         function renderMenu(stockStatus) {
             const container = document.getElementById('menu-container');
-            container.innerHTML = menuItems.map(item => {
+            
+            container.innerHTML = displayMenuItems.map(item => {
+                // Check if hidden by admin
                 if(stockStatus[item.id] === false) return '';
 
-                if(item.id === 3) {
+                if(item.isSpecial) {
                     return `
                     <div class="card p-3 flex justify-between items-center item-row bg-gray-800/50">
                         <div>
@@ -373,13 +420,14 @@
                         <p class="text-orange-400 font-bold text-sm">₹${item.price}</p>
                     </div>
                     <div class="flex items-center gap-3 bg-gray-800 rounded-lg p-1">
-                        <button onclick="updateCart(${item.id}, -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold text-lg">-</button>
+                        <button onclick="updateCart('${item.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold text-lg">-</button>
                         <span class="font-bold w-4 text-center" id="qty-${item.id}">0</span>
-                        <button onclick="updateCart(${item.id}, 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold text-lg">+</button>
+                        <button onclick="updateCart('${item.id}', 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold text-lg">+</button>
                     </div>
                 </div>`;
             }).join('');
             
+            // Restore quantities
             for(let id in cart) {
                 if(document.getElementById(`qty-${id}`)) {
                     document.getElementById(`qty-${id}`).innerText = cart[id].qty;
@@ -445,10 +493,13 @@
         // --- CART LOGIC ---
         function updateCart(id, change) {
             if(!isShopOpen) { alert("Shop is closed now."); return; }
+            
+            // Need to find item in DISPLAY menu items (merged list)
             if(!cart[id]) {
-                const item = menuItems.find(i => i.id === id);
+                // Note: id might be string or int now due to custom items
+                const item = displayMenuItems.find(i => i.id == id);
                 if(!item) return;
-                cart[id] = { ...item, qty: 0 };
+                cart[id] = { id: item.id, name: item.name, price: item.price, qty: 0 };
             }
             cart[id].qty += change;
             if(cart[id].qty <= 0) delete cart[id];
@@ -533,15 +584,14 @@
             
             const address = document.getElementById('order-address').value.trim();
             if(!address) {
-                alert("Please enter a Delivery Address to continue.");
-                document.getElementById('order-address').focus();
+                // NEW: Use Aesthetic Popup instead of Alert
+                document.getElementById('alert-popup').classList.remove('hidden');
                 return;
             }
 
             const total = parseInt(document.getElementById('checkout-total').innerText);
 
             if(selectedPayment === 'UPI') {
-                // Show UPI Modal instead of direct link
                 document.getElementById('upi-modal-amount').innerText = total;
                 document.getElementById('checkout-modal').classList.add('hidden');
                 document.getElementById('upi-confirm-modal').classList.remove('hidden');
@@ -551,7 +601,6 @@
             }
         }
 
-        // NEW: UPI Fallback Functions
         function attemptDeepLink() {
             const total = parseInt(document.getElementById('checkout-total').innerText);
             const upiLink = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${total}&cu=INR`;
@@ -589,7 +638,7 @@
             db.collection('orders').add(orderData).then(() => {
                 cart = {};
                 saveCartToStorage(); 
-                renderMenu({}); 
+                renderMenu({}); // will refresh via listener anyway
                 updateCartUI();
                 
                 closeCheckout();
@@ -625,10 +674,7 @@
             });
             document.getElementById('view-' + tab).classList.remove('hidden');
             document.getElementById('nav-' + tab).classList.add('active');
-
-            // Force Cart Update (hides it if not menu)
             updateCartUI();
-
             if(tab === 'orders') fetchMyHistory();
             if(tab === 'udhaar') fetchMyUdhaar();
         }
@@ -639,7 +685,6 @@
             return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         }
 
-        // --- HISTORY DETAIL ---
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
@@ -739,7 +784,6 @@
 
         function payUdhaarViaUPI() {
             const amount = document.getElementById('my-udhaar-amount').innerText;
-            const name = userProfile.name;
             const upiId = "7065821697@ybl";
             const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&cu=INR`;
             window.location.href = link;
