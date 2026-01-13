@@ -17,7 +17,6 @@
         .card { background: #1f1f1f; border-radius: 12px; border: 1px solid #333; }
         .tab-active { border-bottom: 2px solid #F97316; color: #F97316; }
         
-        /* New Toast & Modal Styles */
         #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: rgba(30, 30, 30, 0.95); border: 1px solid #333; padding: 10px 20px; border-radius: 50px; color: white; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: all 0.3s ease; display: flex; items-center; gap: 8px; backdrop-filter: blur(5px); }
         .toast.show { opacity: 1; transform: translateY(0); }
@@ -73,42 +72,37 @@
     <div id="history-detail-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
         <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
             <button onclick="closeHistoryDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
-            
             <h3 class="text-xl font-bold mb-1 text-white">Order Details</h3>
             <p id="hd-date" class="text-xs text-gray-500 mb-4"></p>
-
-            <div class="bg-black/40 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto border border-gray-800" id="hd-items">
-                </div>
-
+            <div class="bg-black/40 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto border border-gray-800" id="hd-items"></div>
             <div class="space-y-2 text-sm">
-                <div class="flex justify-between text-gray-400">
-                    <span>Customer</span>
-                    <span id="hd-customer" class="text-white font-bold text-right"></span>
-                </div>
-                 <div class="flex justify-between text-gray-400">
-                    <span>Payment Mode</span>
-                    <span id="hd-payment" class="text-white font-bold"></span>
-                </div>
-                <div class="flex justify-between text-gray-400">
-                    <span>Status</span>
-                    <span id="hd-status" class="uppercase font-bold"></span>
-                </div>
-                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold text-white">
-                    <span>Total Amount</span>
-                    <span class="text-orange-500" id="hd-total"></span>
-                </div>
+                <div class="flex justify-between text-gray-400"><span>Customer</span><span id="hd-customer" class="text-white font-bold text-right"></span></div>
+                 <div class="flex justify-between text-gray-400"><span>Payment Mode</span><span id="hd-payment" class="text-white font-bold"></span></div>
+                <div class="flex justify-between text-gray-400"><span>Status</span><span id="hd-status" class="uppercase font-bold"></span></div>
+                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold text-white"><span>Total Amount</span><span class="text-orange-500" id="hd-total"></span></div>
             </div>
         </div>
     </div>
 
-    <div id="menu-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto shadow-2xl">
-            <h3 class="text-xl font-bold mb-4 text-white">Stock Management</h3>
-            <div id="menu-list-items" class="space-y-3"></div>
-            <div class="flex gap-3 mt-6">
-                <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold">Cancel</button>
-                <button onclick="saveMenuStatus()" class="flex-1 py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">Save</button>
+    <div id="menu-modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Stock & Prices</h3>
+                <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
+
+            <div class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1" id="menu-list-items"></div>
+
+            <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-4">
+                <p class="text-xs text-orange-400 font-bold mb-2 uppercase">Add New Item</p>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="new-item-name" placeholder="Item Name" class="bg-gray-900 text-white text-xs p-2 rounded flex-[2] border border-gray-600 outline-none focus:border-orange-500">
+                    <input type="number" id="new-item-price" placeholder="₹ Price" class="bg-gray-900 text-white text-xs p-2 rounded flex-1 border border-gray-600 outline-none focus:border-orange-500">
+                </div>
+                <button onclick="addNewItem()" class="w-full bg-orange-600 text-white text-xs py-2 rounded font-bold shadow hover:bg-orange-500">Add Item</button>
+            </div>
+
+            <button onclick="saveMenuStatus()" class="w-full py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">Save Changes</button>
         </div>
     </div>
 
@@ -116,22 +110,17 @@
         <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-1 text-white">Settle Payment</h3>
             <p class="text-gray-400 text-sm mb-4" id="settle-name"></p>
-            
             <div class="text-center mb-6">
                 <p class="text-xs text-gray-500 uppercase">Current Due</p>
                 <p class="text-3xl font-bold text-red-400">₹<span id="settle-due">0</span></p>
             </div>
-            
             <input type="number" id="settle-amount" class="w-full p-4 bg-gray-800 rounded-lg text-white mb-4 border border-gray-700 outline-none text-center text-xl font-bold focus:border-blue-500" placeholder="Amount Received">
-            
             <div class="flex gap-3 mb-6">
                 <button onclick="closeSettle()" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold">Cancel</button>
                 <button onclick="submitPayment()" class="flex-1 py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">Settle</button>
             </div>
-
             <h4 class="text-xs font-bold text-gray-500 uppercase border-b border-gray-700 pb-2 mb-2">Recent Payments</h4>
-            <div id="settle-history-list" class="space-y-2 text-sm max-h-40 overflow-y-auto">
-                </div>
+            <div id="settle-history-list" class="space-y-2 text-sm max-h-40 overflow-y-auto"></div>
         </div>
     </div>
 
@@ -162,7 +151,16 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const adminMenuItems = [ { id: 1, name: "Normal Chai" }, { id: 2, name: "Adrak Chai" }, { id: 3, name: "Cigarette" }, { id: 4, name: "Matthi" }, { id: 5, name: "Veg Roll" }, { id: 6, name: "Biscuit" }, { id: 7, name: "Namkeen" } ];
+        // Base items for reference (IDs 1-7 are static)
+        const baseAdminItems = [
+            { id: 1, name: "Normal Chai", defaultPrice: 10 },
+            { id: 2, name: "Adrak Chai", defaultPrice: 15 },
+            { id: 3, name: "Cigarette", defaultPrice: 0 }, // Special
+            { id: 4, name: "Matthi", defaultPrice: 5 },
+            { id: 5, name: "Cream Roll", defaultPrice: 10 },
+            { id: 6, name: "Biscuit", defaultPrice: 5 },
+            { id: 7, name: "Namkeen", defaultPrice: 10 }
+        ];
 
         // --- STATE ---
         let isShopOpen = false;
@@ -173,6 +171,9 @@
         let lastPendingCount = 0; 
         let soundEnabled = false;
         let pendingAction = null; 
+        
+        // Menu Data Cache
+        let currentMenuData = { stock: {}, prices: {}, customItems: [] };
 
         // --- INITIALIZATION ---
         function init() {
@@ -186,6 +187,12 @@
                 btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; 
                 btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white shadow-lg shadow-green-900/50" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white shadow-lg shadow-red-900/50"; 
             });
+            // Listen to Menu Data
+            db.collection('settings').doc('menu_data').onSnapshot(doc => {
+                 if(doc.exists) currentMenuData = doc.data();
+                 else currentMenuData = { stock: {}, prices: {}, customItems: [] };
+            });
+
             db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
         }
@@ -283,11 +290,7 @@
             document.getElementById('total-sales').innerText = sales;
             document.getElementById('pending-count').innerText = activeCount;
             renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
-            
-            // If modal is open, refresh history
-            if(!document.getElementById('settle-modal').classList.contains('hidden') && currentSettlePhone) {
-                renderSettleHistory(currentSettlePhone);
-            }
+            if(!document.getElementById('settle-modal').classList.contains('hidden') && currentSettlePhone) renderSettleHistory(currentSettlePhone);
         }
 
         // --- UI RENDERERS ---
@@ -315,9 +318,7 @@
         function renderHistory() {
             const container = document.getElementById('history-container');
             let groups = {}; allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
-            
             if(Object.keys(groups).length === 0) { container.innerHTML = "<p class='text-center text-gray-500 text-sm mt-10'>No history available.</p>"; return; }
-            
             container.innerHTML = Object.keys(groups).map(p => {
                 const g = groups[p]; const t = g.orders.reduce((s, o) => s + (o.status === 'completed' ? o.totalAmount : 0), 0);
                 return `
@@ -331,15 +332,8 @@
                             const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(o.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
                             return `
                             <div onclick="openHistoryDetail('${o.id}')" class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700/50 cursor-pointer hover:bg-gray-700 transition relative">
-                                <div>
-                                    <span class="text-gray-500 text-[10px] block">${dateStr}</span> 
-                                    <span class="text-[10px] uppercase font-bold px-1 rounded ${o.status==='completed'?'bg-green-900 text-green-300':'bg-red-900 text-red-300'}">${o.status}</span>
-                                    <p class="text-xs text-gray-300 mt-1 truncate max-w-[150px]">${o.items.map(i=>i.name).join(', ')}</p>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <span class="font-bold text-white text-sm">₹${o.totalAmount}</span>
-                                    <button onclick="event.stopPropagation(); confirmAction('Delete this record?', () => deleteHistoryItem('${o.id}'))" class="text-red-500 text-xs p-1 opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button>
-                                </div>
+                                <div><span class="text-gray-500 text-[10px] block">${dateStr}</span><span class="text-[10px] uppercase font-bold px-1 rounded ${o.status==='completed'?'bg-green-900 text-green-300':'bg-red-900 text-red-300'}">${o.status}</span><p class="text-xs text-gray-300 mt-1 truncate max-w-[150px]">${o.items.map(i=>i.name).join(', ')}</p></div>
+                                <div class="flex items-center gap-3"><span class="font-bold text-white text-sm">₹${o.totalAmount}</span><button onclick="event.stopPropagation(); confirmAction('Delete this record?', () => deleteHistoryItem('${o.id}'))" class="text-red-500 text-xs p-1 opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button></div>
                             </div>`;
                         }).join('')}
                     </div>
@@ -347,179 +341,170 @@
             }).join('');
         }
 
-        // --- NEW: History Detail Logic ---
         function openHistoryDetail(id) {
             const data = allHistoryOrders.find(o => o.id === id);
             if(!data) return;
-
-            // Date & Time
             const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
             document.getElementById('hd-date').innerText = dateStr;
-            
-            // Customer
             document.getElementById('hd-customer').innerText = (data.customerName || 'Guest') + '\n' + (data.customerPhone || '');
-            
-            // Payment Mode
             const mode = data.paymentMode || 'Cash';
             document.getElementById('hd-payment').innerText = mode;
             document.getElementById('hd-payment').className = "font-bold text-right " + (mode === 'Udhaar' ? 'text-red-400' : 'text-blue-400');
-
-            // Status
             document.getElementById('hd-status').innerText = data.status;
             document.getElementById('hd-status').className = "uppercase font-bold text-right " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
-
-            // Total
             document.getElementById('hd-total').innerText = '₹' + data.totalAmount;
-
-            // Items List
-            const itemsContainer = document.getElementById('hd-items');
-            itemsContainer.innerHTML = data.items.map(i => `
+            document.getElementById('hd-items').innerHTML = data.items.map(i => `
                 <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1 last:border-0 last:pb-0">
-                    <div>
-                        <p class="text-sm font-bold text-white">${i.name}</p>
-                        <p class="text-xs text-gray-400">Qty: ${i.qty}</p>
-                    </div>
+                    <div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div>
                     <p class="font-bold text-orange-400 text-sm">₹${(i.price || 0) * i.qty}</p>
                 </div>
             `).join('');
-
             document.getElementById('history-detail-modal').classList.remove('hidden');
         }
 
-        function closeHistoryDetail() {
-            document.getElementById('history-detail-modal').classList.add('hidden');
-        }
-
-        // --- ACTIONS ---
-        function sendWhatsApp(name, phone, items, total) {
-            if(!phone) { showToast("No Phone Number", "error"); return; }
-            let p = phone.replace(/\D/g,''); if(p.length === 10) p = "91" + p;
-            const text = `*SGMC Chai Stall* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you!`;
-            window.open(`https://wa.me/${p}?text=${encodeURIComponent(text)}`, '_blank');
-        }
-
-        // --- TOAST & CONFIRM SYSTEM ---
-        function showToast(msg, type = 'success') {
-            const container = document.getElementById('toast-container');
-            const el = document.createElement('div');
-            el.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`;
-            el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`;
-            container.appendChild(el);
-            setTimeout(() => el.classList.add('show'), 10);
-            setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000);
-        }
-
-        function confirmAction(title, callback) {
-            document.getElementById('confirm-title').innerText = title;
-            document.getElementById('custom-confirm').classList.remove('hidden');
-            setTimeout(() => document.querySelector('.confirm-box').classList.add('open'), 10);
-            pendingAction = callback;
-        }
-
-        function closeConfirm(result) {
-            document.querySelector('.confirm-box').classList.remove('open');
-            setTimeout(() => document.getElementById('custom-confirm').classList.add('hidden'), 200);
-            if(result && pendingAction) pendingAction();
-            pendingAction = null;
-        }
-
-        // --- CORE FUNCTIONS ---
+        function closeHistoryDetail() { document.getElementById('history-detail-modal').classList.add('hidden'); }
+        function sendWhatsApp(name, phone, items, total) { if(!phone) { showToast("No Phone Number", "error"); return; } let p = phone.replace(/\D/g,''); if(p.length === 10) p = "91" + p; window.open(`https://wa.me/${p}?text=${encodeURIComponent(`*SGMC Chai Stall* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you!`)}`, '_blank'); }
+        function showToast(msg, type = 'success') { const container = document.getElementById('toast-container'); const el = document.createElement('div'); el.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`; el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`; container.appendChild(el); setTimeout(() => el.classList.add('show'), 10); setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000); }
+        function confirmAction(title, callback) { document.getElementById('confirm-title').innerText = title; document.getElementById('custom-confirm').classList.remove('hidden'); setTimeout(() => document.querySelector('.confirm-box').classList.add('open'), 10); pendingAction = callback; }
+        function closeConfirm(result) { document.querySelector('.confirm-box').classList.remove('open'); setTimeout(() => document.getElementById('custom-confirm').classList.add('hidden'), 200); if(result && pendingAction) pendingAction(); pendingAction = null; }
         function deleteHistoryItem(id) { db.collection('orders').doc(id).delete().then(() => showToast("Deleted")); }
-        
-        function openSettle(phone, name, due) { 
-            currentSettlePhone = phone; 
-            document.getElementById('settle-name').innerText = name + " (" + phone + ")"; 
-            document.getElementById('settle-due').innerText = due; 
-            document.getElementById('settle-amount').value = ""; 
-            
-            // Render History immediately
-            renderSettleHistory(phone);
-            
-            document.getElementById('settle-modal').classList.remove('hidden'); 
-        }
+        function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name + " (" + phone + ")"; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = ""; renderSettleHistory(phone); document.getElementById('settle-modal').classList.remove('hidden'); }
         
         function renderSettleHistory(phone) {
             const list = document.getElementById('settle-history-list');
             list.innerHTML = '<p class="text-center text-gray-600 text-xs">Loading...</p>';
-            
-            if(!window.paymentsSnapshot) {
-                list.innerHTML = '<p class="text-center text-gray-600 text-xs">No data.</p>';
-                return;
-            }
-
-            const payments = [];
-            window.paymentsSnapshot.docs.forEach(doc => {
-                const d = doc.data();
-                if(d.phone === phone) payments.push(d);
-            });
-
-            if(payments.length === 0) {
-                list.innerHTML = '<p class="text-center text-gray-500 text-xs">No previous payments found.</p>';
-                return;
-            }
-
-            list.innerHTML = payments.map(p => {
-                const dateStr = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A';
-                const timeStr = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-                
-                return `
+            if(!window.paymentsSnapshot) { list.innerHTML = '<p class="text-center text-gray-600 text-xs">No data.</p>'; return; }
+            const payments = []; window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(d.phone === phone) payments.push(d); });
+            if(payments.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 text-xs">No previous payments found.</p>'; return; }
+            list.innerHTML = payments.map(p => `
                 <div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
-                    <div>
-                        <span class="text-green-400 font-bold text-sm">+₹${p.amount}</span>
-                        <p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p>
-                    </div>
-                    <div class="text-right text-xs text-gray-400">
-                        <p>${dateStr}</p>
-                        <p>${timeStr}</p>
+                    <div><span class="text-green-400 font-bold text-sm">+₹${p.amount}</span><p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p></div>
+                    <div class="text-right text-xs text-gray-400"><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p></div>
+                </div>`).join('');
+        }
+        function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
+        function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Cash (Admin)' }).then(() => { closeSettle(); showToast("Payment Settled"); }); }
+        function endDay() { db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => showToast("Day Reset Successful")); }
+        function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened")); }
+        function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }).then(() => showToast("Status Updated")); }
+        function markComplete(id) { confirmAction('Mark as Delivered?', () => { db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); }); }
+        function cancelOrder(id) { db.collection('orders').doc(id).update({ status: 'cancelled' }).then(() => showToast("Order Cancelled")); }
+        function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
+        function switchTab(t) { ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-500'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); if(t==='history') renderHistory(); }
+        function filterUdhaar() { renderUdhaar(); }
+
+        // --- NEW: MENU MANAGEMENT FUNCTIONS ---
+        function openMenuControl() {
+            renderMenuModalList();
+            document.getElementById('menu-modal').classList.remove('hidden');
+        }
+
+        function renderMenuModalList() {
+            const list = document.getElementById('menu-list-items');
+            const stocks = currentMenuData.stock || {};
+            const prices = currentMenuData.prices || {};
+            const customItems = currentMenuData.customItems || [];
+
+            // 1. Render Base Items
+            let html = baseAdminItems.map(item => {
+                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.defaultPrice;
+                const inStock = stocks[item.id] !== false;
+                
+                // Hide Cigarette Price (it's special)
+                const priceInput = item.id === 3 ? 
+                    `<span class="text-xs text-gray-500 italic">Var. Price</span>` :
+                    `<input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">`;
+
+                return `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700">
+                    <span class="text-sm font-bold w-1/3">${item.name}</span>
+                    <div class="flex items-center gap-2">
+                        ${priceInput}
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
+                        </label>
                     </div>
                 </div>`;
             }).join('');
+
+            // 2. Render Custom Items
+            html += customItems.map((item, index) => {
+                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.price;
+                const inStock = stocks[item.id] !== false;
+
+                return `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700 relative">
+                    <span class="text-sm font-bold w-1/3 text-blue-300">${item.name}</span>
+                    <div class="flex items-center gap-2">
+                         <input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
+                        </label>
+                        <button onclick="deleteCustomItem(${index})" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            list.innerHTML = html;
         }
 
-        function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
-        
-        function submitPayment() { 
-            const amount = parseInt(document.getElementById('settle-amount').value); 
-            if(!amount) return; 
-            db.collection('payments').add({ 
-                phone: currentSettlePhone, 
-                amount: amount, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(), 
-                mode: 'Cash (Admin)' // Defaulting to Cash since admin collects it
-            }).then(() => { 
-                closeSettle(); 
-                showToast("Payment Settled"); 
-            }); 
+        function addNewItem() {
+            const name = document.getElementById('new-item-name').value.trim();
+            const price = parseInt(document.getElementById('new-item-price').value);
+
+            if(!name || !price) { showToast("Enter Name & Price", "error"); return; }
+            
+            // Create a unique ID for custom item (using timestamp)
+            const newItem = { id: Date.now(), name: name, price: price };
+            
+            if(!currentMenuData.customItems) currentMenuData.customItems = [];
+            currentMenuData.customItems.push(newItem);
+            
+            document.getElementById('new-item-name').value = '';
+            document.getElementById('new-item-price').value = '';
+            
+            renderMenuModalList(); // Refresh UI immediately
         }
-        
-        function endDay() { db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => showToast("Day Reset Successful")); }
-        function openMenuControl() { db.collection('settings').doc('menu').get().then(doc => { const s = doc.exists ? doc.data() : {}; document.getElementById('menu-list-items').innerHTML = adminMenuItems.map(i => `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700"><span>${i.name}</span><input type="checkbox" id="stock-${i.id}" ${s[i.id]!==false?'checked':''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }); }
-        function saveMenuStatus() { const u = {}; adminMenuItems.forEach(i => u[i.id] = document.getElementById(`stock-${i.id}`).checked); db.collection('settings').doc('menu').set(u).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Menu Updated"); }); }
-        function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened")); }
-        function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }).then(() => showToast("Status Updated")); }
-        
-        // NEW: Mark Complete with Confirmation
-        function markComplete(id) { 
-            confirmAction('Mark as Delivered?', () => {
-                db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); 
+
+        function deleteCustomItem(index) {
+            if(!confirm("Remove this item?")) return;
+            currentMenuData.customItems.splice(index, 1);
+            renderMenuModalList();
+        }
+
+        function saveMenuStatus() {
+            const stocks = {};
+            const prices = {};
+
+            // Collect Data from Base Items
+            baseAdminItems.forEach(item => {
+                stocks[item.id] = document.getElementById(`stock-${item.id}`).checked;
+                if(item.id !== 3) { // Skip cig price
+                    const val = document.getElementById(`price-${item.id}`).value;
+                    prices[item.id] = val;
+                }
+            });
+
+            // Collect Data from Custom Items
+            if(currentMenuData.customItems) {
+                currentMenuData.customItems.forEach(item => {
+                     stocks[item.id] = document.getElementById(`stock-${item.id}`).checked;
+                     const val = document.getElementById(`price-${item.id}`).value;
+                     prices[item.id] = val;
+                });
+            }
+
+            // Save to DB
+            db.collection('settings').doc('menu_data').set({
+                stock: stocks,
+                prices: prices,
+                customItems: currentMenuData.customItems || []
+            }).then(() => {
+                document.getElementById('menu-modal').classList.add('hidden');
+                showToast("Menu Updated Successfully");
             });
         }
-        
-        function cancelOrder(id) { db.collection('orders').doc(id).update({ status: 'cancelled' }).then(() => showToast("Order Cancelled")); }
-        function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
-        
-        function switchTab(t) { 
-            ['live', 'history', 'udhaar'].forEach(x => { 
-                document.getElementById(`view-${x}`).classList.add('hidden'); 
-                document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); 
-                document.getElementById(`tab-${x}`).classList.add('text-gray-500'); 
-            }); 
-            document.getElementById(`view-${t}`).classList.remove('hidden'); 
-            document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); 
-            document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); 
-            if(t==='history') renderHistory(); 
-        }
-        function filterUdhaar() { renderUdhaar(); }
+
         init();
     </script>
 </body>
