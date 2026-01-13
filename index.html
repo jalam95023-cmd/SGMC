@@ -28,9 +28,14 @@
         .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
         .profile-avatar { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; items-center; justify-center; font-weight: bold; color: #F97316; border: 1px solid #F97316; }
         
-        /* New Aesthetic Alert */
+        /* Aesthetics */
         .animate-pop { animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* Broadcast Ticker */
+        .ticker-wrap { position: fixed; top: 60px; left: 0; right: 0; background: #F97316; color: white; font-size: 12px; overflow: hidden; height: 24px; line-height: 24px; z-index: 30; }
+        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; font-weight: bold; }
+        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
     </style>
 </head>
 <body>
@@ -49,9 +54,11 @@
         </div>
     </div>
 
-    <div class="h-16"></div>
+    <div id="broadcast-bar" class="ticker-wrap hidden">
+        <div class="ticker" id="broadcast-msg">Welcome to SGMC!</div>
+    </div>
 
-    <div id="view-menu" class="p-4 space-y-4">
+    <div class="h-16"></div> <div id="view-menu" class="p-4 space-y-4">
         <div id="closed-banner" class="hidden bg-red-900/20 border border-red-500/50 text-red-200 p-4 rounded-xl text-center mb-4">
             <h3 class="font-bold mb-1"><i class="fas fa-store-slash"></i> Shop is Closed</h3>
             <p class="text-xs">Orders allow nahi hain. Please wait.</p>
@@ -182,6 +189,17 @@
             <button onclick="document.getElementById('alert-popup').classList.add('hidden'); document.getElementById('order-address').focus();" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg font-bold text-sm transition">Okay, Daalta hu</button>
         </div>
     </div>
+    
+    <div id="limit-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[70] hidden">
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-purple-900/50 shadow-2xl w-full max-w-xs animate-pop">
+            <div class="w-14 h-14 bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-3 text-purple-500 text-2xl">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1">Limit Reached</h3>
+            <p class="text-gray-400 text-xs mb-4">Aapki Udhaar Limit cross ho gayi hai. Please purana hisaab clear karein.</p>
+            <button onclick="document.getElementById('limit-popup').classList.add('hidden')" class="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg font-bold text-sm transition">Okay</button>
+        </div>
+    </div>
 
     <div id="upi-confirm-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[60] hidden">
         <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-yellow-600 shadow-2xl w-full max-w-sm">
@@ -253,20 +271,17 @@
 
         // --- STATE ---
         let cart = {};
-        // BASE ITEMS (Default)
         let baseMenuItems = [
             { id: 1, name: "Normal Chai", price: 10 },
             { id: 2, name: "Adrak Chai", price: 15 },
             { id: 3, name: "Cigarettes", isSpecial: true },
             { id: 4, name: "Matthi", price: 5 },
-            { id: 5, name: "Cream Roll", price: 10 }, // Renamed from Veg Roll
+            { id: 5, name: "Cream Roll", price: 10 },
             { id: 6, name: "Biscuit", price: 5 },
             { id: 7, name: "Namkeen", price: 10 }
         ];
         
-        // This will hold the FINAL merged menu
         let displayMenuItems = [...baseMenuItems];
-
         let cigaretteOptions = [
             { id: 'cig_marlboro', name: 'Marlboro Advance', price: 20 },
             { id: 'cig_goldflake', name: 'Gold Flake Ind.', price: 20 },
@@ -283,8 +298,9 @@
         // --- INIT ---
         function init() {
             loadProfile();
-            loadMenuData(); // New function to load items + prices + stock
+            loadMenuData();
             listenToShopStatus();
+            listenToBroadcast(); // NEW: Broadcast Listener
             loadCartFromStorage(); 
             const lastTab = localStorage.getItem('activeTab') || 'menu';
             switchTab(lastTab);
@@ -293,15 +309,9 @@
         // --- CART PERSISTENCE ---
         function loadCartFromStorage() {
             const saved = localStorage.getItem('sgmc_cart');
-            if(saved) {
-                cart = JSON.parse(saved);
-                updateCartUI();
-            }
+            if(saved) { cart = JSON.parse(saved); updateCartUI(); }
         }
-
-        function saveCartToStorage() {
-            localStorage.setItem('sgmc_cart', JSON.stringify(cart));
-        }
+        function saveCartToStorage() { localStorage.setItem('sgmc_cart', JSON.stringify(cart)); }
 
         // --- PROFILE SYSTEM ---
         function loadProfile() {
@@ -313,7 +323,6 @@
                 setTimeout(() => document.getElementById('login-modal').classList.remove('hidden'), 1000);
             }
         }
-
         function saveProfile() {
             const name = document.getElementById('user-name').value.trim();
             const phone = document.getElementById('user-phone').value.trim();
@@ -323,20 +332,18 @@
             updateHeaderProfile();
             document.getElementById('login-modal').classList.add('hidden');
         }
-
         function updateHeaderProfile() {
             document.getElementById('header-name').innerText = userProfile.name;
             document.getElementById('header-phone').innerText = userProfile.phone;
             document.getElementById('header-avatar').innerHTML = userProfile.name.charAt(0).toUpperCase();
         }
-
         function openProfileEdit() {
             document.getElementById('user-name').value = userProfile.name;
             document.getElementById('user-phone').value = userProfile.phone;
             document.getElementById('login-modal').classList.remove('hidden');
         }
 
-        // --- MENU LOGIC (UPDATED) ---
+        // --- BROADCAST & STATUS ---
         function listenToShopStatus() {
             db.collection('settings').doc('status').onSnapshot(doc => {
                 isShopOpen = doc.exists ? doc.data().isOpen : true;
@@ -355,70 +362,60 @@
                 }
             });
         }
+        
+        // NEW: Listen for Broadcast Messages
+        function listenToBroadcast() {
+            db.collection('settings').doc('config').onSnapshot(doc => {
+                const bar = document.getElementById('broadcast-bar');
+                const msgEl = document.getElementById('broadcast-msg');
+                if(doc.exists && doc.data().broadcastMessage) {
+                    msgEl.innerText = doc.data().broadcastMessage;
+                    bar.classList.remove('hidden');
+                    // Adjust spacing so it doesn't overlap header
+                    document.querySelector('.h-16').classList.add('h-24');
+                    document.querySelector('.h-16').classList.remove('h-16');
+                } else {
+                    bar.classList.add('hidden');
+                    document.querySelector('.h-24')?.classList.add('h-16');
+                    document.querySelector('.h-24')?.classList.remove('h-24');
+                }
+            });
+        }
 
         function loadMenuData() {
-            // We listen to 'settings/menu_data' which contains everything
             db.collection('settings').doc('menu_data').onSnapshot(doc => {
-                let stockMap = {};
-                let priceOverrides = {};
-                let customItems = [];
-
+                let stockMap = {}; let priceOverrides = {}; let customItems = [];
                 if(doc.exists) {
                     const data = doc.data();
                     stockMap = data.stock || {};
                     priceOverrides = data.prices || {};
                     customItems = data.customItems || [];
                 }
-
-                // MERGE DATA
                 displayMenuItems = baseMenuItems.map(item => {
-                    return {
-                        ...item,
-                        // If admin changed price, use that, else use default
-                        price: priceOverrides[item.id] !== undefined ? parseInt(priceOverrides[item.id]) : item.price
-                    };
+                    return { ...item, price: priceOverrides[item.id] !== undefined ? parseInt(priceOverrides[item.id]) : item.price };
                 });
-
-                // Append Custom Items
                 if(customItems && customItems.length > 0) {
-                     // Ensure custom items also respect price overrides if any (though usually they are fresh)
-                     const formattedCustom = customItems.map(i => ({
-                         ...i,
-                         price: priceOverrides[i.id] !== undefined ? parseInt(priceOverrides[i.id]) : parseInt(i.price)
-                     }));
+                     const formattedCustom = customItems.map(i => ({ ...i, price: priceOverrides[i.id] !== undefined ? parseInt(priceOverrides[i.id]) : parseInt(i.price) }));
                      displayMenuItems = [...displayMenuItems, ...formattedCustom];
                 }
-
                 renderMenu(stockMap);
             });
         }
 
         function renderMenu(stockStatus) {
             const container = document.getElementById('menu-container');
-            
             container.innerHTML = displayMenuItems.map(item => {
-                // Check if hidden by admin
                 if(stockStatus[item.id] === false) return '';
-
                 if(item.isSpecial) {
                     return `
                     <div class="card p-3 flex justify-between items-center item-row bg-gray-800/50">
-                        <div>
-                            <h3 class="font-bold text-white">Cigarettes</h3>
-                            <p class="text-xs text-orange-400">Multiple Brands</p>
-                        </div>
-                        <button onclick="openCigModal()" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg border border-gray-600 font-bold active:bg-orange-600 active:border-orange-500 transition">
-                            Add <i class="fas fa-plus ml-1"></i>
-                        </button>
+                        <div><h3 class="font-bold text-white">Cigarettes</h3><p class="text-xs text-orange-400">Multiple Brands</p></div>
+                        <button onclick="openCigModal()" class="bg-gray-800 text-white text-xs px-4 py-2 rounded-lg border border-gray-600 font-bold active:bg-orange-600 active:border-orange-500 transition">Add <i class="fas fa-plus ml-1"></i></button>
                     </div>`;
                 }
-
                 return `
                 <div class="card p-3 flex justify-between items-center item-row">
-                    <div>
-                        <h3 class="font-bold text-white">${item.name}</h3>
-                        <p class="text-orange-400 font-bold text-sm">₹${item.price}</p>
-                    </div>
+                    <div><h3 class="font-bold text-white">${item.name}</h3><p class="text-orange-400 font-bold text-sm">₹${item.price}</p></div>
                     <div class="flex items-center gap-3 bg-gray-800 rounded-lg p-1">
                         <button onclick="updateCart('${item.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold text-lg">-</button>
                         <span class="font-bold w-4 text-center" id="qty-${item.id}">0</span>
@@ -426,47 +423,31 @@
                     </div>
                 </div>`;
             }).join('');
-            
-            // Restore quantities
-            for(let id in cart) {
-                if(document.getElementById(`qty-${id}`)) {
-                    document.getElementById(`qty-${id}`).innerText = cart[id].qty;
-                }
-            }
+            for(let id in cart) { if(document.getElementById(`qty-${id}`)) document.getElementById(`qty-${id}`).innerText = cart[id].qty; }
         }
 
-        // --- CIGARETTE MODAL LOGIC (Multi-Select) ---
+        // --- CIGARETTE MODAL ---
         function openCigModal() {
             if(!isShopOpen) { alert("Shop is closed."); return; }
-            
-            tempCigQuantities = {};
-            cigaretteOptions.forEach(opt => tempCigQuantities[opt.id] = 0);
-
+            tempCigQuantities = {}; cigaretteOptions.forEach(opt => tempCigQuantities[opt.id] = 0);
             const list = document.getElementById('cig-options-list');
             list.innerHTML = cigaretteOptions.map(opt => `
                 <div class="p-3 rounded-xl flex justify-between items-center bg-gray-800/50 border border-gray-700">
-                    <div>
-                        <p class="font-bold text-sm text-white">${opt.name}</p>
-                        <p class="text-xs text-gray-500">₹${opt.price}</p>
-                    </div>
+                    <div><p class="font-bold text-sm text-white">${opt.name}</p><p class="text-xs text-gray-500">₹${opt.price}</p></div>
                     <div class="flex items-center gap-3 bg-gray-900 rounded-lg p-1">
                         <button onclick="updateTempCigQty('${opt.id}', -1)" class="w-8 h-8 rounded bg-gray-700 text-white flex items-center justify-center font-bold">-</button>
                         <span class="font-bold w-4 text-center" id="temp-qty-${opt.id}">0</span>
                         <button onclick="updateTempCigQty('${opt.id}', 1)" class="w-8 h-8 rounded bg-orange-600 text-white flex items-center justify-center font-bold">+</button>
                     </div>
-                </div>
-            `).join('');
-            
+                </div>`).join('');
             document.getElementById('cig-modal').classList.remove('hidden');
         }
-
         function updateTempCigQty(id, change) {
             if(!tempCigQuantities[id]) tempCigQuantities[id] = 0;
             tempCigQuantities[id] += change;
             if(tempCigQuantities[id] < 0) tempCigQuantities[id] = 0;
             document.getElementById(`temp-qty-${id}`).innerText = tempCigQuantities[id];
         }
-
         function confirmCigSelection() {
             let added = false;
             for(let id in tempCigQuantities) {
@@ -474,64 +455,39 @@
                 if(qty > 0) {
                     const opt = cigaretteOptions.find(o => o.id === id);
                     if(opt) {
-                        if(!cart[id]) {
-                            cart[id] = { id: id, name: opt.name, price: opt.price, qty: 0 };
-                        }
-                        cart[id].qty += qty;
-                        added = true;
+                        if(!cart[id]) cart[id] = { id: id, name: opt.name, price: opt.price, qty: 0 };
+                        cart[id].qty += qty; added = true;
                     }
                 }
             }
             if(!added) { alert("Please add at least one item."); return; }
-            closeCigModal();
-            updateCartUI();
+            closeCigModal(); updateCartUI();
         }
-
         function closeCigModal() { document.getElementById('cig-modal').classList.add('hidden'); }
-
 
         // --- CART LOGIC ---
         function updateCart(id, change) {
             if(!isShopOpen) { alert("Shop is closed now."); return; }
-            
-            // Need to find item in DISPLAY menu items (merged list)
             if(!cart[id]) {
-                // Note: id might be string or int now due to custom items
                 const item = displayMenuItems.find(i => i.id == id);
                 if(!item) return;
                 cart[id] = { id: item.id, name: item.name, price: item.price, qty: 0 };
             }
             cart[id].qty += change;
             if(cart[id].qty <= 0) delete cart[id];
-            
-            if(document.getElementById(`qty-${id}`)) {
-                document.getElementById(`qty-${id}`).innerText = cart[id] ? cart[id].qty : 0;
-            }
+            if(document.getElementById(`qty-${id}`)) document.getElementById(`qty-${id}`).innerText = cart[id] ? cart[id].qty : 0;
             updateCartUI();
         }
-
         function updateCartUI() {
-            // Only show cart if on MENU tab
             const activeTab = localStorage.getItem('activeTab') || 'menu';
-            if(activeTab !== 'menu') {
-                document.getElementById('cart-bar').classList.add('hidden');
-                return;
-            }
-
+            if(activeTab !== 'menu') { document.getElementById('cart-bar').classList.add('hidden'); return; }
             let count = 0; let total = 0;
-            for(let id in cart) {
-                count += cart[id].qty;
-                total += cart[id].qty * cart[id].price;
-            }
+            for(let id in cart) { count += cart[id].qty; total += cart[id].qty * cart[id].price; }
             const bar = document.getElementById('cart-bar');
             if(count > 0 && isShopOpen) {
-                bar.classList.remove('hidden');
-                bar.classList.add('flex');
-                document.getElementById('cart-count').innerText = count;
-                document.getElementById('cart-total').innerText = total;
-            } else {
-                bar.classList.add('hidden');
-            }
+                bar.classList.remove('hidden'); bar.classList.add('flex');
+                document.getElementById('cart-count').innerText = count; document.getElementById('cart-total').innerText = total;
+            } else { bar.classList.add('hidden'); }
             saveCartToStorage(); 
         }
 
@@ -540,82 +496,83 @@
             const container = document.getElementById('checkout-items');
             let html = ''; let total = 0;
             for(let id in cart) {
-                const item = cart[id];
-                const itemTotal = item.qty * item.price;
-                total += itemTotal;
-                html += `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm">
-                    <span>${item.name} <span class="text-orange-400">x${item.qty}</span></span>
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold">₹${itemTotal}</span>
-                        <button onclick="removeItem('${id}')" class="text-red-500 text-xs ml-2"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
+                const item = cart[id]; const itemTotal = item.qty * item.price; total += itemTotal;
+                html += `<div class="flex justify-between items-center bg-gray-800 p-2 rounded text-sm"><span>${item.name} <span class="text-orange-400">x${item.qty}</span></span><div class="flex items-center gap-3"><span class="font-bold">₹${itemTotal}</span><button onclick="removeItem('${id}')" class="text-red-500 text-xs ml-2"><i class="fas fa-trash"></i></button></div></div>`;
             }
             container.innerHTML = html;
             document.getElementById('checkout-total').innerText = total;
             document.getElementById('checkout-modal').classList.remove('hidden');
             setPayment('Cash');
         }
-
-        function removeItem(id) {
-            delete cart[id];
-            updateCartUI();
-            if(Object.keys(cart).length === 0) closeCheckout();
-            else openCheckout(); 
-        }
-
+        function removeItem(id) { delete cart[id]; updateCartUI(); if(Object.keys(cart).length === 0) closeCheckout(); else openCheckout(); }
         function closeCheckout() { document.getElementById('checkout-modal').classList.add('hidden'); }
-
         function setPayment(mode) {
             selectedPayment = mode;
-            document.querySelectorAll('.payment-opt').forEach(b => {
-                b.classList.remove('bg-orange-600', 'text-white', 'border-transparent');
-                b.classList.add('border-gray-600');
-            });
+            document.querySelectorAll('.payment-opt').forEach(b => { b.classList.remove('bg-orange-600', 'text-white', 'border-transparent'); b.classList.add('border-gray-600'); });
             const btn = document.getElementById('pay-' + mode.toLowerCase());
-            btn.classList.add('bg-orange-600', 'text-white', 'border-transparent');
-            btn.classList.remove('border-gray-600');
+            btn.classList.add('bg-orange-600', 'text-white', 'border-transparent'); btn.classList.remove('border-gray-600');
         }
 
         // --- MAIN ORDER LOGIC ---
         function handlePlaceOrderClick() {
             if(Object.keys(cart).length === 0) return;
             if(!userProfile.phone) { alert("Please setup profile first."); openProfileEdit(); return; }
-            
             const address = document.getElementById('order-address').value.trim();
-            if(!address) {
-                // NEW: Use Aesthetic Popup instead of Alert
-                document.getElementById('alert-popup').classList.remove('hidden');
-                return;
-            }
-
+            if(!address) { document.getElementById('alert-popup').classList.remove('hidden'); return; }
             const total = parseInt(document.getElementById('checkout-total').innerText);
-
+            
             if(selectedPayment === 'UPI') {
                 document.getElementById('upi-modal-amount').innerText = total;
                 document.getElementById('checkout-modal').classList.add('hidden');
                 document.getElementById('upi-confirm-modal').classList.remove('hidden');
-            } 
-            else {
-                finalizeOrder(selectedPayment);
-            }
+            } else { finalizeOrder(selectedPayment); }
         }
 
-        function attemptDeepLink() {
-            const total = parseInt(document.getElementById('checkout-total').innerText);
-            const upiLink = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${total}&cu=INR`;
-            window.location.href = upiLink;
-        }
+        function attemptDeepLink() { const total = parseInt(document.getElementById('checkout-total').innerText); const upiLink = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${total}&cu=INR`; window.location.href = upiLink; }
+        function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { alert("UPI ID Copied! Pay via any app."); }); }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert("UPI ID Copied! Pay via any app.");
-            });
-        }
-
-        function finalizeOrder(paymentMode) {
+        // UPDATED: Finalize Order with UDHAAR LIMIT CHECK
+        async function finalizeOrder(paymentMode) {
             const address = document.getElementById('order-address').value.trim();
             const total = parseInt(document.getElementById('checkout-total').innerText);
+
+            // UI Loading
+            if(document.getElementById('place-order-btn')) {
+                document.getElementById('place-order-btn').innerText = "Processing...";
+                document.getElementById('place-order-btn').disabled = true;
+            }
+
+            // --- UDHAAR LIMIT CHECK ---
+            if(paymentMode === 'Udhaar') {
+                try {
+                    // Fetch user's limit
+                    const limitDoc = await db.collection('user_limits').doc(userProfile.phone).get();
+                    const limit = limitDoc.exists ? limitDoc.data().limit : 99999; // Default high if no limit set
+
+                    // Fetch current due amount (Simplified check)
+                    let currentDue = 0;
+                    const ordersSnap = await db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get();
+                    ordersSnap.forEach(d => { if(d.data().status !== 'cancelled') currentDue += d.data().totalAmount; });
+                    
+                    const paymentsSnap = await db.collection('payments').where('phone', '==', userProfile.phone).get();
+                    paymentsSnap.forEach(d => { currentDue -= d.data().amount; });
+
+                    if((currentDue + total) > limit) {
+                        // Limit Exceeded
+                        document.getElementById('checkout-modal').classList.add('hidden');
+                        document.getElementById('limit-popup').classList.remove('hidden');
+                        if(document.getElementById('place-order-btn')) {
+                            document.getElementById('place-order-btn').innerText = "Place Order";
+                            document.getElementById('place-order-btn').disabled = false;
+                        }
+                        return; // STOP ORDER
+                    }
+
+                } catch(e) {
+                    console.error("Limit Check Failed", e);
+                    // Continue if error (Fail safe: allow order)
+                }
+            }
 
             const orderData = {
                 items: Object.values(cart),
@@ -629,34 +586,13 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Loading state
-            if(document.getElementById('place-order-btn')) {
-                document.getElementById('place-order-btn').innerText = "Processing...";
-                document.getElementById('place-order-btn').disabled = true;
-            }
-
             db.collection('orders').add(orderData).then(() => {
-                cart = {};
-                saveCartToStorage(); 
-                renderMenu({}); // will refresh via listener anyway
-                updateCartUI();
-                
-                closeCheckout();
-                document.getElementById('upi-confirm-modal').classList.add('hidden');
-                
-                if(document.getElementById('place-order-btn')) {
-                    document.getElementById('place-order-btn').innerText = "Place Order";
-                    document.getElementById('place-order-btn').disabled = false;
-                }
-                
+                cart = {}; saveCartToStorage(); renderMenu({}); updateCartUI();
+                closeCheckout(); document.getElementById('upi-confirm-modal').classList.add('hidden');
+                if(document.getElementById('place-order-btn')) { document.getElementById('place-order-btn').innerText = "Place Order"; document.getElementById('place-order-btn').disabled = false; }
                 document.getElementById('success-name').innerText = userProfile.name;
-                const popup = document.getElementById('success-popup');
-                popup.classList.remove('hidden');
-                document.getElementById('success-box').classList.add('scale-100');
-                
-                // If on orders tab, refresh
+                const popup = document.getElementById('success-popup'); popup.classList.remove('hidden'); document.getElementById('success-box').classList.add('scale-100');
                 if(document.getElementById('nav-orders').classList.contains('active')) fetchMyHistory();
-
             }).catch(e => {
                 alert("Error: " + e.message);
                 document.getElementById('upi-confirm-modal').classList.add('hidden');
@@ -665,130 +601,64 @@
         
         function closeSuccess() { document.getElementById('success-popup').classList.add('hidden'); }
 
-        // --- TABS & HISTORY/UDHAAR ---
+        // --- TABS & HISTORY ---
         function switchTab(tab) {
             localStorage.setItem('activeTab', tab);
-            ['menu', 'orders', 'udhaar'].forEach(t => {
-                document.getElementById('view-' + t).classList.add('hidden');
-                document.getElementById('nav-' + t).classList.remove('active');
-            });
-            document.getElementById('view-' + tab).classList.remove('hidden');
-            document.getElementById('nav-' + tab).classList.add('active');
+            ['menu', 'orders', 'udhaar'].forEach(t => { document.getElementById('view-' + t).classList.add('hidden'); document.getElementById('nav-' + t).classList.remove('active'); });
+            document.getElementById('view-' + tab).classList.remove('hidden'); document.getElementById('nav-' + tab).classList.add('active');
             updateCartUI();
-            if(tab === 'orders') fetchMyHistory();
-            if(tab === 'udhaar') fetchMyUdhaar();
+            if(tab === 'orders') fetchMyHistory(); if(tab === 'udhaar') fetchMyUdhaar();
         }
-
-        function formatDate(timestamp) {
-            if(!timestamp) return '';
-            const d = timestamp.toDate();
-            return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-        }
-
+        function formatDate(timestamp) { if(!timestamp) return ''; const d = timestamp.toDate(); return `${d.getDate()}/${d.getMonth()+1} ${d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`; }
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const list = document.getElementById('orders-list');
             list.innerHTML = '<p class="text-center text-gray-500 mt-10"><i class="fas fa-circle-notch fa-spin"></i> Loading history...</p>';
-            
             db.collection('orders').where('customerPhone', '==', userProfile.phone).get().then(snap => {
                   if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10">No past orders.</p>'; return; }
-                  
                   const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds || 0) - (a.data().timestamp?.seconds || 0));
                   cachedOrders = {}; 
-
                   list.innerHTML = docs.map(doc => {
-                      const d = doc.data();
-                      cachedOrders[doc.id] = d; 
-                      const dateStr = formatDate(d.timestamp);
-                      return `
-                      <div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} cursor-pointer hover:bg-gray-800 transition" onclick="openOrderDetail('${doc.id}')">
-                          <div class="flex justify-between items-start">
-                              <div>
-                                  <p class="text-xs text-gray-400">${dateStr}</p>
-                                  <p class="font-bold text-sm text-white">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p>
-                              </div>
-                              <div class="text-right">
-                                  <p class="font-bold text-orange-400">₹${d.totalAmount}</p>
-                                  <p class="text-[10px] uppercase ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p>
-                              </div>
-                          </div>
-                      </div>`;
+                      const d = doc.data(); cachedOrders[doc.id] = d; 
+                      return `<div class="card p-3 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} cursor-pointer hover:bg-gray-800 transition" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400">${formatDate(d.timestamp)}</p><p class="font-bold text-sm text-white">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div></div>`;
                   }).join('');
               });
         }
-
         function openOrderDetail(orderId) {
-            const data = cachedOrders[orderId];
-            if(!data) return;
+            const data = cachedOrders[orderId]; if(!data) return;
             document.getElementById('od-date').innerText = formatDate(data.timestamp);
             document.getElementById('od-payment').innerText = data.paymentMode || 'Cash'; 
             document.getElementById('od-status').innerText = data.status;
             document.getElementById('od-status').className = "uppercase font-bold " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
             document.getElementById('od-total').innerText = '₹' + data.totalAmount;
-
-            const itemsContainer = document.getElementById('od-items');
-            itemsContainer.innerHTML = data.items.map(i => `
-                <div class="flex justify-between items-center mb-2 border-b border-gray-800 pb-1 last:border-0 last:pb-0">
-                    <div>
-                        <p class="text-sm font-bold text-white">${i.name}</p>
-                        <p class="text-xs text-gray-400">Qty: ${i.qty}</p>
-                    </div>
-                    <p class="font-bold text-orange-400 text-sm">₹${i.qty * i.price}</p>
-                </div>
-            `).join('');
+            document.getElementById('od-items').innerHTML = data.items.map(i => `<div class="flex justify-between items-center mb-2 border-b border-gray-800 pb-1 last:border-0 last:pb-0"><div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div><p class="font-bold text-orange-400 text-sm">₹${i.qty * i.price}</p></div>`).join('');
             document.getElementById('order-detail-modal').classList.remove('hidden');
         }
-
         function closeOrderDetail() { document.getElementById('order-detail-modal').classList.add('hidden'); }
         
         function fetchMyUdhaar() {
             if(!userProfile.phone) return;
-            const upiBtn = document.getElementById('upi-pay-btn');
-            const amtEl = document.getElementById('my-udhaar-amount');
-            const historyContainer = document.getElementById('udhaar-history');
-            
+            const upiBtn = document.getElementById('upi-pay-btn'); const amtEl = document.getElementById('my-udhaar-amount'); const historyContainer = document.getElementById('udhaar-history');
             historyContainer.innerHTML = '<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>';
-
             db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get().then(orderSnap => {
                 let debit = 0; let transactions = [];
-                orderSnap.forEach(doc => {
-                    const d = doc.data();
-                    if(d.status !== 'cancelled') {
-                        debit += d.totalAmount;
-                        transactions.push({ type: 'purchase', amount: d.totalAmount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 });
-                    }
-                });
+                orderSnap.forEach(doc => { const d = doc.data(); if(d.status !== 'cancelled') { debit += d.totalAmount; transactions.push({ type: 'purchase', amount: d.totalAmount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 }); } });
                 db.collection('payments').where('phone', '==', userProfile.phone).get().then(paySnap => {
                     let credit = 0;
-                    paySnap.forEach(doc => {
-                        const d = doc.data();
-                        credit += d.amount;
-                        transactions.push({ type: 'paid', amount: d.amount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 });
-                    });
-                    const netDue = debit - credit;
-                    amtEl.innerText = netDue;
+                    paySnap.forEach(doc => { const d = doc.data(); credit += d.amount; transactions.push({ type: 'paid', amount: d.amount, timestamp: d.timestamp, seconds: d.timestamp ? d.timestamp.seconds : 0 }); });
+                    const netDue = debit - credit; amtEl.innerText = netDue;
                     if(netDue > 0) upiBtn.classList.remove('hidden'); else upiBtn.classList.add('hidden');
                     transactions.sort((a, b) => b.seconds - a.seconds);
                     if(transactions.length === 0) { historyContainer.innerHTML = '<p class="text-center text-gray-500 text-sm mt-4">No transactions yet.</p>'; return; }
                     historyContainer.innerHTML = transactions.map(t => {
                         const dateStr = formatDate(t.timestamp);
-                        if(t.type === 'purchase') {
-                            return `<div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Purchase</p></div><span class="text-red-400 font-bold text-lg">-₹${t.amount}</span></div>`;
-                        } else {
-                            return `<div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Paid</p></div><span class="text-green-500 font-bold text-lg">+₹${t.amount}</span></div>`;
-                        }
+                        if(t.type === 'purchase') { return `<div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Purchase</p></div><span class="text-red-400 font-bold text-lg">-₹${t.amount}</span></div>`; } 
+                        else { return `<div class="flex justify-between items-center p-3 bg-[#111] border border-[#222] rounded-lg mb-2"><div><p class="text-xs text-gray-500 mb-1">${dateStr}</p><p class="text-white font-bold text-sm">Paid</p></div><span class="text-green-500 font-bold text-lg">+₹${t.amount}</span></div>`; }
                     }).join('');
                 });
             });
         }
-
-        function payUdhaarViaUPI() {
-            const amount = document.getElementById('my-udhaar-amount').innerText;
-            const upiId = "7065821697@ybl";
-            const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&cu=INR`;
-            window.location.href = link;
-        }
-
+        function payUdhaarViaUPI() { const amount = document.getElementById('my-udhaar-amount').innerText; const upiId = "7065821697@ybl"; const link = `upi://pay?pa=${upiId}&pn=SGMC&am=${amount}&cu=INR`; window.location.href = link; }
         init();
     </script>
 </body>
