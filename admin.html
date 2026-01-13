@@ -23,8 +23,11 @@
         #custom-confirm { backdrop-filter: blur(5px); }
         .confirm-box { transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .confirm-box.open { transform: scale(1); }
-        /* Blur background when modals are open */
-        .modal-active { overflow: hidden; }
+        /* Graph Bars */
+        .bar-container { display: flex; align-items: flex-end; height: 100px; gap: 8px; }
+        .bar { background: #F97316; border-radius: 4px 4px 0 0; flex: 1; transition: height 0.5s ease; position: relative; min-height: 2px;}
+        .bar span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #aaa; }
+        .bar-label { text-align: center; font-size: 9px; color: #666; margin-top: 4px; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-24" onclick="enableSound()">
@@ -39,17 +42,19 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4 mb-4">
-        <div class="card p-3 flex flex-col justify-between relative overflow-hidden">
+        <div class="card p-3 flex flex-col justify-between relative overflow-hidden cursor-pointer active:scale-95 transition" onclick="openSalesAnalysis()">
             <div class="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-full -mr-8 -mt-8"></div>
             <div class="text-center z-10 relative">
                 <div class="flex justify-center items-center gap-2">
                     <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
-                    <button onclick="toggleSalesPrivacy()" class="text-gray-600 hover:text-white text-[10px]"><i class="fas fa-eye" id="privacy-icon"></i></button>
+                    <div onclick="event.stopPropagation(); toggleSalesPrivacy()" class="text-gray-600 hover:text-white text-[10px]"><i class="fas fa-eye" id="privacy-icon"></i></div>
                 </div>
                 <h2 class="text-2xl font-bold text-green-400 mt-1">₹<span id="total-sales">0</span></h2>
+                <p class="text-[9px] text-gray-500 mt-1">Tap for details & history <i class="fas fa-chart-bar ml-1"></i></p>
             </div>
-            <button onclick="confirmAction('Reset Day Sales?', endDay)" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
+            <button onclick="event.stopPropagation(); confirmAction('End Day & Save History?', endDay)" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
         </div>
+        
         <div class="card p-3 text-center flex flex-col justify-center relative">
             <p class="text-gray-400 text-xs uppercase tracking-wider">Active Orders</p>
             <h2 class="text-3xl font-bold text-yellow-400 my-1" id="pending-count">0</h2>
@@ -73,17 +78,28 @@
         <div id="udhaar-list" class="space-y-2"></div>
     </div>
 
-    <div id="history-detail-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
-            <button onclick="closeHistoryDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
-            <h3 class="text-xl font-bold mb-1 text-white">Order Details</h3>
-            <p id="hd-date" class="text-xs text-gray-500 mb-4"></p>
-            <div class="bg-black/40 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto border border-gray-800" id="hd-items"></div>
-            <div class="space-y-2 text-sm">
-                <div class="flex justify-between text-gray-400"><span>Customer</span><span id="hd-customer" class="text-white font-bold text-right"></span></div>
-                 <div class="flex justify-between text-gray-400"><span>Payment Mode</span><span id="hd-payment" class="text-white font-bold"></span></div>
-                <div class="flex justify-between text-gray-400"><span>Status</span><span id="hd-status" class="uppercase font-bold"></span></div>
-                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold text-white"><span>Total Amount</span><span class="text-orange-500" id="hd-total"></span></div>
+    <div id="sales-modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-[70] backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Business Insights</h3>
+                <button onclick="document.getElementById('sales-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div class="flex mb-4 border-b border-gray-700">
+                <button onclick="switchSalesTab('today')" id="sale-tab-today" class="flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500">Today's Items</button>
+                <button onclick="switchSalesTab('past')" id="sale-tab-past" class="flex-1 py-2 text-sm font-bold text-gray-500">Past 7 Days</button>
+            </div>
+
+            <div id="sales-view-today">
+                <p class="text-xs text-gray-400 mb-3">Item-wise breakdown of today's sales:</p>
+                <div id="today-breakdown-list" class="space-y-2"></div>
+            </div>
+
+            <div id="sales-view-past" class="hidden">
+                <p class="text-xs text-gray-400 mb-3">Sales performance over the last week:</p>
+                <div id="past-graph-container" class="mb-4 bg-gray-800/50 p-4 rounded-xl border border-gray-700">
+                    </div>
+                <div id="past-list-container" class="space-y-2"></div>
             </div>
         </div>
     </div>
@@ -107,6 +123,50 @@
         </div>
     </div>
 
+    <div id="broadcast-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i> Broadcast</h3>
+                <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+            <textarea id="broadcast-input" rows="3" class="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-sm focus:border-orange-500 outline-none" placeholder="e.g. Aaj 4 baje shop band rahegi..."></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="saveBroadcast('')" class="flex-1 py-2 rounded-lg bg-red-900/50 text-red-400 font-bold text-xs border border-red-900">Clear</button>
+                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-xs shadow-lg">Publish</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="limit-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-1">Set Udhaar Limit</h3>
+            <p class="text-sm text-gray-400 mb-4" id="limit-modal-name">User</p>
+            <div class="bg-gray-800 p-4 rounded-xl mb-4 border border-gray-700">
+                <label class="text-xs text-gray-500 mb-1 block">Max Amount Allowed (₹)</label>
+                <input type="number" id="limit-input" class="w-full bg-transparent text-white text-2xl font-bold outline-none border-b border-gray-600 focus:border-orange-500 pb-1" placeholder="500">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button>
+                <button onclick="saveLimit()" class="flex-1 py-3 rounded-lg bg-purple-600 text-white font-bold text-sm shadow-lg shadow-purple-900/50">Set Limit</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history-detail-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
+            <button onclick="closeHistoryDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i class="fas fa-times"></i></button>
+            <h3 class="text-xl font-bold mb-1 text-white">Order Details</h3>
+            <p id="hd-date" class="text-xs text-gray-500 mb-4"></p>
+            <div class="bg-black/40 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto border border-gray-800" id="hd-items"></div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between text-gray-400"><span>Customer</span><span id="hd-customer" class="text-white font-bold text-right"></span></div>
+                 <div class="flex justify-between text-gray-400"><span>Payment Mode</span><span id="hd-payment" class="text-white font-bold"></span></div>
+                <div class="flex justify-between text-gray-400"><span>Status</span><span id="hd-status" class="uppercase font-bold"></span></div>
+                <div class="border-t border-gray-700 my-2 pt-2 flex justify-between text-lg font-bold text-white"><span>Total Amount</span><span class="text-orange-500" id="hd-total"></span></div>
+            </div>
+        </div>
+    </div>
+
     <div id="settle-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
         <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-lg font-bold mb-1 text-white">Settle Payment</h3>
@@ -122,38 +182,6 @@
             </div>
             <h4 class="text-xs font-bold text-gray-500 uppercase border-b border-gray-700 pb-2 mb-2">Recent Payments</h4>
             <div id="settle-history-list" class="space-y-2 text-sm max-h-40 overflow-y-auto"></div>
-        </div>
-    </div>
-
-    <div id="broadcast-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i> Broadcast</h3>
-                <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
-            <p class="text-xs text-gray-400 mb-3">Yeh message sabhi customers ke app ke upar chalega.</p>
-            <textarea id="broadcast-input" rows="3" class="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-sm focus:border-orange-500 outline-none" placeholder="e.g. Aaj 4 baje shop band rahegi..."></textarea>
-            <div class="flex gap-3 mt-4">
-                <button onclick="saveBroadcast('')" class="flex-1 py-2 rounded-lg bg-red-900/50 text-red-400 font-bold text-xs border border-red-900">Clear Message</button>
-                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-xs shadow-lg">Publish</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="limit-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-1">Set Udhaar Limit</h3>
-            <p class="text-sm text-gray-400 mb-4" id="limit-modal-name">User</p>
-            
-            <div class="bg-gray-800 p-4 rounded-xl mb-4 border border-gray-700">
-                <label class="text-xs text-gray-500 mb-1 block">Max Amount Allowed (₹)</label>
-                <input type="number" id="limit-input" class="w-full bg-transparent text-white text-2xl font-bold outline-none border-b border-gray-600 focus:border-orange-500 pb-1" placeholder="500">
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button>
-                <button onclick="saveLimit()" class="flex-1 py-3 rounded-lg bg-purple-600 text-white font-bold text-sm shadow-lg shadow-purple-900/50">Set Limit</button>
-            </div>
         </div>
     </div>
 
@@ -204,15 +232,20 @@
         let soundEnabled = false;
         let pendingAction = null; 
         let currentMenuData = { stock: {}, prices: {}, customItems: [] };
-        
-        // New State for Modals
         let currentLimitPhone = null;
         let salesHidden = false;
+        
+        // New State for Analytics
+        let todaysItemsMap = {}; // Tracks { "Chai": 10, "Bun": 5 }
+        let salesHistoryData = []; // Tracks past days data
 
-        // --- INITIALIZATION ---
         function init() {
             db.collection('settings').doc('config').onSnapshot(doc => { 
-                if(doc.exists && doc.data().lastReset) lastResetSeconds = doc.data().lastReset.seconds; 
+                if(doc.exists) {
+                    const data = doc.data();
+                    if(data.lastReset) lastResetSeconds = data.lastReset.seconds; 
+                    if(data.salesHistory) salesHistoryData = data.salesHistory; // Load History
+                }
                 recalculateData(); 
             });
             db.collection('settings').doc('status').onSnapshot(doc => { 
@@ -228,37 +261,30 @@
             db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
 
-            // Restore Last Active Tab
             const lastTab = localStorage.getItem('admin_active_tab') || 'live';
             switchTab(lastTab);
         }
 
-        // --- SOUND LOGIC ---
         function enableSound() { 
             if(!soundEnabled) { 
                 const audio = document.getElementById('order-sound'); 
                 audio.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; 
-                audio.play().then(() => { 
-                    audio.pause(); audio.currentTime = 0; 
-                    soundEnabled = true; 
-                    document.getElementById('sound-status').innerHTML = '<i class="fas fa-volume-up text-green-500"></i> Sound Active'; 
-                }).catch(e => console.log("Init Sound Error", e)); 
+                audio.play().then(() => { audio.pause(); audio.currentTime = 0; soundEnabled = true; document.getElementById('sound-status').innerHTML = '<i class="fas fa-volume-up text-green-500"></i> Sound Active'; }).catch(e => console.log("Init Sound Error", e)); 
             } 
         }
 
         function playNotification() { 
             if(soundEnabled) { 
-                const audio = document.getElementById('order-sound'); 
-                audio.loop = true; 
-                audio.play().catch(e => {}); 
+                const audio = document.getElementById('order-sound'); audio.loop = true; audio.play().catch(e => {}); 
                 document.body.addEventListener('click', () => { audio.pause(); audio.currentTime = 0; }, { once: true });
             } 
         }
 
-        // --- DATA HANDLING ---
+        // --- CORE DATA LOGIC ---
         function recalculateData() {
             if(!window.ordersSnapshot) return;
-            udhaarMap = {}; allHistoryOrders = []; let liveHtml = '', sales = 0, activeCount = 0;
+            udhaarMap = {}; allHistoryOrders = []; todaysItemsMap = {}; // Reset counts
+            let liveHtml = '', sales = 0, activeCount = 0;
 
             if(window.paymentsSnapshot) { 
                 window.paymentsSnapshot.docs.forEach(doc => { 
@@ -278,7 +304,16 @@
                     if(data.status !== 'cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; } 
                 }
                 
-                if(orderTime > lastResetSeconds && data.status === 'completed') sales += data.totalAmount;
+                // --- SALES & ITEM ANALYTICS LOGIC ---
+                if(orderTime > lastResetSeconds && data.status === 'completed') {
+                    sales += data.totalAmount;
+                    // Count Items
+                    data.items.forEach(item => {
+                        const key = item.name;
+                        if(!todaysItemsMap[key]) todaysItemsMap[key] = 0;
+                        todaysItemsMap[key] += item.qty;
+                    });
+                }
 
                 const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
                 if(isActive) {
@@ -307,128 +342,200 @@
             lastPendingCount = activeCount;
             document.getElementById('view-live').innerHTML = liveHtml || '<div class="flex flex-col items-center justify-center pt-20 opacity-50"><i class="fas fa-mug-hot text-4xl mb-2 text-gray-600"></i><p class="text-gray-500">No active orders</p></div>';
             
-            // Sales Privacy Logic
             const salesEl = document.getElementById('total-sales');
             salesEl.innerText = salesHidden ? "****" : sales;
-            salesEl.dataset.realValue = sales; // Store for toggling
+            salesEl.dataset.realValue = sales; 
             
             document.getElementById('pending-count').innerText = activeCount;
             renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
             if(!document.getElementById('settle-modal').classList.contains('hidden') && currentSettlePhone) renderSettleHistory(currentSettlePhone);
+            
+            // Refresh Analysis Modal if Open
+            if(!document.getElementById('sales-modal').classList.contains('hidden')) renderTodayAnalysis();
+            // Refresh Stock Modal if Open
+            if(!document.getElementById('menu-modal').classList.contains('hidden')) renderMenuModalList();
         }
 
-        function toggleSalesPrivacy() {
-            salesHidden = !salesHidden;
-            const salesEl = document.getElementById('total-sales');
-            const icon = document.getElementById('privacy-icon');
-            
-            if(salesHidden) {
-                salesEl.innerText = "****";
-                icon.className = "fas fa-eye-slash";
+        // --- NEW: SALES ANALYSIS LOGIC ---
+        function openSalesAnalysis() {
+            document.getElementById('sales-modal').classList.remove('hidden');
+            switchSalesTab('today');
+        }
+
+        function switchSalesTab(tab) {
+            if(tab === 'today') {
+                document.getElementById('sale-tab-today').className = "flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500";
+                document.getElementById('sale-tab-past').className = "flex-1 py-2 text-sm font-bold text-gray-500";
+                document.getElementById('sales-view-today').classList.remove('hidden');
+                document.getElementById('sales-view-past').classList.add('hidden');
+                renderTodayAnalysis();
             } else {
-                salesEl.innerText = salesEl.dataset.realValue;
-                icon.className = "fas fa-eye";
+                document.getElementById('sale-tab-past').className = "flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500";
+                document.getElementById('sale-tab-today').className = "flex-1 py-2 text-sm font-bold text-gray-500";
+                document.getElementById('sales-view-past').classList.remove('hidden');
+                document.getElementById('sales-view-today').classList.add('hidden');
+                renderPastHistory();
             }
         }
 
-        // --- NEW AESTHETIC MODAL FUNCTIONS ---
-        
-        // Broadcast
-        function openBroadcastModal() {
-            document.getElementById('broadcast-modal').classList.remove('hidden');
-        }
-        function saveBroadcast(msg) {
-            db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true })
-            .then(() => {
-                document.getElementById('broadcast-modal').classList.add('hidden');
-                showToast(msg ? "Broadcast Active" : "Broadcast Removed");
-            });
-        }
-
-        // Udhaar Limit
-        function openLimitModal(phone, name) {
-            currentLimitPhone = phone;
-            document.getElementById('limit-modal-name').innerText = name + " (" + phone + ")";
-            document.getElementById('limit-input').value = ""; // Reset
-            document.getElementById('limit-modal').classList.remove('hidden');
-            document.getElementById('limit-input').focus();
+        function renderTodayAnalysis() {
+            const container = document.getElementById('today-breakdown-list');
+            if(Object.keys(todaysItemsMap).length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center text-sm py-4">No sales today yet.</p>';
+                return;
+            }
+            // Sort by quantity desc
+            const sorted = Object.entries(todaysItemsMap).sort((a,b) => b[1] - a[1]);
+            
+            container.innerHTML = sorted.map(([name, qty]) => `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded-lg border border-gray-700">
+                    <span class="text-sm font-bold text-white">${name}</span>
+                    <span class="text-sm font-bold text-orange-400">${qty} Sold</span>
+                </div>
+            `).join('');
         }
 
-        function saveLimit() {
-            const val = document.getElementById('limit-input').value;
-            if(!val) { showToast("Enter a value", "error"); return; }
-            db.collection('user_limits').doc(currentLimitPhone).set({ limit: parseInt(val) }, { merge: true })
-            .then(() => {
-                document.getElementById('limit-modal').classList.add('hidden');
-                showToast("Limit Set Successfully");
-            });
+        function renderPastHistory() {
+            const listContainer = document.getElementById('past-list-container');
+            const graphContainer = document.getElementById('past-graph-container');
+            
+            if(!salesHistoryData || salesHistoryData.length === 0) {
+                listContainer.innerHTML = '<p class="text-gray-500 text-center text-sm py-4">No history data.</p>';
+                graphContainer.classList.add('hidden');
+                return;
+            }
+            graphContainer.classList.remove('hidden');
+
+            // Render List
+            // Reverse to show latest first
+            const displayData = [...salesHistoryData].reverse().slice(0, 7); 
+            listContainer.innerHTML = displayData.map(d => `
+                <div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
+                    <span class="text-xs text-gray-400">${d.date}</span>
+                    <span class="text-sm font-bold text-green-400">₹${d.total}</span>
+                </div>
+            `).join('');
+
+            // Render Graph
+            const maxVal = Math.max(...displayData.map(d => d.total));
+            const barHtml = displayData.reverse().map(d => { // Normal order for graph left-to-right
+                const height = maxVal > 0 ? (d.total / maxVal) * 80 : 0;
+                const shortDate = d.date.split('/')[0]; // Just Day
+                return `
+                <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+                    <div class="bar w-full" style="height:${height}px; min-height:4px; opacity:0.8;"><span>₹${d.total}</span></div>
+                    <div class="bar-label">${shortDate}</div>
+                </div>`;
+            }).join('');
+            
+            graphContainer.innerHTML = `<div class="bar-container">${barHtml}</div>`;
         }
 
-        // --- RENDERERS ---
+        // --- UPDATED END DAY LOGIC ---
+        function endDay() {
+            const currentSales = parseInt(document.getElementById('total-sales').dataset.realValue || 0);
+            const todayStr = new Date().toLocaleDateString('en-IN'); // DD/MM/YYYY
+
+            // Prepare new history entry
+            const newEntry = { date: todayStr, total: currentSales };
+            // Add to existing history
+            const updatedHistory = [...salesHistoryData, newEntry];
+            // Keep only last 30 days to save space
+            if(updatedHistory.length > 30) updatedHistory.shift();
+
+            db.collection('settings').doc('config').set({ 
+                lastReset: firebase.firestore.FieldValue.serverTimestamp(),
+                salesHistory: updatedHistory
+            }, { merge: true }).then(() => {
+                showToast("Day Reset & History Saved");
+                document.getElementById('sales-modal').classList.add('hidden');
+            }); 
+        }
+
+        // --- UPDATED MENU RENDER (With Sales Counter) ---
+        function renderMenuModalList() {
+            const list = document.getElementById('menu-list-items');
+            const stocks = currentMenuData.stock || {}; const prices = currentMenuData.prices || {}; const customItems = currentMenuData.customItems || [];
+            
+            const renderItem = (id, name, defPrice) => {
+                const currentPrice = prices[id] !== undefined ? prices[id] : defPrice; 
+                const inStock = stocks[id] !== false;
+                // Get Sold Count
+                const soldCount = todaysItemsMap[name] || 0;
+                
+                const priceInput = id === 3 ? `<span class="text-xs text-gray-500 italic">Var.</span>` : `<input type="number" id="price-${id}" value="${currentPrice}" class="bg-gray-900 w-14 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">`;
+                
+                // Added: Sold Count Badge
+                const soldBadge = soldCount > 0 ? `<span class="text-[10px] bg-green-900 text-green-300 px-1.5 py-0.5 rounded ml-2">Sold:${soldCount}</span>` : '';
+
+                return `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700">
+                    <div class="flex flex-col w-1/3">
+                        <span class="text-sm font-bold text-white">${name}</span>
+                        ${soldBadge}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${priceInput}
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="stock-${id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
+                        </label>
+                    </div>
+                </div>`;
+            };
+
+            let html = baseAdminItems.map(item => renderItem(item.id, item.name, item.defaultPrice)).join('');
+            html += customItems.map((item, index) => {
+                // ... (Custom item logic similar to above but with delete button)
+                 const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.price; 
+                 const inStock = stocks[item.id] !== false;
+                 const soldCount = todaysItemsMap[item.name] || 0;
+                 const soldBadge = soldCount > 0 ? `<span class="text-[10px] bg-green-900 text-green-300 px-1.5 py-0.5 rounded ml-2">Sold:${soldCount}</span>` : '';
+                 return `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700 relative">
+                    <div class="flex flex-col w-1/3">
+                        <span class="text-sm font-bold text-blue-300">${item.name}</span>
+                        ${soldBadge}
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-14 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
+                        </label>
+                        <button onclick="deleteCustomItem(${index})" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('');
+            list.innerHTML = html;
+        }
+
+        // --- OTHER UTILS (Standard) ---
+        function toggleSalesPrivacy() {
+            salesHidden = !salesHidden; const salesEl = document.getElementById('total-sales'); const icon = document.getElementById('privacy-icon');
+            if(salesHidden) { salesEl.innerText = "****"; icon.className = "fas fa-eye-slash"; } else { salesEl.innerText = salesEl.dataset.realValue; icon.className = "fas fa-eye"; }
+        }
+        function openBroadcastModal() { document.getElementById('broadcast-modal').classList.remove('hidden'); }
+        function saveBroadcast(msg) { db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true }).then(() => { document.getElementById('broadcast-modal').classList.add('hidden'); showToast(msg ? "Broadcast Active" : "Broadcast Removed"); }); }
+        function openLimitModal(phone, name) { currentLimitPhone = phone; document.getElementById('limit-modal-name').innerText = name + " (" + phone + ")"; document.getElementById('limit-input').value = ""; document.getElementById('limit-modal').classList.remove('hidden'); document.getElementById('limit-input').focus(); }
+        function saveLimit() { const val = document.getElementById('limit-input').value; if(!val) { showToast("Enter a value", "error"); return; } db.collection('user_limits').doc(currentLimitPhone).set({ limit: parseInt(val) }, { merge: true }).then(() => { document.getElementById('limit-modal').classList.add('hidden'); showToast("Limit Set Successfully"); }); }
         function renderUdhaar() {
             const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
             for(let phone in udhaarMap) {
                 const u = udhaarMap[phone]; const netDue = u.debit - u.credit;
                 if(netDue > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) {
-                    html += `
-                    <div class="card p-3 flex justify-between items-center animate-fade-in">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h4 class="font-bold text-white">${u.name}</h4>
-                                <button onclick="openLimitModal('${phone}', '${u.name}')" class="text-gray-500 hover:text-white text-xs"><i class="fas fa-lock"></i></button>
-                            </div>
-                            <p class="text-xs text-gray-400 tracking-wide">${phone}</p>
-                        </div>
-                        <div class="text-right">
-                            <h4 class="text-red-400 font-bold text-lg">₹${netDue}</h4>
-                            <div class="flex gap-2 mt-1 justify-end">
-                                <button onclick="sendWhatsApp('${u.name}', '${phone}', 'Udhaar Reminder', ${netDue})" class="text-green-500 hover:text-green-400"><i class="fab fa-whatsapp"></i></button>
-                                <button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow">SETTLE</button>
-                            </div>
-                        </div>
-                    </div>`;
+                    html += `<div class="card p-3 flex justify-between items-center animate-fade-in"><div><div class="flex items-center gap-2"><h4 class="font-bold text-white">${u.name}</h4><button onclick="openLimitModal('${phone}', '${u.name}')" class="text-gray-500 hover:text-white text-xs"><i class="fas fa-lock"></i></button></div><p class="text-xs text-gray-400 tracking-wide">${phone}</p></div><div class="text-right"><h4 class="text-red-400 font-bold text-lg">₹${netDue}</h4><div class="flex gap-2 mt-1 justify-end"><button onclick="sendWhatsApp('${u.name}', '${phone}', 'Udhaar Reminder', ${netDue})" class="text-green-500 hover:text-green-400"><i class="fab fa-whatsapp"></i></button><button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow">SETTLE</button></div></div></div>`;
                 }
             }
             list.innerHTML = html || "<p class='text-center text-gray-500 text-sm mt-10'>No Udhaar pending.</p>";
         }
-
         function renderHistory() {
-            const container = document.getElementById('history-container');
-            let groups = {}; allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
+            const container = document.getElementById('history-container'); let groups = {}; allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
             if(Object.keys(groups).length === 0) { container.innerHTML = "<p class='text-center text-gray-500 text-sm mt-10'>No history available.</p>"; return; }
             container.innerHTML = Object.keys(groups).map(p => {
                 const g = groups[p]; const t = g.orders.reduce((s, o) => s + (o.status === 'completed' ? o.totalAmount : 0), 0);
-                return `
-                <div class="card overflow-hidden">
-                    <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-750 transition">
-                        <div><h3 class="font-bold text-white text-sm">${g.name}</h3><p class="text-[10px] text-gray-400">${p}</p></div>
-                        <div class="text-right"><p class="text-orange-400 font-bold text-sm">Total: ₹${t}</p><p class="text-[10px] text-gray-500">${g.orders.length} orders <i class="fas fa-chevron-down ml-1"></i></p></div>
-                    </div>
-                    <div class="hidden bg-black/20 p-2 space-y-2 border-t border-gray-700">
-                        ${g.orders.map(o => {
-                            const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(o.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-                            return `
-                            <div onclick="openHistoryDetail('${o.id}')" class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700/50 cursor-pointer hover:bg-gray-700 transition relative">
-                                <div><span class="text-gray-500 text-[10px] block">${dateStr}</span><span class="text-[10px] uppercase font-bold px-1 rounded ${o.status==='completed'?'bg-green-900 text-green-300':'bg-red-900 text-red-300'}">${o.status}</span><p class="text-xs text-gray-300 mt-1 truncate max-w-[150px]">${o.items.map(i=>i.name).join(', ')}</p></div>
-                                <div class="flex items-center gap-3"><span class="font-bold text-white text-sm">₹${o.totalAmount}</span><button onclick="event.stopPropagation(); confirmAction('Delete this record?', () => deleteHistoryItem('${o.id}'))" class="text-red-500 text-xs p-1 opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button></div>
-                            </div>`;
-                        }).join('')}
-                    </div>
-                </div>`;
+                return `<div class="card overflow-hidden"><div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-750 transition"><div><h3 class="font-bold text-white text-sm">${g.name}</h3><p class="text-[10px] text-gray-400">${p}</p></div><div class="text-right"><p class="text-orange-400 font-bold text-sm">Total: ₹${t}</p><p class="text-[10px] text-gray-500">${g.orders.length} orders <i class="fas fa-chevron-down ml-1"></i></p></div></div><div class="hidden bg-black/20 p-2 space-y-2 border-t border-gray-700">${g.orders.map(o => { const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(o.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''; return `<div onclick="openHistoryDetail('${o.id}')" class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700/50 cursor-pointer hover:bg-gray-700 transition relative"><div><span class="text-gray-500 text-[10px] block">${dateStr}</span><span class="text-[10px] uppercase font-bold px-1 rounded ${o.status==='completed'?'bg-green-900 text-green-300':'bg-red-900 text-red-300'}">${o.status}</span><p class="text-xs text-gray-300 mt-1 truncate max-w-[150px]">${o.items.map(i=>i.name).join(', ')}</p></div><div class="flex items-center gap-3"><span class="font-bold text-white text-sm">₹${o.totalAmount}</span><button onclick="event.stopPropagation(); confirmAction('Delete this record?', () => deleteHistoryItem('${o.id}'))" class="text-red-500 text-xs p-1 opacity-50 hover:opacity-100"><i class="fas fa-trash"></i></button></div></div>`; }).join('')}</div></div>`;
             }).join('');
         }
-
-        function openHistoryDetail(id) {
-            const data = allHistoryOrders.find(o => o.id === id); if(!data) return;
-            const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
-            document.getElementById('hd-date').innerText = dateStr; document.getElementById('hd-customer').innerText = (data.customerName || 'Guest') + '\n' + (data.customerPhone || '');
-            const mode = data.paymentMode || 'Cash';
-            document.getElementById('hd-payment').innerText = mode; document.getElementById('hd-payment').className = "font-bold text-right " + (mode === 'Udhaar' ? 'text-red-400' : 'text-blue-400');
-            document.getElementById('hd-status').innerText = data.status; document.getElementById('hd-status').className = "uppercase font-bold text-right " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
-            document.getElementById('hd-total').innerText = '₹' + data.totalAmount;
-            document.getElementById('hd-items').innerHTML = data.items.map(i => `<div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1 last:border-0 last:pb-0"><div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div><p class="font-bold text-orange-400 text-sm">₹${(i.price || 0) * i.qty}</p></div>`).join('');
-            document.getElementById('history-detail-modal').classList.remove('hidden');
-        }
+        function openHistoryDetail(id) { const data = allHistoryOrders.find(o => o.id === id); if(!data) return; const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'; document.getElementById('hd-date').innerText = dateStr; document.getElementById('hd-customer').innerText = (data.customerName || 'Guest') + '\n' + (data.customerPhone || ''); const mode = data.paymentMode || 'Cash'; document.getElementById('hd-payment').innerText = mode; document.getElementById('hd-payment').className = "font-bold text-right " + (mode === 'Udhaar' ? 'text-red-400' : 'text-blue-400'); document.getElementById('hd-status').innerText = data.status; document.getElementById('hd-status').className = "uppercase font-bold text-right " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500'); document.getElementById('hd-total').innerText = '₹' + data.totalAmount; document.getElementById('hd-items').innerHTML = data.items.map(i => `<div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1 last:border-0 last:pb-0"><div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div><p class="font-bold text-orange-400 text-sm">₹${(i.price || 0) * i.qty}</p></div>`).join(''); document.getElementById('history-detail-modal').classList.remove('hidden'); }
         function closeHistoryDetail() { document.getElementById('history-detail-modal').classList.add('hidden'); }
         function sendWhatsApp(name, phone, items, total) { if(!phone) { showToast("No Phone Number", "error"); return; } let p = phone.replace(/\D/g,''); if(p.length === 10) p = "91" + p; window.open(`https://wa.me/${p}?text=${encodeURIComponent(`*SGMC Chai Stall* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you!`)}`, '_blank'); }
         function showToast(msg, type = 'success') { const container = document.getElementById('toast-container'); const el = document.createElement('div'); el.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`; el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`; container.appendChild(el); setTimeout(() => el.classList.add('show'), 10); setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000); }
@@ -436,70 +543,22 @@
         function closeConfirm(result) { document.querySelector('.confirm-box').classList.remove('open'); setTimeout(() => document.getElementById('custom-confirm').classList.add('hidden'), 200); if(result && pendingAction) pendingAction(); pendingAction = null; }
         function deleteHistoryItem(id) { db.collection('orders').doc(id).delete().then(() => showToast("Deleted")); }
         function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name + " (" + phone + ")"; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = ""; renderSettleHistory(phone); document.getElementById('settle-modal').classList.remove('hidden'); }
-        function renderSettleHistory(phone) {
-            const list = document.getElementById('settle-history-list'); list.innerHTML = '<p class="text-center text-gray-600 text-xs">Loading...</p>';
-            if(!window.paymentsSnapshot) { list.innerHTML = '<p class="text-center text-gray-600 text-xs">No data.</p>'; return; }
-            const payments = []; window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(d.phone === phone) payments.push(d); });
-            if(payments.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 text-xs">No previous payments found.</p>'; return; }
-            list.innerHTML = payments.map(p => `<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700"><div><span class="text-green-400 font-bold text-sm">+₹${p.amount}</span><p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p></div><div class="text-right text-xs text-gray-400"><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p></div></div>`).join('');
-        }
+        function renderSettleHistory(phone) { const list = document.getElementById('settle-history-list'); list.innerHTML = '<p class="text-center text-gray-600 text-xs">Loading...</p>'; if(!window.paymentsSnapshot) { list.innerHTML = '<p class="text-center text-gray-600 text-xs">No data.</p>'; return; } const payments = []; window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(d.phone === phone) payments.push(d); }); if(payments.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 text-xs">No previous payments found.</p>'; return; } list.innerHTML = payments.map(p => `<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700"><div><span class="text-green-400 font-bold text-sm">+₹${p.amount}</span><p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p></div><div class="text-right text-xs text-gray-400"><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p></div></div>`).join(''); }
         function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
         function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Cash (Admin)' }).then(() => { closeSettle(); showToast("Payment Settled"); }); }
-        function endDay() { db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => showToast("Day Reset Successful")); }
+        
         function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened")); }
         function updateStatus(id, st) { db.collection('orders').doc(id).update({ status: st }).then(() => showToast("Status Updated")); }
         function markComplete(id) { confirmAction('Mark as Delivered?', () => { db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); }); }
         function cancelOrder(id) { db.collection('orders').doc(id).update({ status: 'cancelled' }).then(() => showToast("Order Cancelled")); }
         function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
         
-        // --- TAB LOGIC WITH MEMORY ---
-        function switchTab(t) { 
-            // Save state to browser memory
-            localStorage.setItem('admin_active_tab', t);
-            
-            ['live', 'history', 'udhaar'].forEach(x => { 
-                document.getElementById(`view-${x}`).classList.add('hidden'); 
-                document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); 
-                document.getElementById(`tab-${x}`).classList.add('text-gray-500'); 
-            }); 
-            document.getElementById(`view-${t}`).classList.remove('hidden'); 
-            document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); 
-            document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); 
-            if(t==='history') renderHistory(); 
-        }
-
+        function switchTab(t) { localStorage.setItem('admin_active_tab', t); ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-500'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); if(t==='history') renderHistory(); }
         function filterUdhaar() { renderUdhaar(); }
-        
-        // --- MENU MANAGEMENT ---
         function openMenuControl() { renderMenuModalList(); document.getElementById('menu-modal').classList.remove('hidden'); }
-        function renderMenuModalList() {
-            const list = document.getElementById('menu-list-items');
-            const stocks = currentMenuData.stock || {}; const prices = currentMenuData.prices || {}; const customItems = currentMenuData.customItems || [];
-            let html = baseAdminItems.map(item => {
-                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.defaultPrice; const inStock = stocks[item.id] !== false;
-                const priceInput = item.id === 3 ? `<span class="text-xs text-gray-500 italic">Var. Price</span>` : `<input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">`;
-                return `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700"><span class="text-sm font-bold w-1/3">${item.name}</span><div class="flex items-center gap-2">${priceInput}<label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label></div></div>`;
-            }).join('');
-            html += customItems.map((item, index) => {
-                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.price; const inStock = stocks[item.id] !== false;
-                return `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700 relative"><span class="text-sm font-bold w-1/3 text-blue-300">${item.name}</span><div class="flex items-center gap-2"><input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold"><label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label><button onclick="deleteCustomItem(${index})" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button></div></div>`;
-            }).join('');
-            list.innerHTML = html;
-        }
-        function addNewItem() {
-            const name = document.getElementById('new-item-name').value.trim(); const price = parseInt(document.getElementById('new-item-price').value);
-            if(!name || !price) { showToast("Enter Name & Price", "error"); return; }
-            const newItem = { id: Date.now(), name: name, price: price };
-            if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push(newItem);
-            document.getElementById('new-item-name').value = ''; document.getElementById('new-item-price').value = ''; renderMenuModalList();
-        }
+        function addNewItem() { const name = document.getElementById('new-item-name').value.trim(); const price = parseInt(document.getElementById('new-item-price').value); if(!name || !price) { showToast("Enter Name & Price", "error"); return; } const newItem = { id: Date.now(), name: name, price: price }; if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push(newItem); document.getElementById('new-item-name').value = ''; document.getElementById('new-item-price').value = ''; renderMenuModalList(); }
         function deleteCustomItem(index) { if(!confirm("Remove this item?")) return; currentMenuData.customItems.splice(index, 1); renderMenuModalList(); }
-        function saveMenuStatus() {
-            const stocks = {}; const prices = {};
-            baseAdminItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; if(item.id !== 3) { prices[item.id] = document.getElementById(`price-${item.id}`).value; } });
-            if(currentMenuData.customItems) { currentMenuData.customItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; prices[item.id] = document.getElementById(`price-${item.id}`).value; }); }
-            db.collection('settings').doc('menu_data').set({ stock: stocks, prices: prices, customItems: currentMenuData.customItems || [] }).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Menu Updated Successfully"); });
-        }
+        function saveMenuStatus() { const stocks = {}; const prices = {}; baseAdminItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; if(item.id !== 3) { prices[item.id] = document.getElementById(`price-${item.id}`).value; } }); if(currentMenuData.customItems) { currentMenuData.customItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; prices[item.id] = document.getElementById(`price-${item.id}`).value; }); } db.collection('settings').doc('menu_data').set({ stock: stocks, prices: prices, customItems: currentMenuData.customItems || [] }).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Menu Updated Successfully"); }); }
         init();
     </script>
 </body>
