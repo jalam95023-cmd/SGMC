@@ -16,12 +16,10 @@
         body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         .card { background: #1f1f1f; border-radius: 12px; border: 1px solid #333; }
         .tab-active { border-bottom: 2px solid #F97316; color: #F97316; }
-        
         #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: rgba(30, 30, 30, 0.95); border: 1px solid #333; padding: 10px 20px; border-radius: 50px; color: white; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); opacity: 0; transform: translateY(20px); transition: all 0.3s ease; display: flex; items-center; gap: 8px; backdrop-filter: blur(5px); }
         .toast.show { opacity: 1; transform: translateY(0); }
         .toast-success i { color: #4ade80; } .toast-error i { color: #f87171; }
-        
         #custom-confirm { backdrop-filter: blur(5px); }
         .confirm-box { transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .confirm-box.open { transform: scale(1); }
@@ -32,6 +30,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
         <div class="flex gap-2">
+            <button onclick="setBroadcast()" class="w-8 h-8 rounded bg-gray-800 text-yellow-500 border border-gray-600 flex items-center justify-center shadow"><i class="fas fa-bullhorn text-xs"></i></button>
             <button onclick="openMenuControl()" class="px-3 py-2 rounded text-xs font-bold bg-blue-600 text-white shadow-lg shadow-blue-900/50">Stock</button>
             <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-2 rounded text-xs font-bold bg-gray-700 shadow-lg">Loading...</button>
         </div>
@@ -90,9 +89,7 @@
                 <h3 class="text-xl font-bold text-white">Stock & Prices</h3>
                 <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
-
             <div class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1" id="menu-list-items"></div>
-
             <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-4">
                 <p class="text-xs text-orange-400 font-bold mb-2 uppercase">Add New Item</p>
                 <div class="flex gap-2 mb-2">
@@ -101,7 +98,6 @@
                 </div>
                 <button onclick="addNewItem()" class="w-full bg-orange-600 text-white text-xs py-2 rounded font-bold shadow hover:bg-orange-500">Add Item</button>
             </div>
-
             <button onclick="saveMenuStatus()" class="w-full py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">Save Changes</button>
         </div>
     </div>
@@ -135,7 +131,7 @@
     </div>
 
     <div id="toast-container"></div>
-    <audio id="order-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
+    <audio id="order-sound"></audio>
 
     <script>
         // --- CONFIG ---
@@ -151,11 +147,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Base items for reference (IDs 1-7 are static)
         const baseAdminItems = [
             { id: 1, name: "Normal Chai", defaultPrice: 10 },
             { id: 2, name: "Adrak Chai", defaultPrice: 15 },
-            { id: 3, name: "Cigarette", defaultPrice: 0 }, // Special
+            { id: 3, name: "Cigarette", defaultPrice: 0 },
             { id: 4, name: "Matthi", defaultPrice: 5 },
             { id: 5, name: "Cream Roll", defaultPrice: 10 },
             { id: 6, name: "Biscuit", defaultPrice: 5 },
@@ -171,8 +166,6 @@
         let lastPendingCount = 0; 
         let soundEnabled = false;
         let pendingAction = null; 
-        
-        // Menu Data Cache
         let currentMenuData = { stock: {}, prices: {}, customItems: [] };
 
         // --- INITIALIZATION ---
@@ -187,28 +180,39 @@
                 btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; 
                 btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white shadow-lg shadow-green-900/50" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white shadow-lg shadow-red-900/50"; 
             });
-            // Listen to Menu Data
             db.collection('settings').doc('menu_data').onSnapshot(doc => {
                  if(doc.exists) currentMenuData = doc.data();
                  else currentMenuData = { stock: {}, prices: {}, customItems: [] };
             });
-
             db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
         }
 
+        // --- UPDATED SOUND LOGIC (LOOP) ---
         function enableSound() { 
             if(!soundEnabled) { 
                 const audio = document.getElementById('order-sound'); 
+                audio.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; // Louder Bell
                 audio.play().then(() => { 
                     audio.pause(); audio.currentTime = 0; 
                     soundEnabled = true; 
                     document.getElementById('sound-status').innerHTML = '<i class="fas fa-volume-up text-green-500"></i> Sound Active'; 
-                }).catch(e => console.log("Init Sound")); 
+                }).catch(e => console.log("Init Sound Error", e)); 
             } 
         }
+
         function playNotification() { 
-            if(soundEnabled) { const audio = document.getElementById('order-sound'); audio.currentTime = 0; audio.play().catch(e => {}); } 
+            if(soundEnabled) { 
+                const audio = document.getElementById('order-sound'); 
+                audio.loop = true; // LOOP ENABLED
+                audio.play().catch(e => {}); 
+                
+                // Add one-time listener to stop on click
+                document.body.addEventListener('click', () => {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }, { once: true });
+            } 
         }
 
         // --- DATA HANDLING ---
@@ -227,56 +231,31 @@
             window.ordersSnapshot.docs.forEach(doc => {
                 const data = doc.data(); const id = doc.id;
                 const orderTime = data.timestamp ? data.timestamp.seconds : 0;
-                
-                // History Logic
                 if(data.status === 'completed' || data.status === 'cancelled') allHistoryOrders.push({id, ...data});
                 
-                // Udhaar Logic
                 if(data.paymentMode === 'Udhaar' && data.customerPhone) { 
                     if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 }; 
-                    if(data.status !== 'cancelled') { 
-                        udhaarMap[data.customerPhone].debit += data.totalAmount; 
-                        udhaarMap[data.customerPhone].name = data.customerName; 
-                    } 
+                    if(data.status !== 'cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; } 
                 }
                 
-                // Sales Logic
                 if(orderTime > lastResetSeconds && data.status === 'completed') sales += data.totalAmount;
 
-                // Live Orders Logic
                 const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
                 if(isActive) {
                     activeCount++;
                     const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
                     const itemStr = data.items.map(i => `${i.qty} x ${i.name}`).join(', ');
-                    
                     liveHtml += `
                     <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'} animate-fade-in relative">
                         <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="font-bold text-lg leading-tight">${data.customerName}</h3>
-                                <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${data.paymentMode === 'Udhaar' ? 'bg-red-900 text-red-200' : 'bg-blue-900 text-blue-200'}">${data.paymentMode}</span>
-                            </div>
-                            <div class="text-right">
-                                <h3 class="font-bold text-xl text-orange-400">₹${data.totalAmount}</h3>
-                                <button onclick="sendWhatsApp('${data.customerName}', '${data.customerPhone}', '${itemStr}', ${data.totalAmount})" class="text-green-500 hover:text-green-400 mt-1"><i class="fab fa-whatsapp fa-lg"></i></button>
-                            </div>
+                            <div><h3 class="font-bold text-lg leading-tight">${data.customerName}</h3><span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${data.paymentMode === 'Udhaar' ? 'bg-red-900 text-red-200' : 'bg-blue-900 text-blue-200'}">${data.paymentMode}</span></div>
+                            <div class="text-right"><h3 class="font-bold text-xl text-orange-400">₹${data.totalAmount}</h3><button onclick="sendWhatsApp('${data.customerName}', '${data.customerPhone}', '${itemStr}', ${data.totalAmount})" class="text-green-500 hover:text-green-400 mt-1"><i class="fab fa-whatsapp fa-lg"></i></button></div>
                         </div>
-                        
                         ${data.customerAddress ? `<div class="bg-gray-800/50 p-2 rounded mb-2 flex items-start gap-2"><i class="fas fa-map-marker-alt text-orange-500 mt-0.5 text-xs"></i><p class="text-xs text-gray-300 leading-tight">${data.customerAddress}</p></div>` : ''}
-
-                        <ul class="text-sm text-gray-300 mb-3 space-y-1 pl-1 border-l border-gray-700 ml-1">
-                            ${data.items.map(i => `<li><span class="font-bold text-white">${i.qty}</span> ${i.name}</li>`).join('')}
-                        </ul>
-
+                        <ul class="text-sm text-gray-300 mb-3 space-y-1 pl-1 border-l border-gray-700 ml-1">${data.items.map(i => `<li><span class="font-bold text-white">${i.qty}</span> ${i.name}</li>`).join('')}</ul>
                         ${isUpiPending ? `<div class="bg-yellow-900/30 border border-yellow-700/50 text-yellow-200 text-xs p-2 rounded mb-3 flex justify-between items-center"><span><i class="fas fa-exclamation-circle"></i> UPI Check!</span><button onclick="confirmAction('Verify UPI Payment?', () => verifyPayment('${id}'))" class="bg-yellow-600 text-white px-3 py-1 rounded shadow-lg">Verify</button></div>` : ''}
-                        
                         <div class="flex gap-2 items-center bg-gray-900/50 p-1 rounded-lg">
-                            <select onchange="updateStatus('${id}', this.value)" class="bg-gray-800 text-white text-xs p-2 rounded border-none outline-none focus:ring-1 ring-orange-500">
-                                <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option>
-                                <option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option>
-                            </select>
+                            <select onchange="updateStatus('${id}', this.value)" class="bg-gray-800 text-white text-xs p-2 rounded border-none outline-none focus:ring-1 ring-orange-500"><option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option><option value="cooking" ${data.status === 'cooking' ? 'selected' : ''}>Cooking</option><option value="ready" ${data.status === 'ready' ? 'selected' : ''}>Ready</option></select>
                             <button onclick="markComplete('${id}')" class="bg-green-600 text-white py-2 px-4 rounded text-xs font-bold flex-1 shadow-lg shadow-green-900/20 active:scale-95 transition">COMPLETE</button>
                             <button onclick="confirmAction('Cancel Order?', () => cancelOrder('${id}'))" class="text-red-500 hover:bg-red-900/20 w-8 h-8 rounded flex items-center justify-center transition"><i class="fas fa-trash"></i></button>
                         </div>
@@ -284,7 +263,7 @@
                 }
             });
 
-            if(activeCount > lastPendingCount) playNotification();
+            if(activeCount > lastPendingCount) playNotification(); // SOUND TRIGGER
             lastPendingCount = activeCount;
             document.getElementById('view-live').innerHTML = liveHtml || '<div class="flex flex-col items-center justify-center pt-20 opacity-50"><i class="fas fa-mug-hot text-4xl mb-2 text-gray-600"></i><p class="text-gray-500">No active orders</p></div>';
             document.getElementById('total-sales').innerText = sales;
@@ -293,7 +272,7 @@
             if(!document.getElementById('settle-modal').classList.contains('hidden') && currentSettlePhone) renderSettleHistory(currentSettlePhone);
         }
 
-        // --- UI RENDERERS ---
+        // --- UPDATED UDHAAR RENDER (Add Lock Icon) ---
         function renderUdhaar() {
             const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
             for(let phone in udhaarMap) {
@@ -301,7 +280,13 @@
                 if(netDue > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) {
                     html += `
                     <div class="card p-3 flex justify-between items-center animate-fade-in">
-                        <div><h4 class="font-bold text-white">${u.name}</h4><p class="text-xs text-gray-400 tracking-wide">${phone}</p></div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-white">${u.name}</h4>
+                                <button onclick="setLimit('${phone}', '${u.name}')" class="text-gray-500 hover:text-white text-xs"><i class="fas fa-lock"></i></button>
+                            </div>
+                            <p class="text-xs text-gray-400 tracking-wide">${phone}</p>
+                        </div>
                         <div class="text-right">
                             <h4 class="text-red-400 font-bold text-lg">₹${netDue}</h4>
                             <div class="flex gap-2 mt-1 justify-end">
@@ -313,6 +298,21 @@
                 }
             }
             list.innerHTML = html || "<p class='text-center text-gray-500 text-sm mt-10'>No Udhaar pending.</p>";
+        }
+
+        // --- NEW FEATURES: LIMIT & BROADCAST ---
+        function setLimit(phone, name) {
+            const limit = prompt(`Set Max Udhaar Limit for ${name}:`, "500");
+            if(limit && !isNaN(limit)) {
+                db.collection('user_limits').doc(phone).set({ limit: parseInt(limit) }, { merge: true })
+                .then(() => showToast("Limit Set: ₹" + limit));
+            }
+        }
+
+        function setBroadcast() {
+            const msg = prompt("Enter Broadcast Message (Leave empty to remove):");
+            db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true })
+            .then(() => showToast(msg ? "Broadcast Active" : "Broadcast Removed"));
         }
 
         function renderHistory() {
@@ -342,26 +342,16 @@
         }
 
         function openHistoryDetail(id) {
-            const data = allHistoryOrders.find(o => o.id === id);
-            if(!data) return;
+            const data = allHistoryOrders.find(o => o.id === id); if(!data) return;
             const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
-            document.getElementById('hd-date').innerText = dateStr;
-            document.getElementById('hd-customer').innerText = (data.customerName || 'Guest') + '\n' + (data.customerPhone || '');
+            document.getElementById('hd-date').innerText = dateStr; document.getElementById('hd-customer').innerText = (data.customerName || 'Guest') + '\n' + (data.customerPhone || '');
             const mode = data.paymentMode || 'Cash';
-            document.getElementById('hd-payment').innerText = mode;
-            document.getElementById('hd-payment').className = "font-bold text-right " + (mode === 'Udhaar' ? 'text-red-400' : 'text-blue-400');
-            document.getElementById('hd-status').innerText = data.status;
-            document.getElementById('hd-status').className = "uppercase font-bold text-right " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
+            document.getElementById('hd-payment').innerText = mode; document.getElementById('hd-payment').className = "font-bold text-right " + (mode === 'Udhaar' ? 'text-red-400' : 'text-blue-400');
+            document.getElementById('hd-status').innerText = data.status; document.getElementById('hd-status').className = "uppercase font-bold text-right " + (data.status === 'completed' ? 'text-green-500' : 'text-yellow-500');
             document.getElementById('hd-total').innerText = '₹' + data.totalAmount;
-            document.getElementById('hd-items').innerHTML = data.items.map(i => `
-                <div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1 last:border-0 last:pb-0">
-                    <div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div>
-                    <p class="font-bold text-orange-400 text-sm">₹${(i.price || 0) * i.qty}</p>
-                </div>
-            `).join('');
+            document.getElementById('hd-items').innerHTML = data.items.map(i => `<div class="flex justify-between items-center mb-2 border-b border-gray-700 pb-1 last:border-0 last:pb-0"><div><p class="text-sm font-bold text-white">${i.name}</p><p class="text-xs text-gray-400">Qty: ${i.qty}</p></div><p class="font-bold text-orange-400 text-sm">₹${(i.price || 0) * i.qty}</p></div>`).join('');
             document.getElementById('history-detail-modal').classList.remove('hidden');
         }
-
         function closeHistoryDetail() { document.getElementById('history-detail-modal').classList.add('hidden'); }
         function sendWhatsApp(name, phone, items, total) { if(!phone) { showToast("No Phone Number", "error"); return; } let p = phone.replace(/\D/g,''); if(p.length === 10) p = "91" + p; window.open(`https://wa.me/${p}?text=${encodeURIComponent(`*SGMC Chai Stall* ☕\n\nHello ${name},\nYour Order: ${items}\n*Total: ₹${total}*\n\nThank you!`)}`, '_blank'); }
         function showToast(msg, type = 'success') { const container = document.getElementById('toast-container'); const el = document.createElement('div'); el.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`; el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`; container.appendChild(el); setTimeout(() => el.classList.add('show'), 10); setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000); }
@@ -369,18 +359,12 @@
         function closeConfirm(result) { document.querySelector('.confirm-box').classList.remove('open'); setTimeout(() => document.getElementById('custom-confirm').classList.add('hidden'), 200); if(result && pendingAction) pendingAction(); pendingAction = null; }
         function deleteHistoryItem(id) { db.collection('orders').doc(id).delete().then(() => showToast("Deleted")); }
         function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name + " (" + phone + ")"; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = ""; renderSettleHistory(phone); document.getElementById('settle-modal').classList.remove('hidden'); }
-        
         function renderSettleHistory(phone) {
-            const list = document.getElementById('settle-history-list');
-            list.innerHTML = '<p class="text-center text-gray-600 text-xs">Loading...</p>';
+            const list = document.getElementById('settle-history-list'); list.innerHTML = '<p class="text-center text-gray-600 text-xs">Loading...</p>';
             if(!window.paymentsSnapshot) { list.innerHTML = '<p class="text-center text-gray-600 text-xs">No data.</p>'; return; }
             const payments = []; window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(d.phone === phone) payments.push(d); });
             if(payments.length === 0) { list.innerHTML = '<p class="text-center text-gray-500 text-xs">No previous payments found.</p>'; return; }
-            list.innerHTML = payments.map(p => `
-                <div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700">
-                    <div><span class="text-green-400 font-bold text-sm">+₹${p.amount}</span><p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p></div>
-                    <div class="text-right text-xs text-gray-400"><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p></div>
-                </div>`).join('');
+            list.innerHTML = payments.map(p => `<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700"><div><span class="text-green-400 font-bold text-sm">+₹${p.amount}</span><p class="text-[10px] text-gray-500">${p.mode || 'Cash'}</p></div><div class="text-right text-xs text-gray-400"><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleDateString() : 'N/A'}</p><p>${p.timestamp ? new Date(p.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''}</p></div></div>`).join('');
         }
         function closeSettle() { document.getElementById('settle-modal').classList.add('hidden'); }
         function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Cash (Admin)' }).then(() => { closeSettle(); showToast("Payment Settled"); }); }
@@ -392,119 +376,37 @@
         function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
         function switchTab(t) { ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-500'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); if(t==='history') renderHistory(); }
         function filterUdhaar() { renderUdhaar(); }
-
-        // --- NEW: MENU MANAGEMENT FUNCTIONS ---
-        function openMenuControl() {
-            renderMenuModalList();
-            document.getElementById('menu-modal').classList.remove('hidden');
-        }
-
+        
+        // --- MENU MANAGEMENT ---
+        function openMenuControl() { renderMenuModalList(); document.getElementById('menu-modal').classList.remove('hidden'); }
         function renderMenuModalList() {
             const list = document.getElementById('menu-list-items');
-            const stocks = currentMenuData.stock || {};
-            const prices = currentMenuData.prices || {};
-            const customItems = currentMenuData.customItems || [];
-
-            // 1. Render Base Items
+            const stocks = currentMenuData.stock || {}; const prices = currentMenuData.prices || {}; const customItems = currentMenuData.customItems || [];
             let html = baseAdminItems.map(item => {
-                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.defaultPrice;
-                const inStock = stocks[item.id] !== false;
-                
-                // Hide Cigarette Price (it's special)
-                const priceInput = item.id === 3 ? 
-                    `<span class="text-xs text-gray-500 italic">Var. Price</span>` :
-                    `<input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">`;
-
-                return `
-                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700">
-                    <span class="text-sm font-bold w-1/3">${item.name}</span>
-                    <div class="flex items-center gap-2">
-                        ${priceInput}
-                        <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
-                        </label>
-                    </div>
-                </div>`;
+                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.defaultPrice; const inStock = stocks[item.id] !== false;
+                const priceInput = item.id === 3 ? `<span class="text-xs text-gray-500 italic">Var. Price</span>` : `<input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">`;
+                return `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700"><span class="text-sm font-bold w-1/3">${item.name}</span><div class="flex items-center gap-2">${priceInput}<label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label></div></div>`;
             }).join('');
-
-            // 2. Render Custom Items
             html += customItems.map((item, index) => {
-                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.price;
-                const inStock = stocks[item.id] !== false;
-
-                return `
-                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700 relative">
-                    <span class="text-sm font-bold w-1/3 text-blue-300">${item.name}</span>
-                    <div class="flex items-center gap-2">
-                         <input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold">
-                        <label class="flex items-center cursor-pointer">
-                            <input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
-                        </label>
-                        <button onclick="deleteCustomItem(${index})" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button>
-                    </div>
-                </div>`;
+                const currentPrice = prices[item.id] !== undefined ? prices[item.id] : item.price; const inStock = stocks[item.id] !== false;
+                return `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700 relative"><span class="text-sm font-bold w-1/3 text-blue-300">${item.name}</span><div class="flex items-center gap-2"><input type="number" id="price-${item.id}" value="${currentPrice}" class="bg-gray-900 w-16 text-center text-xs p-2 rounded border border-gray-600 text-orange-400 font-bold"><label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${inStock ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label><button onclick="deleteCustomItem(${index})" class="text-red-500 ml-2"><i class="fas fa-trash"></i></button></div></div>`;
             }).join('');
-
             list.innerHTML = html;
         }
-
         function addNewItem() {
-            const name = document.getElementById('new-item-name').value.trim();
-            const price = parseInt(document.getElementById('new-item-price').value);
-
+            const name = document.getElementById('new-item-name').value.trim(); const price = parseInt(document.getElementById('new-item-price').value);
             if(!name || !price) { showToast("Enter Name & Price", "error"); return; }
-            
-            // Create a unique ID for custom item (using timestamp)
             const newItem = { id: Date.now(), name: name, price: price };
-            
-            if(!currentMenuData.customItems) currentMenuData.customItems = [];
-            currentMenuData.customItems.push(newItem);
-            
-            document.getElementById('new-item-name').value = '';
-            document.getElementById('new-item-price').value = '';
-            
-            renderMenuModalList(); // Refresh UI immediately
+            if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push(newItem);
+            document.getElementById('new-item-name').value = ''; document.getElementById('new-item-price').value = ''; renderMenuModalList();
         }
-
-        function deleteCustomItem(index) {
-            if(!confirm("Remove this item?")) return;
-            currentMenuData.customItems.splice(index, 1);
-            renderMenuModalList();
-        }
-
+        function deleteCustomItem(index) { if(!confirm("Remove this item?")) return; currentMenuData.customItems.splice(index, 1); renderMenuModalList(); }
         function saveMenuStatus() {
-            const stocks = {};
-            const prices = {};
-
-            // Collect Data from Base Items
-            baseAdminItems.forEach(item => {
-                stocks[item.id] = document.getElementById(`stock-${item.id}`).checked;
-                if(item.id !== 3) { // Skip cig price
-                    const val = document.getElementById(`price-${item.id}`).value;
-                    prices[item.id] = val;
-                }
-            });
-
-            // Collect Data from Custom Items
-            if(currentMenuData.customItems) {
-                currentMenuData.customItems.forEach(item => {
-                     stocks[item.id] = document.getElementById(`stock-${item.id}`).checked;
-                     const val = document.getElementById(`price-${item.id}`).value;
-                     prices[item.id] = val;
-                });
-            }
-
-            // Save to DB
-            db.collection('settings').doc('menu_data').set({
-                stock: stocks,
-                prices: prices,
-                customItems: currentMenuData.customItems || []
-            }).then(() => {
-                document.getElementById('menu-modal').classList.add('hidden');
-                showToast("Menu Updated Successfully");
-            });
+            const stocks = {}; const prices = {};
+            baseAdminItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; if(item.id !== 3) { prices[item.id] = document.getElementById(`price-${item.id}`).value; } });
+            if(currentMenuData.customItems) { currentMenuData.customItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; prices[item.id] = document.getElementById(`price-${item.id}`).value; }); }
+            db.collection('settings').doc('menu_data').set({ stock: stocks, prices: prices, customItems: currentMenuData.customItems || [] }).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Menu Updated Successfully"); });
         }
-
         init();
     </script>
 </body>
