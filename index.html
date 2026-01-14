@@ -15,17 +15,21 @@
         body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         .card { background: #1a1a1a; border-radius: 16px; border: 1px solid #333; overflow: hidden; }
         .btn-primary { background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); color: white; font-weight: bold; }
+        
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 10px; padding-bottom: 20px; z-index: 50; }
+        .nav-item { color: #666; font-size: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-item.active { color: #F97316; }
         
+        .modal-overlay { background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
+        .animate-pop { animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popUp { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* Broadcast & Chat */
         .ticker-wrap { position: fixed; top: 60px; left: 0; right: 0; background: #F97316; color: white; font-size: 12px; overflow: hidden; height: 24px; line-height: 24px; z-index: 30; }
         .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; font-weight: bold; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-
-        /* Chat */
-        .chat-bubble { padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 13px; margin-bottom: 6px; }
-        .chat-me { background: #F97316; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .chat-admin { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .chat-me { background: #F97316; color: white; border-radius: 12px 12px 0 12px; align-self: flex-end; padding: 8px 12px; font-size: 13px; max-width: 80%; }
+        .chat-admin { background: #333; color: white; border-radius: 12px 12px 12px 0; align-self: flex-start; padding: 8px 12px; font-size: 13px; max-width: 80%; }
     </style>
 </head>
 <body>
@@ -36,21 +40,18 @@
             <p class="text-[10px] text-green-500" id="shop-status-badge">● Open</p>
         </div>
         <div class="flex items-center gap-3">
-            <button onclick="openChatModal()" class="relative">
-                <i class="fas fa-headset text-xl text-gray-400"></i>
-                <span id="chat-badge" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-black"></span>
-            </button>
+            <button onclick="openChatModal()" class="relative text-gray-400 text-xl"><i class="fas fa-headset"></i></button>
             <div class="flex items-center gap-2" onclick="openProfileEdit()">
                 <div class="text-right">
                     <p class="text-xs font-bold text-white" id="header-name">Guest</p>
                     <p class="text-[10px] text-gray-400" id="header-phone">Tap to setup</p>
                 </div>
-                <div class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-orange-500 border border-gray-700" id="header-avatar"><i class="fas fa-user"></i></div>
+                <div class="w-9 h-9 rounded-full bg-gray-800 flex items-center justify-center text-orange-500 border border-gray-700"><i class="fas fa-user"></i></div>
             </div>
         </div>
     </div>
 
-    <div id="broadcast-bar" class="ticker-wrap hidden"><div class="ticker" id="broadcast-msg">Welcome!</div></div>
+    <div id="broadcast-bar" class="ticker-wrap hidden"><div class="ticker" id="broadcast-msg"></div></div>
     <div class="h-16"></div>
 
     <div id="view-menu" class="p-4 space-y-4">
@@ -58,46 +59,18 @@
         <div id="menu-container" class="space-y-3 pb-10"></div>
     </div>
 
-    <div id="view-orders" class="hidden p-4"><h2 class="text-lg font-bold mb-4">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
-    <div id="view-udhaar" class="hidden p-4"><div class="card p-6 text-center"><h1 class="text-4xl font-bold text-blue-500">₹<span id="my-udhaar-amount">0</span></h1><p>Udhaar</p></div><div id="udhaar-history"></div></div>
-
-    <div id="chat-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-end justify-center">
-        <div class="bg-[#151515] w-full max-w-md h-[80vh] rounded-t-2xl border-t border-gray-700 flex flex-col">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 rounded-t-2xl">
-                <h3 class="font-bold text-white">Chat with Admin</h3>
-                <button onclick="document.getElementById('chat-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
-            <div class="p-3 bg-gray-900 border-t border-gray-800 flex gap-2">
-                <input type="text" id="chat-input" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-full outline-none border border-gray-700" placeholder="Type...">
-                <button onclick="sendChatMessage()" class="w-10 h-10 rounded-full bg-orange-600 text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
+    <div id="view-orders" class="hidden p-4">
+        <h2 class="text-lg font-bold mb-4">My Orders</h2>
+        <div id="orders-list" class="space-y-3"></div>
     </div>
 
-    <div id="checkout-modal" class="fixed inset-0 bg-black/90 hidden flex items-end justify-center z-50">
-        <div class="bg-[#1f1f1f] w-full max-w-md p-6 rounded-t-2xl border-t border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 class="text-xl font-bold mb-4">Checkout</h2>
-            <div id="checkout-items" class="space-y-2 mb-4 max-h-40 overflow-y-auto"></div>
-            
-            <div class="mb-4">
-                <label class="text-xs text-orange-500 font-bold ml-1">Delivery Address</label>
-                <input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 mt-1 text-sm text-white" placeholder="Room no, Floor...">
-                <button onclick="detectLocation()" id="loc-btn" class="w-full mt-2 py-2 bg-blue-900/30 text-blue-400 border border-blue-800 rounded-lg text-xs font-bold flex items-center justify-center gap-2">
-                    <i class="fas fa-crosshairs"></i> Detect Location (Check Range)
-                </button>
-                <p id="loc-msg" class="text-[10px] mt-1 text-center hidden"></p>
-            </div>
-
-            <div class="flex justify-between font-bold text-lg mb-4"><span>Total</span><span class="text-orange-500">₹<span id="checkout-total">0</span></span></div>
-            <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="setPayment('Cash')" id="pay-cash" class="p-2 rounded border border-gray-600 text-sm payment-opt">Cash</button>
-                <button onclick="setPayment('UPI')" id="pay-upi" class="p-2 rounded border border-gray-600 text-sm payment-opt">UPI</button>
-                <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-2 rounded border border-gray-600 text-sm payment-opt">Udhaar</button>
-            </div>
-            <button onclick="handlePlaceOrderClick()" class="w-full btn-primary py-3 rounded-xl font-bold" id="place-order-btn">Place Order</button>
-            <button onclick="document.getElementById('checkout-modal').classList.add('hidden')" class="w-full py-3 text-gray-500 text-xs">Cancel</button>
+    <div id="view-udhaar" class="hidden p-4">
+        <div class="card p-6 text-center mb-6 bg-gradient-to-br from-gray-800 to-slate-900 border-blue-900/30">
+            <p class="text-gray-400 text-xs uppercase">Total Udhaar</p>
+            <h1 class="text-4xl font-bold text-blue-500 mb-1">₹<span id="my-udhaar-amount">0</span></h1>
+            <p class="text-[10px] text-gray-500">Pay via UPI</p>
         </div>
+        <div id="udhaar-history" class="space-y-2"></div>
     </div>
 
     <div id="cart-bar" class="fixed bottom-20 left-4 right-4 bg-orange-600 text-white p-4 rounded-xl shadow-2xl flex justify-between items-center z-40 hidden cursor-pointer" onclick="openCheckout()">
@@ -109,21 +82,86 @@
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu"><i class="fas fa-utensils"></i> Menu</div>
-        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders"><i class="fas fa-clock"></i> History</div>
-        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet"></i> Udhaar</div>
+        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu"><i class="fas fa-utensils mb-1"></i> Menu</div>
+        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders"><i class="fas fa-clock mb-1"></i> History</div>
+        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet mb-1"></i> Udhaar</div>
     </div>
 
-    <div id="login-modal" class="hidden"></div> <div id="cig-modal" class="hidden"></div> <div id="alert-popup" class="hidden"></div> <div id="upi-confirm-modal" class="hidden"></div> <div id="success-popup" class="hidden"></div>
+    <div id="login-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
+        <div class="bg-[#1f1f1f] w-full max-w-xs p-6 rounded-2xl border border-gray-700 shadow-2xl">
+            <h2 class="text-xl font-bold text-white text-center mb-4">Setup Profile</h2>
+            <input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 mb-3 text-white" placeholder="Name">
+            <input type="tel" id="user-phone" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 mb-3 text-white" placeholder="Phone">
+            <button onclick="saveProfile()" class="w-full btn-primary py-3 rounded-xl shadow-lg">Save</button>
+        </div>
+    </div>
+
+    <div id="alert-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-[70] hidden">
+        <div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-red-900/50 shadow-2xl w-full max-w-xs animate-pop">
+            <h3 class="text-lg font-bold text-white mb-1">Address Missing</h3>
+            <p class="text-gray-400 text-xs mb-4">Please enter your delivery address.</p>
+            <button onclick="document.getElementById('alert-popup').classList.add('hidden')" class="w-full bg-gray-800 text-white py-2 rounded-lg">Okay</button>
+        </div>
+    </div>
+
+    <div id="success-popup" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
+        <div class="bg-[#1f1f1f] p-8 rounded-2xl text-center border border-green-900/50 shadow-2xl animate-pop">
+            <h2 class="text-2xl font-bold text-white mb-2">Order Placed!</h2>
+            <p class="text-gray-400 text-sm mb-6">Preparing your chai...</p>
+            <button onclick="document.getElementById('success-popup').classList.add('hidden')" class="bg-gray-800 text-white px-8 py-2 rounded-lg font-bold">Okay</button>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-end justify-center">
+        <div class="bg-[#151515] w-full max-w-md h-[80vh] rounded-t-2xl border-t border-gray-700 flex flex-col">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 rounded-t-2xl">
+                <h3 class="font-bold text-white">Chat</h3>
+                <button onclick="document.getElementById('chat-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
+            <div class="p-3 bg-gray-900 border-t border-gray-800 flex gap-2">
+                <input type="text" id="chat-input" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-full outline-none" placeholder="Type...">
+                <button onclick="sendChatMessage()" class="w-10 h-10 rounded-full bg-orange-600 text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="checkout-modal" class="fixed inset-0 bg-black/90 hidden flex items-end justify-center z-50">
+        <div class="bg-[#1f1f1f] w-full max-w-md p-6 rounded-t-2xl border-t border-gray-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h2 class="text-xl font-bold mb-4">Checkout</h2>
+            <div id="checkout-items" class="space-y-2 mb-4"></div>
+            <div class="mb-4">
+                <input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm text-white" placeholder="Address / Room No">
+                <button onclick="detectLocation()" id="loc-btn" class="w-full mt-2 py-2 bg-blue-900/30 text-blue-400 border border-blue-800 rounded-lg text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-crosshairs"></i> Detect Location</button>
+                <p id="loc-msg" class="text-[10px] mt-1 text-center hidden"></p>
+            </div>
+            <div class="flex justify-between font-bold text-lg mb-4"><span>Total</span><span class="text-orange-500">₹<span id="checkout-total">0</span></span></div>
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button onclick="setPayment('Cash')" id="pay-cash" class="p-2 rounded border border-gray-600 text-sm payment-opt">Cash</button>
+                <button onclick="setPayment('UPI')" id="pay-upi" class="p-2 rounded border border-gray-600 text-sm payment-opt">UPI</button>
+                <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-2 rounded border border-gray-600 text-sm payment-opt">Udhaar</button>
+            </div>
+            <button onclick="handlePlaceOrderClick()" class="w-full btn-primary py-3 rounded-xl font-bold" id="place-order-btn">Place Order</button>
+            <button onclick="document.getElementById('checkout-modal').classList.add('hidden')" class="w-full py-3 text-gray-500 text-xs">Cancel</button>
+        </div>
+    </div>
+
+    <div id="cig-modal" class="fixed inset-0 modal-overlay flex items-center justify-center p-6 z-50 hidden">
+        <div class="bg-[#1f1f1f] w-full max-w-xs p-6 rounded-2xl border border-gray-700">
+            <h3 class="font-bold mb-4">Select Cigarette</h3>
+            <div id="cig-list" class="space-y-2 mb-4"></div>
+            <button onclick="document.getElementById('cig-modal').classList.add('hidden')" class="w-full py-2 bg-gray-800 rounded">Close</button>
+        </div>
+    </div>
 
     <script>
-        // CONFIG
         const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
         let cart={}; let userProfile={}; let userLocation=null; let selectedPayment='Cash'; let isShopOpen=true;
-        const menuItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarettes",isSpecial:true},{id:4,name:"Matthi",price:5},{id:5,name:"Veg Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
+        const menuItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarettes",isSpecial:true},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
+        const cigOptions = [{id:31,name:'Marlboro',price:20},{id:32,name:'Gold Flake',price:20},{id:33,name:'Chhoti Adv',price:12}];
 
         function init() {
             loadProfile();
@@ -134,31 +172,52 @@
                 if(d.exists && d.data().broadcastMessage) { b.classList.remove('hidden'); document.getElementById('broadcast-msg').innerText = d.data().broadcastMessage; } else b.classList.add('hidden');
             });
             const saved = localStorage.getItem('sgmc_cart'); if(saved) { cart = JSON.parse(saved); updateCartUI(); }
-            switchTab('menu');
+            const savedTab = localStorage.getItem('activeTab') || 'menu'; switchTab(savedTab);
         }
 
-        // --- CHAT ---
-        function openChatModal() {
-            if(!userProfile.phone) return alert("Setup Profile");
-            document.getElementById('chat-modal').classList.remove('hidden');
-            document.getElementById('chat-badge').classList.add('hidden');
-            db.collection('chats').doc(userProfile.phone).onSnapshot(doc => {
-                if(doc.exists) {
-                    document.getElementById('chat-messages').innerHTML = (doc.data().messages||[]).map(m => `<div class="chat-bubble ${m.sender==='user'?'chat-me':'chat-admin'}">${m.text}</div>`).join('');
-                    if(doc.data().unreadUser) document.getElementById('chat-badge').classList.remove('hidden');
-                }
-            });
-        }
-        function sendChatMessage() {
-            const txt = document.getElementById('chat-input').value; if(!txt) return;
-            const msg = { text: txt, sender: 'user', timestamp: Date.now() };
-            db.collection('chats').doc(userProfile.phone).set({
-                userName: userProfile.name, messages: firebase.firestore.FieldValue.arrayUnion(msg), lastMessage: txt, lastUpdated: firebase.firestore.FieldValue.serverTimestamp(), unreadAdmin: true
-            }, {merge:true});
-            document.getElementById('chat-input').value='';
+        function renderMenu(doc) {
+            const container = document.getElementById('menu-container');
+            let stock={}; if(doc && doc.exists) stock = doc.data().stock || {};
+            container.innerHTML = menuItems.map(i => {
+                if(stock[i.id]===false) return '';
+                if(i.isSpecial) return `<div class="card p-3 flex justify-between items-center bg-gray-800/50"><div><h3 class="font-bold">Cigarettes</h3></div><button onclick="openCigModal()" class="bg-gray-800 px-3 py-1 rounded text-xs border border-gray-600">Select</button></div>`;
+                return `<div class="card p-3 flex justify-between items-center"><div><h3 class="font-bold">${i.name}</h3><p class="text-orange-400 text-sm">₹${i.price}</p></div><div class="flex items-center gap-3 bg-gray-800 rounded p-1"><button onclick="updateCart(${i.id},-1)" class="w-8 h-8 rounded bg-gray-700 font-bold">-</button><span class="font-bold w-4 text-center">${cart[i.id]?.qty||0}</span><button onclick="updateCart(${i.id},1)" class="w-8 h-8 rounded bg-orange-600 font-bold">+</button></div></div>`;
+            }).join('');
         }
 
-        // --- LOCATION ---
+        function updateCart(id, change, customItem=null) {
+            if(!isShopOpen) return alert("Shop Closed");
+            if(customItem) {
+                if(!cart[id]) cart[id] = { ...customItem, qty: 0 };
+            } else {
+                const item = menuItems.find(x => x.id === id);
+                if(!cart[id]) cart[id] = { ...item, qty: 0 };
+            }
+            cart[id].qty += change; if(cart[id].qty <= 0) delete cart[id];
+            updateCartUI(); renderMenu(); 
+        }
+
+        function updateCartUI() {
+            let count=0, total=0; for(let id in cart) { count+=cart[id].qty; total+=cart[id].qty*cart[id].price; }
+            const bar = document.getElementById('cart-bar');
+            if(count>0 && isShopOpen) { bar.classList.remove('hidden'); bar.classList.add('flex'); document.getElementById('cart-count').innerText=count; document.getElementById('cart-total').innerText=total; } else bar.classList.add('hidden');
+            localStorage.setItem('sgmc_cart', JSON.stringify(cart));
+        }
+
+        // CIGARETTES
+        function openCigModal() {
+            document.getElementById('cig-list').innerHTML = cigOptions.map(c => 
+                `<div class="flex justify-between bg-gray-800 p-2 rounded"><span>${c.name} (₹${c.price})</span><button onclick="addCig(${c.id})" class="bg-orange-600 px-2 rounded">+</button></div>`
+            ).join('');
+            document.getElementById('cig-modal').classList.remove('hidden');
+        }
+        function addCig(id) { const item = cigOptions.find(x=>x.id===id); updateCart(id, 1, item); document.getElementById('cig-modal').classList.add('hidden'); }
+
+        // CHECKOUT & MAP
+        function openCheckout() {
+            let html='', total=0; for(let id in cart) { total+=cart[id].qty*cart[id].price; html+=`<div class="flex justify-between bg-gray-800 p-2 rounded text-sm"><span>${cart[id].name} x${cart[id].qty}</span><span>₹${cart[id].qty*cart[id].price}</span></div>`; }
+            document.getElementById('checkout-items').innerHTML=html; document.getElementById('checkout-total').innerText=total; document.getElementById('checkout-modal').classList.remove('hidden');
+        }
         function detectLocation() {
             const btn = document.getElementById('loc-btn'); const msg = document.getElementById('loc-msg');
             btn.innerHTML = 'Detecting...';
@@ -180,51 +239,56 @@
             const a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)*Math.sin(dLon/2);
             return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
-
-        // --- RENDER MENU & CART (Standard) ---
-        function renderMenu(doc) {
-            const container = document.getElementById('menu-container');
-            let stock={}; if(doc && doc.exists) stock = doc.data().stock || {};
-            container.innerHTML = menuItems.map(i => {
-                if(stock[i.id]===false) return '';
-                if(i.isSpecial) return `<div class="card p-3 flex justify-between items-center bg-gray-800/50"><div><h3 class="font-bold">Cigarettes</h3></div><button onclick="document.getElementById('cig-modal').classList.remove('hidden')" class="bg-gray-800 px-3 py-1 rounded text-xs border border-gray-600">Select</button></div>`;
-                return `<div class="card p-3 flex justify-between items-center"><div><h3 class="font-bold">${i.name}</h3><p class="text-orange-400 text-sm">₹${i.price}</p></div><div class="flex items-center gap-3 bg-gray-800 rounded p-1"><button onclick="updateCart(${i.id},-1)" class="w-8 h-8 rounded bg-gray-700 font-bold">-</button><span class="font-bold w-4 text-center">${cart[i.id]?.qty||0}</span><button onclick="updateCart(${i.id},1)" class="w-8 h-8 rounded bg-orange-600 font-bold">+</button></div></div>`;
-            }).join('');
-        }
-        function updateCart(id, change) {
-            if(!isShopOpen) return alert("Shop Closed");
-            const item = menuItems.find(x => x.id === id);
-            if(!cart[id]) cart[id] = { ...item, qty: 0 };
-            cart[id].qty += change; if(cart[id].qty <= 0) delete cart[id];
-            updateCartUI(); renderMenu(); 
-        }
-        function updateCartUI() {
-            let count=0, total=0; for(let id in cart) { count+=cart[id].qty; total+=cart[id].qty*cart[id].price; }
-            const bar = document.getElementById('cart-bar');
-            if(count>0 && isShopOpen) { bar.classList.remove('hidden'); bar.classList.add('flex'); document.getElementById('cart-count').innerText=count; document.getElementById('cart-total').innerText=total; } else bar.classList.add('hidden');
-            saveCartToStorage();
-        }
-        function openCheckout() {
-            let html='', total=0; for(let id in cart) { total+=cart[id].qty*cart[id].price; html+=`<div class="flex justify-between bg-gray-800 p-2 rounded text-sm"><span>${cart[id].name} x${cart[id].qty}</span><span>₹${cart[id].qty*cart[id].price}</span></div>`; }
-            document.getElementById('checkout-items').innerHTML=html; document.getElementById('checkout-total').innerText=total; document.getElementById('checkout-modal').classList.remove('hidden');
-        }
+        function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>b.classList.replace('bg-orange-600','bg-gray-800')); document.getElementById('pay-'+m.toLowerCase()).classList.replace('bg-gray-800','bg-orange-600'); }
+        
         function handlePlaceOrderClick() {
             const addr = document.getElementById('order-address').value;
-            if(!addr && !userLocation) return alert("Enter Address");
+            if(!addr && !userLocation) return document.getElementById('alert-popup').classList.remove('hidden');
             const total = parseInt(document.getElementById('checkout-total').innerText);
-            db.collection('orders').add({ items: Object.values(cart), totalAmount: total, paymentMode: selectedPayment, customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: addr, location: userLocation, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { cart={}; updateCartUI(); document.getElementById('checkout-modal').classList.add('hidden'); alert("Order Placed"); switchTab('orders'); });
+            db.collection('orders').add({ items: Object.values(cart), totalAmount: total, paymentMode: selectedPayment, customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: addr, location: userLocation, status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { cart={}; updateCartUI(); document.getElementById('checkout-modal').classList.add('hidden'); document.getElementById('success-popup').classList.remove('hidden'); switchTab('orders'); });
         }
 
-        // --- UTILS ---
+        // CHAT
+        function openChatModal() {
+            if(!userProfile.phone) return openProfileEdit();
+            document.getElementById('chat-modal').classList.remove('hidden');
+            db.collection('chats').doc(userProfile.phone).onSnapshot(doc => {
+                if(doc.exists) document.getElementById('chat-messages').innerHTML = (doc.data().messages||[]).map(m => `<div class="chat-bubble ${m.sender==='user'?'chat-me':'chat-admin'}">${m.text}</div>`).join('');
+            });
+        }
+        function sendChatMessage() {
+            const txt = document.getElementById('chat-input').value; if(!txt) return;
+            db.collection('chats').doc(userProfile.phone).set({ userName: userProfile.name, messages: firebase.firestore.FieldValue.arrayUnion({text:txt, sender:'user'}), lastMessage:txt, lastUpdated:firebase.firestore.FieldValue.serverTimestamp(), unreadAdmin:true }, {merge:true});
+            document.getElementById('chat-input').value='';
+        }
+
+        // UTILS
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('header-name').innerText=userProfile.name; } else document.getElementById('login-modal').classList.remove('hidden'); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p) { userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('login-modal').classList.add('hidden'); init(); } }
         function openProfileEdit() { document.getElementById('login-modal').classList.remove('hidden'); }
-        function saveCartToStorage() { localStorage.setItem('sgmc_cart', JSON.stringify(cart)); }
-        function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>b.classList.replace('bg-orange-600','bg-gray-800')); document.getElementById('pay-'+m.toLowerCase()).classList.replace('bg-gray-800','bg-orange-600'); }
-        function switchTab(t) { localStorage.setItem('activeTab', t); ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('nav-'+x).classList.remove('active');}); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('nav-'+t).classList.add('active'); updateCartUI(); if(t==='orders') fetchHistory(); if(t==='udhaar') fetchUdhaar(); }
-        // Fetch History/Udhaar logic same as file 5...
-        function fetchHistory() { /* ... copy from file 5 ... */ }
-        function fetchUdhaar() { /* ... copy from file 5 ... */ }
+        function switchTab(t) { 
+            localStorage.setItem('activeTab', t);
+            ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('nav-'+x).classList.remove('active');}); 
+            document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('nav-'+t).classList.add('active'); 
+            if(t==='orders') fetchHistory(); if(t==='udhaar') fetchUdhaar(); 
+        }
+        
+        function fetchHistory() {
+            if(!userProfile.phone) return;
+            db.collection('orders').where('customerPhone','==',userProfile.phone).orderBy('timestamp','desc').get().then(s => {
+                document.getElementById('orders-list').innerHTML = s.docs.map(d => { const o = d.data(); return `<div class="card p-3 border-l-4 ${o.status==='completed'?'border-green-500':'border-yellow-500'}"><div><p class="font-bold">${o.items.map(i=>i.qty+' '+i.name).join(', ')}</p><p class="text-xs text-gray-400">${new Date(o.timestamp?.toDate()).toLocaleString()}</p></div></div>`; }).join('');
+            });
+        }
+        function fetchUdhaar() { /* (File 5 Logic Simplified) */
+             if(!userProfile.phone) return;
+             const amtEl = document.getElementById('my-udhaar-amount');
+             db.collection('orders').where('customerPhone', '==', userProfile.phone).where('paymentMode', '==', 'Udhaar').get().then(snap => {
+                 let due = 0; snap.forEach(d => { if(d.data().status!=='cancelled') due += d.data().totalAmount; });
+                 db.collection('payments').where('phone', '==', userProfile.phone).get().then(pSnap => {
+                     pSnap.forEach(d => due -= d.data().amount); amtEl.innerText = due;
+                 });
+             });
+        }
 
         init();
     </script>
