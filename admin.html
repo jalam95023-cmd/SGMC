@@ -7,7 +7,6 @@
     <link rel="manifest" href="admin_manifest.json">
     <meta name="theme-color" content="#0f0f0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -21,11 +20,13 @@
         .toast { background: rgba(30, 30, 30, 0.95); border: 1px solid #333; padding: 10px 20px; border-radius: 50px; color: white; font-size: 14px; opacity: 0; transform: translateY(20px); transition: all 0.3s; }
         .toast.show { opacity: 1; transform: translateY(0); }
         
-        /* Modal & Chat Styles */
-        .modal-bg { backdrop-filter: blur(5px); }
-        .chat-bubble { padding: 8px 12px; border-radius: 12px; max-width: 80%; font-size: 12px; margin-bottom: 4px; }
-        .chat-me { background: #F97316; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .chat-user { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
+        #custom-confirm, #manage-modal, #chat-modal { backdrop-filter: blur(5px); }
+        .confirm-box { transform: scale(0.9); transition: transform 0.2s; }
+        .confirm-box.open { transform: scale(1); }
+
+        /* Chat Bubbles */
+        .chat-me { background: #F97316; color: white; border-radius: 12px 12px 0 12px; align-self: flex-end; padding: 8px 12px; font-size: 13px; max-width: 80%; }
+        .chat-user { background: #333; color: white; border-radius: 12px 12px 12px 0; align-self: flex-start; padding: 8px 12px; font-size: 13px; max-width: 80%; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-24" onclick="enableSound()">
@@ -34,7 +35,6 @@
         <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
         <div class="flex gap-2">
             <button onclick="setShopLocation()" id="loc-btn" class="w-9 h-9 rounded bg-gray-800 text-blue-400 border border-gray-600 flex items-center justify-center shadow"><i class="fas fa-map-marker-alt"></i></button>
-            <button onclick="openBroadcastModal()" class="w-9 h-9 rounded bg-gray-800 text-yellow-500 border border-gray-600 flex items-center justify-center shadow"><i class="fas fa-bullhorn text-xs"></i></button>
             
             <button onclick="openMenuControl()" class="px-3 py-2 rounded text-xs font-bold bg-blue-600 text-white shadow-lg">Stock</button>
             <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-2 rounded text-xs font-bold bg-gray-700 shadow-lg">Loading...</button>
@@ -42,23 +42,18 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4 mb-4">
-        <div class="card p-3 flex flex-col justify-between relative overflow-hidden cursor-pointer" onclick="openSalesAnalysis()">
+        <div class="card p-3 flex flex-col justify-between relative overflow-hidden">
             <div class="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-full -mr-8 -mt-8"></div>
             <div class="text-center z-10">
-                <div class="flex justify-center items-center gap-2">
-                    <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
-                    <div onclick="event.stopPropagation(); toggleSalesPrivacy()" class="text-gray-600 hover:text-white text-[10px]"><i class="fas fa-eye" id="privacy-icon"></i></div>
-                </div>
+                <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
                 <h2 class="text-2xl font-bold text-green-400 mt-1">₹<span id="total-sales">0</span></h2>
-                <p class="text-[9px] text-gray-500 mt-1">Tap for details <i class="fas fa-chart-bar ml-1"></i></p>
             </div>
-            <button onclick="event.stopPropagation(); confirmAction('Reset Day Sales?', endDay)" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
+            <button onclick="confirmAction('Reset Day Sales?', endDay)" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
         </div>
-        
-        <div class="card p-3 text-center flex flex-col justify-center" onclick="stopSoundManually()">
-            <p class="text-gray-400 text-xs uppercase">Active Orders</p>
+        <div class="card p-3 text-center flex flex-col justify-center relative" onclick="stopSoundManually()">
+            <p class="text-gray-400 text-xs uppercase tracking-wider">Active Orders</p>
             <h2 class="text-3xl font-bold text-yellow-400 my-1" id="pending-count">0</h2>
-            <p class="text-[10px] text-gray-500" id="sound-status">Tap to Mute 🔇</p>
+            <p class="text-[10px] text-gray-500" id="sound-status">Tap for Sound 🔇</p>
         </div>
     </div>
 
@@ -70,67 +65,43 @@
     </div>
 
     <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
-    
-    <div id="view-chats" class="hidden space-y-2">
-        <div id="chats-list" class="space-y-2 pb-20"></div>
+    <div id="view-chats" class="hidden space-y-2 pb-20">
+        <div id="chats-list" class="space-y-2"></div>
     </div>
-
-    <div id="view-history" class="hidden space-y-3"><div id="history-container"></div></div>
-    
+    <div id="view-history" class="hidden space-y-3"><div id="history-container" class="space-y-2"></div></div>
     <div id="view-udhaar" class="hidden space-y-3">
-        <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Name..." class="w-full p-2 bg-gray-800 rounded-lg border border-gray-700 text-sm mb-2 outline-none">
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-500"></i>
+            <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Name..." class="w-full pl-10 p-2 bg-gray-800 rounded-lg border border-gray-700 text-sm focus:border-orange-500 outline-none transition">
+        </div>
         <div id="udhaar-list" class="space-y-2"></div>
     </div>
 
-    <div id="sales-modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-[70] modal-bg">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[80vh] overflow-y-auto">
-            <h3 class="text-xl font-bold mb-4 text-white">Sales Breakdown</h3>
-            <div id="sales-breakdown-list" class="space-y-2"></div>
-            <button onclick="document.getElementById('sales-modal').classList.add('hidden')" class="w-full mt-4 py-3 bg-gray-800 rounded-lg text-sm text-gray-400">Close</button>
-        </div>
-    </div>
-
-    <div id="broadcast-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 modal-bg">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm">
-            <h3 class="text-lg font-bold text-white mb-2">Set Announcement</h3>
-            <textarea id="broadcast-input" rows="3" class="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-sm outline-none" placeholder="e.g. Shop closing at 4 PM..."></textarea>
-            <div class="flex gap-3 mt-4">
-                <button onclick="saveBroadcast('')" class="flex-1 py-2 bg-red-900/30 text-red-400 rounded-lg text-xs">Clear</button>
-                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 bg-orange-600 text-white rounded-lg text-xs font-bold">Publish</button>
-            </div>
-            <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-2 py-2 text-gray-500 text-xs">Close</button>
-        </div>
-    </div>
-
-    <div id="manage-modal" class="fixed inset-0 bg-black/90 hidden flex items-end justify-center z-50 modal-bg">
-        <div class="bg-[#151515] w-full max-w-md rounded-t-2xl border-t border-gray-700 h-[90vh] flex flex-col">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
+    <div id="manage-modal" class="fixed inset-0 bg-black/90 hidden flex items-end sm:items-center justify-center z-50 p-4">
+        <div class="bg-[#151515] w-full max-w-sm rounded-2xl border border-gray-700 shadow-2xl h-[85vh] flex flex-col">
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 rounded-t-2xl">
                 <h3 class="text-lg font-bold text-white" id="mm-name">Customer</h3>
                 <button onclick="document.getElementById('manage-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
             </div>
             <div class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div class="grid grid-cols-3 gap-3">
-                    <a id="mm-call" href="#" class="bg-gray-800 border border-gray-700 text-white py-3 rounded-xl flex flex-col items-center justify-center"><i class="fas fa-phone-alt text-green-400 mb-1"></i> Call</a>
-                    <a id="mm-map" href="#" target="_blank" class="bg-gray-800 border border-gray-700 text-white py-3 rounded-xl flex flex-col items-center justify-center"><i class="fas fa-map-marker-alt text-blue-400 mb-1"></i> Map</a>
-                    <button onclick="openChatFromOrder()" class="bg-gray-800 border border-gray-700 text-white py-3 rounded-xl flex flex-col items-center justify-center"><i class="fas fa-comment-alt text-yellow-500 mb-1"></i> Chat</button>
+                    <a id="mm-call" class="bg-gray-800 text-white py-3 rounded-xl flex flex-col items-center justify-center border border-gray-700"><i class="fas fa-phone-alt text-green-400"></i> Call</a>
+                    <a id="mm-map" target="_blank" class="bg-gray-800 text-white py-3 rounded-xl flex flex-col items-center justify-center border border-gray-700"><i class="fas fa-map-marker-alt text-blue-400"></i> Map</a>
+                    <button onclick="openChatFromOrder()" class="bg-gray-800 text-white py-3 rounded-xl flex flex-col items-center justify-center border border-gray-700"><i class="fas fa-comment text-yellow-500"></i> Chat</button>
                 </div>
-                <div class="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
-                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Address</p>
-                    <p class="text-sm text-gray-300" id="mm-address">...</p>
-                </div>
+                <div class="bg-gray-800 p-3 rounded-lg"><p class="text-xs text-gray-400">Address</p><p id="mm-address" class="text-sm">...</p></div>
                 <div id="mm-items-list" class="space-y-2"></div>
                 <div class="flex justify-between items-center pt-2 border-t border-gray-800">
-                    <span class="text-gray-400">Total</span>
-                    <span class="text-xl font-bold text-orange-500">₹<span id="mm-total">0</span></span>
+                    <span>Total</span><span class="text-xl font-bold text-orange-500">₹<span id="mm-total">0</span></span>
                 </div>
                 <button onclick="saveOrderChanges()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold">Save PNA Changes</button>
             </div>
             <div class="p-4 bg-gray-900 border-t border-gray-800 grid grid-cols-3 gap-2">
-                <button onclick="updateStatusFromModal('pending')" class="py-2 rounded bg-gray-800 text-gray-400 border border-gray-600">Pending</button>
-                <button onclick="updateStatusFromModal('cooking')" class="py-2 rounded bg-yellow-900/40 text-yellow-500 border border-yellow-700">Cooking</button>
-                <button onclick="updateStatusFromModal('ready')" class="py-2 rounded bg-green-900/40 text-green-500 border border-green-700">Ready</button>
+                <button onclick="updateStatusFromModal('pending')" class="py-2 bg-gray-800 text-gray-400 rounded">Pending</button>
+                <button onclick="updateStatusFromModal('cooking')" class="py-2 bg-yellow-900/40 text-yellow-500 rounded">Cooking</button>
+                <button onclick="updateStatusFromModal('ready')" class="py-2 bg-green-900/40 text-green-500 rounded">Ready</button>
             </div>
-            <button onclick="markCompleteFromModal()" class="w-full bg-green-600 text-white py-3 font-bold">Mark Delivered</button>
+            <button onclick="markCompleteFromModal()" class="w-full bg-green-600 text-white py-3 font-bold rounded-none rounded-b-2xl">Mark Delivered</button>
         </div>
     </div>
 
@@ -142,22 +113,57 @@
             </div>
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2"></div>
             <div class="p-3 bg-gray-900 border-t border-gray-800 flex gap-2">
-                <input type="text" id="chat-input" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-full outline-none border border-gray-700" placeholder="Type...">
+                <input type="text" id="chat-input" class="flex-1 bg-gray-800 text-white px-4 py-2 rounded-full outline-none" placeholder="Type...">
                 <button onclick="sendAdminMessage()" class="w-10 h-10 rounded-full bg-orange-600 text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
 
-    <div id="custom-confirm" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-[90]">
-        <div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs confirm-box">
-            <h3 class="text-lg font-bold mb-2" id="confirm-title">Confirm?</h3>
-            <div class="flex gap-3 mt-4"><button onclick="closeConfirm(false)" class="flex-1 py-2 bg-gray-800 rounded-lg">Cancel</button><button onclick="closeConfirm(true)" class="flex-1 py-2 bg-orange-600 rounded-lg">Confirm</button></div>
+    <div id="menu-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4 text-white">Stock Management</h3>
+            <div id="menu-list-items" class="space-y-3"></div>
+            <button onclick="saveMenuStatus()" class="w-full mt-4 py-3 rounded-lg bg-green-600 text-white font-bold">Save Stock</button>
+            <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-full mt-2 py-2 text-gray-500 text-xs">Close</button>
         </div>
     </div>
+
+    <div id="history-detail-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-[60]">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm relative">
+            <button onclick="document.getElementById('history-detail-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times"></i></button>
+            <h3 class="text-xl font-bold mb-1 text-white">Order Details</h3>
+            <p id="hd-date" class="text-xs text-gray-500 mb-4"></p>
+            <div class="bg-black/40 rounded-xl p-4 mb-4 max-h-60 overflow-y-auto border border-gray-800" id="hd-items"></div>
+            <div class="flex justify-between font-bold text-lg text-white"><span>Total</span><span class="text-orange-500" id="hd-total"></span></div>
+        </div>
+    </div>
+
+    <div id="settle-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm">
+            <h3 class="text-lg font-bold mb-1 text-white">Settle Payment</h3>
+            <p class="text-gray-400 text-sm mb-4" id="settle-name"></p>
+            <p class="text-3xl font-bold text-red-400 text-center mb-4">₹<span id="settle-due">0</span></p>
+            <input type="number" id="settle-amount" class="w-full p-4 bg-gray-800 rounded-lg text-white mb-4 text-center text-xl font-bold" placeholder="Amount">
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="flex-1 py-3 bg-gray-800 rounded-lg text-white">Cancel</button>
+                <button onclick="submitPayment()" class="flex-1 py-3 bg-green-600 rounded-lg font-bold text-white">Settle</button>
+            </div>
+            <div id="settle-history-list" class="mt-4 space-y-2 text-sm max-h-40 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <div id="custom-confirm" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs confirm-box">
+            <h3 class="text-lg font-bold text-white mb-2" id="confirm-title">Confirm?</h3>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeConfirm(false)" class="flex-1 py-2 bg-gray-800 rounded-lg text-white">Cancel</button>
+                <button onclick="closeConfirm(true)" class="flex-1 py-2 bg-orange-600 rounded-lg text-white">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container"></div>
     <audio id="order-sound"></audio>
-    
-    <div id="menu-modal" class="hidden"></div> <div id="settle-modal" class="hidden"></div>
 
     <script>
         // CONFIG
@@ -165,32 +171,47 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // STATE
-        let isShopOpen=false; let soundEnabled=false; let pendingAction=null; let salesHidden=false;
-        let todaysItemsMap={}; let salesHistoryData=[]; let currentModalOrder=null; let currentItemsEdit=[]; let currentChatPhone=null;
+        // STATE (From File 5)
+        let isShopOpen=false; let udhaarMap={}; let allHistoryOrders=[]; let lastResetSeconds=0; 
+        let lastPendingCount=0; let soundEnabled=false; let pendingAction=null; 
+        let currentMenuData = { stock: {}, prices: {}, customItems: [] };
+        
+        // New State
+        let currentModalOrder=null; let currentItemsEdit=[]; let currentChatPhone=null;
 
         function init() {
+            // Config & Reset Logic (File 5)
             db.collection('settings').doc('config').onSnapshot(doc => { 
-                if(doc.exists) {
-                    const data = doc.data();
-                    if(data.lastReset) window.lastResetSeconds = data.lastReset.seconds;
-                    if(data.salesHistory) salesHistoryData = data.salesHistory;
-                }
+                if(doc.exists && doc.data().lastReset) lastResetSeconds = doc.data().lastReset.seconds; 
                 recalculateData(); 
             });
+            // Shop Status (File 5)
             db.collection('settings').doc('status').onSnapshot(doc => { 
                 isShopOpen = doc.exists ? doc.data().isOpen : true; 
                 const btn = document.getElementById('shop-toggle-btn'); 
                 btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; 
-                btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white"; 
+                btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white shadow-lg" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white shadow-lg"; 
             });
+            // Stock Data (File 5)
+            db.collection('settings').doc('menu_data').onSnapshot(doc => {
+                 if(doc.exists) currentMenuData = doc.data();
+                 else currentMenuData = { stock: {}, prices: {}, customItems: [] };
+            });
+            // Payments & Orders (File 5)
+            db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
+            // Chats
             db.collection('chats').orderBy('lastUpdated', 'desc').onSnapshot(snap => renderChatsList(snap));
+
+            // Restore Tab
+            const savedTab = localStorage.getItem('admin_active_tab') || 'live';
+            switchTab(savedTab);
         }
 
-        function enableSound() { if(!soundEnabled) { const a=document.getElementById('order-sound'); a.src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; a.loop=true; a.play().then(()=>{a.pause(); soundEnabled=true; document.getElementById('sound-status').innerHTML='🔊 ON';}); } }
+        // --- CORE LOGIC (File 5) ---
+        function enableSound() { if(!soundEnabled) { const a = document.getElementById('order-sound'); a.src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"; a.loop=true; a.play().then(()=>{a.pause(); soundEnabled=true; document.getElementById('sound-status').innerHTML='🔊 ON';}); } }
         function playNotification() { if(soundEnabled) document.getElementById('order-sound').play().catch(()=>{}); }
-        function stopSoundManually() { const a=document.getElementById('order-sound'); a.pause(); a.currentTime=0; }
+        function stopSoundManually() { document.getElementById('order-sound').pause(); document.getElementById('order-sound').currentTime=0; }
 
         function setShopLocation() {
             if(!navigator.geolocation) return showToast("GPS Error", "error");
@@ -204,28 +225,42 @@
 
         function recalculateData() {
             if(!window.ordersSnapshot) return;
-            let liveHtml='', sales=0, activeCount=0; todaysItemsMap={};
+            udhaarMap={}; allHistoryOrders=[]; let liveHtml='', sales=0, activeCount=0;
+
+            if(window.paymentsSnapshot) { window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(!udhaarMap[d.phone]) udhaarMap[d.phone] = { name: "Unknown", debit: 0, credit: 0 }; udhaarMap[d.phone].credit += d.amount; }); }
+
             window.ordersSnapshot.docs.forEach(doc => {
-                const data = doc.data();
-                if(data.status==='completed' && (!window.lastResetSeconds || data.timestamp.seconds > window.lastResetSeconds)) {
-                    sales += data.totalAmount;
-                    data.items.forEach(i => { todaysItemsMap[i.name] = (todaysItemsMap[i.name]||0) + i.qty; });
+                const data = doc.data(); const id = doc.id;
+                // History Logic
+                if(data.status==='completed'||data.status==='cancelled') allHistoryOrders.push({id, ...data});
+                // Udhaar Logic
+                if(data.paymentMode==='Udhaar' && data.customerPhone) { 
+                    if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 }; 
+                    if(data.status!=='cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; } 
                 }
+                // Sales Logic
+                if(data.timestamp && data.timestamp.seconds > lastResetSeconds && data.status==='completed') sales += data.totalAmount;
+
+                // Live Card
                 if(['pending','cooking','ready'].includes(data.status)) {
                     activeCount++;
-                    liveHtml += `<div class="card p-4 border-l-4 ${data.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'} cursor-pointer" onclick="openOrderManageModal('${doc.id}')">
-                        <div class="flex justify-between"><h3 class="font-bold">${data.customerName}</h3><span class="font-bold text-orange-400">₹${data.totalAmount}</span></div>
+                    liveHtml += `
+                    <div class="card p-4 border-l-4 ${data.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'} cursor-pointer" onclick="openOrderManageModal('${id}')">
+                        <div class="flex justify-between"><h3 class="font-bold text-white">${data.customerName}</h3><span class="font-bold text-orange-400">₹${data.totalAmount}</span></div>
                         <p class="text-xs text-gray-400">${data.items.length} items • ${data.status}</p>
-                        <div class="mt-2 flex justify-end"><button class="bg-gray-800 rounded-full w-8 h-8 flex items-center justify-center"><i class="fas fa-chevron-right"></i></button></div>
+                        <div class="mt-2 text-right text-gray-500 text-[10px]">Tap to Manage ></div>
                     </div>`;
                 }
             });
-            if(activeCount > (window.lastActiveCount||0)) playNotification(); window.lastActiveCount = activeCount;
+
+            if(activeCount > lastPendingCount) playNotification(); lastPendingCount = activeCount;
             document.getElementById('view-live').innerHTML = liveHtml || '<p class="text-center text-gray-500 mt-10">No active orders</p>';
-            const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
+            document.getElementById('total-sales').innerText = sales;
             document.getElementById('pending-count').innerText = activeCount;
+            renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
         }
 
+        // --- ORDER MANAGER (PNA & Maps) ---
         function openOrderManageModal(id) {
             stopSoundManually();
             const doc = window.ordersSnapshot.docs.find(d => d.id === id); if(!doc) return;
@@ -239,10 +274,9 @@
             
             renderEditItems(); document.getElementById('manage-modal').classList.remove('hidden');
         }
-
         function renderEditItems() {
             document.getElementById('mm-items-list').innerHTML = currentItemsEdit.map((item, i) => `
-                <div class="flex justify-between bg-gray-800 p-2 rounded"><span>${item.name}</span><div class="flex gap-2"><button onclick="modQty(${i},-1)">-</button><span>${item.qty}</span><button onclick="modQty(${i},1)">+</button></div></div>
+                <div class="flex justify-between items-center bg-gray-800 p-2 rounded"><span>${item.name}</span><div class="flex gap-2"><button onclick="modQty(${i},-1)">-</button><span>${item.qty}</span><button onclick="modQty(${i},1)">+</button></div></div>
             `).join('');
             document.getElementById('mm-total').innerText = currentItemsEdit.reduce((s,i)=>s+(i.price*i.qty),0);
         }
@@ -253,17 +287,62 @@
         }
         function updateStatusFromModal(st) { db.collection('orders').doc(currentModalOrder.id).update({ status: st }).then(()=>showToast("Updated")); }
         function markCompleteFromModal() { if(confirm("Complete?")) db.collection('orders').doc(currentModalOrder.id).update({ status: 'completed' }).then(()=>{ showToast("Completed"); document.getElementById('manage-modal').classList.add('hidden'); }); }
-        
+
+        // --- HISTORY & UDHAAR (File 5 Logic) ---
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            if(allHistoryOrders.length === 0) { container.innerHTML="<p class='text-center text-gray-500'>No history</p>"; return; }
+            container.innerHTML = allHistoryOrders.map(o => `
+                <div class="card p-3 mb-2 border-l-4 ${o.status==='completed'?'border-green-500':'border-red-500'}">
+                    <div class="flex justify-between"><div><h4 class="font-bold text-white">${o.customerName}</h4><p class="text-xs text-gray-400">${new Date(o.timestamp?.toDate()).toLocaleString()}</p></div><div class="text-right"><p class="text-orange-400 font-bold">₹${o.totalAmount}</p><p class="text-[10px] uppercase">${o.status}</p></div></div>
+                </div>`).join('');
+        }
+        function renderUdhaar() {
+            const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
+            for(let phone in udhaarMap) {
+                const u = udhaarMap[phone]; const net = u.debit - u.credit;
+                if(net > 0 && u.name.toLowerCase().includes(q)) {
+                    html += `<div class="card p-3 flex justify-between items-center"><div><h4 class="text-white font-bold">${u.name}</h4><p class="text-xs text-gray-400">${phone}</p></div><div class="text-right"><h4 class="text-red-400 font-bold">₹${net}</h4><button onclick="openSettle('${phone}','${u.name}',${net})" class="bg-blue-600 text-white text-xs px-2 py-1 rounded">Settle</button></div></div>`;
+                }
+            }
+            list.innerHTML = html || "<p class='text-center text-gray-500'>No Udhaar</p>";
+        }
+
+        // --- STOCK (File 5 Logic Restored) ---
+        const baseAdminItems = [{id:1,name:"Normal Chai"},{id:2,name:"Adrak Chai"},{id:3,name:"Cigarette"},{id:4,name:"Matthi"},{id:5,name:"Cream Roll"},{id:6,name:"Biscuit"},{id:7,name:"Namkeen"}];
+        function openMenuControl() {
+            const list = document.getElementById('menu-list-items');
+            const stocks = currentMenuData.stock || {}; const prices = currentMenuData.prices || {};
+            // Render Base Items
+            let html = baseAdminItems.map(item => `
+                <div class="flex justify-between items-center bg-gray-800 p-2 rounded mb-2">
+                    <span class="text-sm font-bold w-1/3">${item.name}</span>
+                    <input type="number" id="price-${item.id}" value="${prices[item.id]||''}" placeholder="Price" class="bg-gray-900 w-16 text-center text-xs p-1 rounded text-white">
+                    <input type="checkbox" id="stock-${item.id}" ${stocks[item.id]!==false?'checked':''} class="w-5 h-5">
+                </div>`).join('');
+            // Custom items can be added here if needed, keeping it simple for stability
+            list.innerHTML = html;
+            document.getElementById('menu-modal').classList.remove('hidden');
+        }
+        function saveMenuStatus() {
+            const stocks = {}; const prices = {};
+            baseAdminItems.forEach(item => { 
+                stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; 
+                prices[item.id] = document.getElementById(`price-${item.id}`).value;
+            });
+            db.collection('settings').doc('menu_data').set({ stock: stocks, prices: prices, customItems: [] }, {merge:true}).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Updated"); });
+        }
+
+        // --- CHAT ---
         function renderChatsList(snap) {
             document.getElementById('chats-list').innerHTML = snap.docs.map(doc => {
                 const c = doc.data();
-                return `<div onclick="openChat('${doc.id}','${c.userName}')" class="bg-gray-800 p-3 rounded flex justify-between ${c.unreadAdmin?'border-l-4 border-red-500':''}"><div><h4 class="font-bold">${c.userName||doc.id}</h4><p class="text-xs text-gray-400 truncate">${c.lastMessage}</p></div></div>`;
+                return `<div onclick="openChat('${doc.id}','${c.userName}')" class="bg-gray-800 p-3 rounded flex justify-between ${c.unreadAdmin?'border-l-4 border-red-500':''}"><div><h4 class="font-bold text-white">${c.userName||doc.id}</h4><p class="text-xs text-gray-400 truncate">${c.lastMessage}</p></div></div>`;
             }).join('');
             document.getElementById('chat-badge').style.display = snap.docs.some(d=>d.data().unreadAdmin) ? 'block' : 'none';
         }
         function openChat(phone, name) {
-            currentChatPhone = phone; document.getElementById('chat-user-name').innerText = name || phone;
-            document.getElementById('chat-modal').classList.remove('hidden');
+            currentChatPhone = phone; document.getElementById('chat-modal').classList.remove('hidden');
             db.collection('chats').doc(phone).update({ unreadAdmin: false });
             db.collection('chats').doc(phone).onSnapshot(doc => {
                 if(doc.exists) document.getElementById('chat-messages').innerHTML = (doc.data().messages||[]).map(m => `<div class="chat-bubble ${m.sender==='admin'?'chat-me':'chat-user'}">${m.text}</div>`).join('');
@@ -271,33 +350,28 @@
         }
         function sendAdminMessage() {
             const txt = document.getElementById('chat-input').value; if(!txt) return;
-            const msg = { text: txt, sender: 'admin', timestamp: Date.now() };
-            db.collection('chats').doc(currentChatPhone).update({ messages: firebase.firestore.FieldValue.arrayUnion(msg), lastMessage: "You: "+txt, lastUpdated: firebase.firestore.FieldValue.serverTimestamp(), unreadUser: true });
+            db.collection('chats').doc(currentChatPhone).update({ messages: firebase.firestore.FieldValue.arrayUnion({ text: txt, sender: 'admin' }), lastMessage: "You: "+txt, lastUpdated: firebase.firestore.FieldValue.serverTimestamp(), unreadUser: true });
             document.getElementById('chat-input').value='';
         }
-        function openChatFromOrder() { if(currentModalOrder) { document.getElementById('manage-modal').classList.add('hidden'); switchTab('chats'); openChat(currentModalOrder.customerPhone, currentModalOrder.customerName); } }
 
-        function toggleSalesPrivacy() { salesHidden = !salesHidden; recalculateData(); document.getElementById('privacy-icon').className = salesHidden ? 'fas fa-eye-slash' : 'fas fa-eye'; }
-        function openSalesAnalysis() {
-            document.getElementById('sales-breakdown-list').innerHTML = Object.entries(todaysItemsMap).map(([k,v]) => `<div class="flex justify-between p-2 bg-gray-800 rounded"><span>${k}</span><span>${v}</span></div>`).join('');
-            document.getElementById('sales-modal').classList.remove('hidden');
-        }
-        function openBroadcastModal() { document.getElementById('broadcast-modal').classList.remove('hidden'); }
-        function saveBroadcast(msg) { db.collection('settings').doc('config').set({ broadcastMessage: msg }, {merge:true}).then(() => { showToast("Updated"); document.getElementById('broadcast-modal').classList.add('hidden'); }); }
-        function endDay() { 
-            const entry = { date: new Date().toLocaleDateString(), total: parseInt(document.getElementById('total-sales').dataset.realValue) };
-            db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp(), salesHistory: [...salesHistoryData, entry] }, {merge:true}).then(()=>showToast("Day Reset")); 
-        }
-
-        function showToast(msg, type) { const t=document.createElement('div'); t.className='toast show'; t.innerText=msg; document.getElementById('toast-container').appendChild(t); setTimeout(()=>t.remove(), 2000); }
-        function confirmAction(t, cb) { if(confirm(t)) cb(); }
-        function closeConfirm(res) { document.getElementById('custom-confirm').classList.add('hidden'); if(res && pendingAction) pendingAction(); }
+        // --- UTILS ---
+        function showToast(msg) { const t=document.createElement('div'); t.className='toast show'; t.innerText=msg; document.getElementById('toast-container').appendChild(t); setTimeout(()=>t.remove(), 2000); }
+        function confirmAction(t, cb) { if(confirm(t)) cb(); } // Simple confirm for stability
         function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }); }
-        function switchTab(t) { ['live', 'chats', 'history', 'udhaar'].forEach(x => { document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x).className="flex-1 py-3 text-gray-500 font-bold text-sm"; }); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('tab-'+t).className="flex-1 py-3 tab-active font-bold text-sm"; }
+        function endDay() { db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true}); }
+        function switchTab(t) { 
+            localStorage.setItem('admin_active_tab', t);
+            ['live', 'chats', 'history', 'udhaar'].forEach(x => { document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x).className="flex-1 py-3 text-gray-500 font-bold text-sm"; });
+            document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('tab-'+t).className="flex-1 py-3 tab-active font-bold text-sm";
+            if(t==='history') renderHistory(); if(t==='udhaar') renderUdhaar();
+        }
         
-        // Stock/Settle logic omitted for brevity, add if needed or keep existing logic from file 5
-        function openMenuControl() { document.getElementById('menu-modal').classList.remove('hidden'); } 
-        // ... (Include Stock/Settle/History render logic from File 5 here) ...
+        // Settle Logic
+        function openSettle(phone, name, due) { currentSettlePhone=phone; document.getElementById('settle-name').innerText=name; document.getElementById('settle-due').innerText=due; document.getElementById('settle-modal').classList.remove('hidden'); }
+        function submitPayment() { 
+            const amt = parseInt(document.getElementById('settle-amount').value); if(!amt) return;
+            db.collection('payments').add({ phone: currentSettlePhone, amount: amt, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => { document.getElementById('settle-modal').classList.add('hidden'); showToast("Settled"); });
+        }
 
         init();
     </script>
