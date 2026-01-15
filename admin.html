@@ -17,26 +17,17 @@
         
         /* Aesthetic Light Mode */
         body.light-mode { 
-            --bg: #F0F2F5; /* Soft Premium Grey */
-            --card: #FFFFFF; 
-            --border: #E5E7EB; 
-            --accent: #EA580C; 
-            --text: #1F2937; 
-            --text-sub: #6B7280;
-            --modal-bg: #F9FAFB;
+            --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; 
+            --text: #1F2937; --text-sub: #6B7280; --modal-bg: #F9FAFB;
         }
         
-        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
         
         .aesthetic-card { 
-            background: var(--card); 
-            border: 1px solid var(--border); 
-            border-radius: 16px; 
-            padding: 16px; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: transform 0.2s;
+            background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative;
         }
-        .aesthetic-card:active { transform: scale(0.99); }
+        .aesthetic-card:active { transform: scale(0.98); }
         
         /* Sidebar */
         .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); }
@@ -49,13 +40,13 @@
         .fs-modal.open { transform: translateY(0); }
 
         /* Tabs */
-        .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; }
+        .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; padding-bottom: 12px; }
         .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
 
         /* Chat */
         .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; }
-        .chat-admin { background: var(--accent); color: white; align-self: flex-end; }
-        .chat-user { background: #374151; color: white; align-self: flex-start; }
+        .chat-admin { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-user { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
 
         /* Inputs */
         input, textarea { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; }
@@ -74,10 +65,10 @@
             <p class="text-[10px] text-green-500 font-bold uppercase tracking-wider">● Online</p>
         </div>
         <div class="flex gap-3">
-            <button onclick="setShopLocation()" class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-500 flex items-center justify-center shadow-lg active:scale-95 z-50 transition">
+            <button onclick="setShopLocation()" class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-500 flex items-center justify-center shadow-lg active:scale-95 z-50">
                 <i class="fas fa-map-marker-alt"></i>
             </button>
-            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-white flex items-center justify-center shadow-lg active:scale-95 z-50 relative transition">
+            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-white flex items-center justify-center shadow-lg active:scale-95 z-50 relative">
                 <i class="fas fa-bars"></i>
                 <span id="header-msg-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full hidden border-2 border-gray-800"></span>
             </button>
@@ -121,7 +112,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 gap-4 mb-6">
+    <div id="dashboard-section" class="grid grid-cols-2 gap-4 mb-6">
         <div class="aesthetic-card flex flex-col justify-between cursor-pointer relative overflow-hidden" onclick="openSalesAnalysis()">
             <div class="flex justify-between items-start z-10 relative">
                 <span class="text-xs uppercase tracking-wider opacity-70">Revenue</span>
@@ -137,7 +128,7 @@
         </div>
     </div>
 
-    <div class="flex mb-4 border-b border-gray-800" style="border-color:var(--border)">
+    <div id="tabs-section" class="flex mb-4 border-b border-gray-800" style="border-color:var(--border)">
         <button onclick="switchView('live')" id="tab-live" class="flex-1 py-3 tab-btn tab-active text-sm">LIVE</button>
         <button onclick="switchView('history')" id="tab-history" class="flex-1 py-3 tab-btn text-sm">HISTORY</button>
         <button onclick="switchView('udhaar')" id="tab-udhaar" class="flex-1 py-3 tab-btn text-sm">UDHAAR</button>
@@ -148,7 +139,8 @@
 
         <div id="view-history" class="hidden space-y-3">
             <input type="text" id="search-history" onkeyup="renderHistory()" placeholder="Search History..." class="mb-3">
-            <div id="history-list" class="space-y-2"></div> </div>
+            <div id="history-list" class="space-y-2"></div>
+        </div>
 
         <div id="view-udhaar" class="hidden space-y-3">
             <input type="text" id="search-udhaar" onkeyup="renderUdhaar()" placeholder="Search Udhaar..." class="mb-3">
@@ -157,7 +149,7 @@
 
         <div id="view-messages" class="hidden space-y-3">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold">Inbox</h2>
+                <h2 class="text-xl font-bold text-orange-500">Inbox</h2>
                 <button onclick="switchView('live')" class="text-gray-500 text-sm">Close</button>
             </div>
             <div id="messages-list" class="space-y-2"></div>
@@ -175,12 +167,10 @@
                 <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
                 <h1 class="text-2xl font-bold" id="fm-name">Customer</h1>
                 <p class="text-sm opacity-70" id="fm-phone">Phone</p>
-                
                 <div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p>
                     <p class="text-sm" id="fm-recipient">Name (Phone)</p>
                 </div>
-                
                 <p class="text-xs opacity-50 mt-2" id="fm-time">Time</p>
                 <p class="text-xs text-yellow-500 italic mt-1 hidden" id="fm-note"></p>
                 <p class="text-sm mt-3 border-t border-gray-700 pt-2 flex items-center gap-2" id="fm-address" style="border-color:var(--border)"><i class="fas fa-map-marker-alt text-red-500"></i> Address</p>
@@ -260,60 +250,37 @@
 
         let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={customItems:[]}, currentOpenOrder=null;
         let pendingAction=null, salesHidden=false, todaysItemsMap={}, salesHistoryData=[], currentLimitPhone=null, currentSettlePhone=null, currentChatUser=null;
-        let allOrders=[], chatUsers=[];
+        let allOrders=[], chatUsers=[], todaysOrderCount=0;
         const baseItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarette",price:0},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
 
         function init() {
             const lastTab = localStorage.getItem('admin_active_tab') || 'live';
-            
             db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists) { const dd=d.data(); window.lastReset=dd.lastReset?dd.lastReset.seconds:0; salesHistoryData=dd.salesHistory||[]; } render(); });
             db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; const b=document.getElementById('shop-toggle-btn'); b.innerText=isShopOpen?"OPEN":"CLOSED"; b.className=isShopOpen?"px-3 py-1 rounded text-xs font-bold bg-green-600 text-white":"px-3 py-1 rounded text-xs font-bold bg-red-600 text-white"; });
             db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) currentMenuData=d.data(); });
             db.collection('orders').orderBy('timestamp','desc').onSnapshot(s=>{ window.ordersSnap=s; render(); });
             db.collection('payments').orderBy('timestamp','desc').onSnapshot(s=>{ window.paymentsSnap=s; render(); });
-            
-            db.collection('chats').onSnapshot(s => {
-                chatUsers = s.docs.map(d=>({id:d.id, ...d.data()})); 
-                const hasMsg = !s.empty; 
-                document.getElementById('header-msg-dot').classList.toggle('hidden', !hasMsg);
-                document.getElementById('sidebar-msg-count').classList.toggle('hidden', !hasMsg);
-                if(document.getElementById('view-messages').classList.contains('hidden') === false) renderMessagesList();
-            });
-
+            db.collection('chats').onSnapshot(s => { chatUsers = s.docs.map(d=>({id:d.id, ...d.data()})); const hasMsg = !s.empty; document.getElementById('header-msg-dot').classList.toggle('hidden', !hasMsg); document.getElementById('sidebar-msg-count').classList.toggle('hidden', !hasMsg); if(!document.getElementById('view-messages').classList.contains('hidden')) renderMessagesList(); });
             switchView(lastTab);
         }
 
         function render() {
             if(!window.ordersSnap) return;
-            let active=0, sales=0, liveHtml='', historyHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
+            let active=0, sales=0, liveHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
             if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0,lastOrder:0}; udhaarMap[p.phone].credit+=p.amount; });
 
             window.ordersSnap.docs.forEach(doc=>{
                 const d=doc.data(); const id=doc.id; d.id=id; allOrders.push(d);
-                if(d.paymentMode==='Udhaar' && d.status!=='cancelled') { 
-                    if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0}; 
-                    udhaarMap[d.customerPhone].debit+=d.totalAmount; udhaarMap[d.customerPhone].name=d.customerName;
-                }
+                if(d.paymentMode==='Udhaar' && d.status!=='cancelled') { if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0}; udhaarMap[d.customerPhone].debit+=d.totalAmount; udhaarMap[d.customerPhone].name=d.customerName; }
                 if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0};
-                if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) {
-                    udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds;
-                    udhaarMap[d.customerPhone].lastAmount = d.totalAmount;
-                    udhaarMap[d.customerPhone].name = d.customerName;
-                }
-
-                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { 
-                    sales+=d.totalAmount; todaysOrderCount++; 
-                    d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); 
-                }
+                if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) { udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds; udhaarMap[d.customerPhone].lastAmount = d.totalAmount; udhaarMap[d.customerPhone].name = d.customerName; }
+                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { sales+=d.totalAmount; todaysOrderCount++; d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); }
                 
                 if(['pending','cooking','ready'].includes(d.status)) {
                     active++;
-                    liveHtml+=`<div class="aesthetic-card order-live mb-3 cursor-pointer" onclick="openFullModal('${id}')">
-                        <div class="flex justify-between items-start">
-                            <div><h3 class="font-bold text-lg" style="color:var(--text)">${d.customerName}</h3><span class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-white uppercase tracking-wider">${d.status}</span></div>
-                            <h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3>
-                        </div>
-                        ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block mt-2"><i class="fas fa-gift"></i> For: ${d.recipient.name}</span>` : ''}
+                    liveHtml+=`<div class="aesthetic-card mb-3 cursor-pointer" style="border-left: 4px solid var(--accent)" onclick="openFullModal('${id}')">
+                        <div class="flex justify-between items-start"><div><h3 class="font-bold text-lg">${d.customerName}</h3><span class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-white uppercase">${d.status}</span></div><h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3></div>
+                        ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block mt-2">For: ${d.recipient.name}</span>` : ''}
                     </div>`;
                 }
             });
@@ -322,8 +289,9 @@
             document.getElementById('pending-count').innerText=active;
             const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
             
-            renderHistory();
-            renderUdhaar();
+            // Force re-render of History and Udhaar to ensure they appear
+            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            if(!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
             
             if(active > (window.lastActive||0)) { const a=document.getElementById('order-sound'); if(soundEnabled){a.src="https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; a.play();} }
             window.lastActive=active;
@@ -332,103 +300,59 @@
         // --- VIEWS ---
         function switchView(v) { 
             localStorage.setItem('admin_active_tab', v);
-            ['live','history','udhaar','messages'].forEach(x=>{ 
-                const el=document.getElementById('view-'+x); if(el) el.classList.add('hidden'); 
-                const btn=document.getElementById('tab-'+x); if(btn) btn.classList.remove('tab-active'); 
-            }); 
-            const tel=document.getElementById('view-'+v); if(tel) tel.classList.remove('hidden'); 
-            const tbtn=document.getElementById('tab-'+v); if(tbtn) tbtn.classList.add('tab-active');
-            
-            if(v==='messages') renderMessagesList();
+            ['live','history','udhaar','messages'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x)?.classList.remove('tab-active'); }); 
+            document.getElementById('view-'+v).classList.remove('hidden'); document.getElementById('tab-'+v)?.classList.add('tab-active');
+            // Hide Dashboard on Messages view to clean up
+            document.getElementById('dashboard-section').style.display = v==='messages' ? 'none' : 'grid';
+            document.getElementById('tabs-section').style.display = v==='messages' ? 'none' : 'flex';
+            if(v==='history') renderHistory(); if(v==='udhaar') renderUdhaar(); if(v==='messages') renderMessagesList();
         }
 
         // --- HISTORY ---
         function renderHistory() {
             const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
             const users = Object.keys(udhaarMap).map(p=>({phone:p, ...udhaarMap[p]})).sort((a,b)=>b.lastOrder-a.lastOrder);
-            
+            if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history.</p>"; return; }
             list.innerHTML = users.map(u => {
                 if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
                 return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.phone}', '${u.name}')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div>
-                        <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div>
-                    </div>
+                    <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
                     <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
                 </div>`;
             }).join('');
         }
-
         function openUserHistory(phone, name) {
             const list = document.getElementById('history-list');
             const userOrders = allOrders.filter(o => o.customerPhone === phone);
-            list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to All Users</button></div>` + 
+            list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
             userOrders.map(d => {
                 const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
-                    <div><p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold mt-1">${d.items.length} Items</p></div>
-                    <span class="font-bold text-orange-400">₹${d.totalAmount}</span>
-                </div>`;
+                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')"><div><p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold mt-1">${d.items.length} Items</p></div><span class="font-bold text-orange-400">₹${d.totalAmount}</span></div>`;
             }).join('');
         }
 
         // --- FULL MODAL ---
         function openFullModal(id) {
             const d = allOrders.find(o=>o.id===id); if(!d) return; currentOpenOrder = {id, ...d};
-            
-            document.getElementById('fm-name').innerText = d.customerName;
-            document.getElementById('fm-phone').innerText = d.customerPhone;
+            document.getElementById('fm-name').innerText = d.customerName; document.getElementById('fm-phone').innerText = d.customerPhone;
             document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
-            document.getElementById('fm-status-badge').innerText = d.status;
-            document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
+            document.getElementById('fm-status-badge').innerText = d.status; document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
             document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
-            
-            if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } 
-            else document.getElementById('fm-recipient-box').classList.add('hidden');
-            if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); }
-            else document.getElementById('fm-note').classList.add('hidden');
-
-            const callPh = d.recipient ? d.recipient.phone : d.customerPhone;
-            document.getElementById('fm-btn-call').href = `tel:${callPh}`;
-            document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g,'')}`;
-            document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
-
+            if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } else document.getElementById('fm-recipient-box').classList.add('hidden');
+            if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); } else document.getElementById('fm-note').classList.add('hidden');
+            const callPh = d.recipient ? d.recipient.phone : d.customerPhone; document.getElementById('fm-btn-call').href = `tel:${callPh}`; document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g,'')}`; document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
             renderFullModalItems();
-
             const c = document.getElementById('fm-controls');
-            c.innerHTML = `
-                <div class="grid grid-cols-4 gap-2">
-                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Pending</button>
-                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Cooking</button>
-                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button>
-                    <button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button>
-                </div>
-                <button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>
-            `;
+            c.innerHTML = `<div class="grid grid-cols-4 gap-2"><button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Pending</button><button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Cooking</button><button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button><button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button></div><button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
             document.getElementById('order-full-modal').classList.add('open');
         }
-
         function renderFullModalItems() {
             const l = document.getElementById('fm-items-list'); let t=0;
-            l.innerHTML = currentOpenOrder.items.map((i, idx) => {
-                if(!i.originalQty) i.originalQty = i.qty; t += i.qty * i.price;
-                return `<div class="flex justify-between items-center p-2 rounded bg-gray-800/30 border border-gray-700">
-                    <div class="flex-1"><span class="text-sm font-bold">${i.name}</span></div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="adjustPNA(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">-</button>
-                        <span class="text-sm font-bold text-orange-400 w-4 text-center">${i.qty}</span>
-                        <button onclick="adjustPNA(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">+</button>
-                    </div>
-                </div>`;
-            }).join('');
+            l.innerHTML = currentOpenOrder.items.map((i, idx) => { if(!i.originalQty) i.originalQty = i.qty; t += i.qty * i.price; return `<div class="flex justify-between items-center p-2 rounded bg-gray-800/30 border border-gray-700"><div class="flex-1"><span class="text-sm font-bold">${i.name}</span></div><div class="flex items-center gap-3"><button onclick="adjustPNA(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">-</button><span class="text-sm font-bold text-orange-400 w-4 text-center">${i.qty}</span><button onclick="adjustPNA(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">+</button></div></div>`; }).join('');
             document.getElementById('fm-total').innerText = t; currentOpenOrder._liveTotal = t;
         }
-
-        function adjustPNA(idx, change) {
-            const item = currentOpenOrder.items[idx]; const newQty = item.qty + change;
-            if(newQty >= 0) { item.qty = newQty; db.collection('orders').doc(currentOpenOrder.id).update({ items: currentOpenOrder.items, totalAmount: currentOpenOrder._liveTotal }); renderFullModalItems(); }
-        }
-        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); showToast("Status Updated"); }); }
+        function adjustPNA(idx, change) { const item = currentOpenOrder.items[idx]; const newQty = item.qty + change; if(newQty >= 0) { item.qty = newQty; db.collection('orders').doc(currentOpenOrder.id).update({ items: currentOpenOrder.items, totalAmount: currentOpenOrder._liveTotal }); renderFullModalItems(); } }
+        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); showToast("Updated"); }); }
         function deleteOrder() { if(confirm("Permanently delete?")) db.collection('orders').doc(currentOpenOrder.id).delete().then(()=>{ closeFullModal(); showToast("Deleted"); }); }
         function closeFullModal() { document.getElementById('order-full-modal').classList.remove('open'); }
 
@@ -436,90 +360,35 @@
         function renderMessagesList() {
             const list = document.getElementById('messages-list');
             if(chatUsers.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No messages</p>"; return; }
-            list.innerHTML = chatUsers.map(u => {
-                // Get name from udhaarMap if available
-                const name = udhaarMap[u.id]?.name || "Unknown User";
-                return `
-                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openChat('${u.id}', '${name}')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center"><i class="fas fa-user"></i></div>
-                        <div><p class="font-bold text-sm">${name}</p><p class="text-xs opacity-50">${u.id}</p></div>
-                    </div>
-                    <i class="fas fa-chevron-right opacity-30"></i>
-                </div>
-            `;
-            }).join('');
+            list.innerHTML = chatUsers.map(u => { const name = udhaarMap[u.id]?.name || "Unknown"; return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openChat('${u.id}', '${name}')"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div><p class="font-bold text-sm">${name}</p><p class="text-xs opacity-50">${u.id}</p></div></div><i class="fas fa-chevron-right opacity-30"></i></div>`; }).join('');
         }
-        function openChat(phone, name) {
-            currentChatUser = phone;
-            document.getElementById('chat-user-name').innerText = name;
-            document.getElementById('chat-window').classList.add('open');
-            db.collection('chats').doc(phone).collection('messages').orderBy('timestamp').onSnapshot(snap => {
-                document.getElementById('chat-messages').innerHTML = snap.docs.map(d => {
-                    const m = d.data();
-                    return `<div class="chat-bubble ${m.sender==='admin'?'chat-admin':'chat-user'}">${m.text}</div>`;
-                }).join('');
-                document.getElementById('chat-messages').scrollTop = 9999;
-            });
-        }
-        function sendAdminMessage() {
-            const t = document.getElementById('chat-input').value.trim();
-            if(t && currentChatUser) {
-                db.collection('chats').doc(currentChatUser).collection('messages').add({
-                    text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge:true});
-                document.getElementById('chat-input').value = "";
-            }
-        }
+        function openChat(phone, name) { currentChatUser = phone; document.getElementById('chat-user-name').innerText = name; document.getElementById('chat-window').classList.add('open'); db.collection('chats').doc(phone).collection('messages').orderBy('timestamp').onSnapshot(snap => { document.getElementById('chat-messages').innerHTML = snap.docs.map(d => `<div class="chat-bubble ${d.data().sender==='admin'?'chat-admin':'chat-user'}">${d.data().text}</div>`).join(''); document.getElementById('chat-messages').scrollTop = 9999; }); }
+        function sendAdminMessage() { const t = document.getElementById('chat-input').value.trim(); if(t && currentChatUser) { db.collection('chats').doc(currentChatUser).collection('messages').add({ text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge:true}); document.getElementById('chat-input').value = ""; } }
         function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); }
-
-        // --- ANALYTICS ---
-        function openAnalytics() {
-            document.getElementById('sales-modal').classList.remove('hidden');
-            document.getElementById('an-sales').innerText = document.getElementById('total-sales').dataset.realValue;
-            document.getElementById('an-count').innerText = todaysOrderCount;
-            const l = document.getElementById('today-breakdown-list');
-            l.innerHTML = Object.entries(todaysItemsMap).sort((a,b)=>b[1]-a[1]).map(([n,q]) => {
-                const max = Math.max(...Object.values(todaysItemsMap));
-                const per = (q/max)*100;
-                return `
-                <div class="mb-3">
-                    <div class="flex justify-between text-xs mb-1"><span>${n}</span><span class="font-bold">${q}</span></div>
-                    <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-orange-500" style="width:${per}%"></div></div>
-                </div>`;
-            }).join('');
-        }
 
         // --- UTILS ---
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
         function toggleTheme() { document.body.classList.toggle('light-mode'); document.getElementById('theme-icon').className = document.body.classList.contains('light-mode') ? "fas fa-toggle-off text-gray-400" : "fas fa-toggle-on text-purple-500"; }
-        function setShopLocation() { 
-            showToast("Detecting Location...", "info");
-            navigator.geolocation.getCurrentPosition(p=>{ 
-                db.collection('settings').doc('config').set({location:{lat:p.coords.latitude,lng:p.coords.longitude}},{merge:true}).then(()=>{
-                    showToast("Location Updated Successfully!"); 
-                });
-            }, e => showToast("Error: " + e.message)); 
-        }
+        function setShopLocation() { showToast("Detecting...", "info"); navigator.geolocation.getCurrentPosition(p=>{ db.collection('settings').doc('config').set({location:{lat:p.coords.latitude,lng:p.coords.longitude}},{merge:true}).then(()=>showToast("Location Updated!")); }, e => showToast("Error: " + e.message)); }
         function toggleShop() { db.collection('settings').doc('status').set({isOpen:!isShopOpen}); }
         function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
         function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage:m},{merge:true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Sent"); }
-        function renderUdhaar() { const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); let h=''; for(let p in udhaarMap){const u=udhaarMap[p],d=u.debit-u.credit; if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) h+=`<div class="aesthetic-card p-3 flex justify-between items-center mb-2"><div><div class="flex gap-2 items-center"><p class="font-bold text-lg">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs" onclick="openLimit('${p}','${u.name}')"></i></div><p class="text-xs opacity-50">${p}</p></div><div class="text-right"><p class="text-red-400 font-bold">₹${d}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div></div>`;} l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; }
-        function openLimit(p,n){currentLimitPhone=p;document.getElementById('limit-name').innerText=n;document.getElementById('limit-input').value='';document.getElementById('limit-modal').classList.remove('hidden');}
-        function saveLimit(){db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(document.getElementById('limit-input').value)},{merge:true});document.getElementById('limit-modal').classList.add('hidden');showToast("Limit Set");}
+        function renderUdhaar() { const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); let h=''; for(let p in udhaarMap){const u=udhaarMap[p],d=u.debit-u.credit; if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) h+=`<div class="aesthetic-card p-3 flex justify-between items-center mb-2"><div><div class="flex gap-2 items-center"><p class="font-bold text-white" style="color:var(--text)">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs" onclick="openLimitModal('${p}','${u.name}')"></i></div><p class="text-xs opacity-50">${p}</p></div><div class="text-right"><p class="text-red-400 font-bold">₹${d}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div></div>`;} l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; }
+        function openLimitModal(p,n){currentLimitPhone=p;document.getElementById('limit-modal-name').innerText=n;document.getElementById('limit-input').value='';document.getElementById('limit-modal').classList.remove('hidden');}
+        function saveLimit(){db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(document.getElementById('limit-input').value)},{merge:true});document.getElementById('limit-modal').classList.add('hidden');showToast("Saved");}
         function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
         function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
         function openMenuControl() { document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? currentMenuData.customItems.map((item, idx) => `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2"><span class="text-white">${item.name} <span class="text-orange-400">₹${item.price}</span></span><i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i></div>`).join('') : baseItems.map(i=>`<div class="flex justify-between p-3 bg-gray-800 rounded mb-1"><span class="text-gray-400">${i.name}</span><span class="text-orange-400">₹${i.price}</span></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }
         function addNewItem() { const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value); if(n && p) { if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push({id: Date.now(), name: n, price: p}); document.getElementById('new-item-name').value=''; document.getElementById('new-item-price').value=''; openMenuControl(); } }
-        function deleteCustomItem(idx) { if(confirm("Delete item?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); } }
+        function deleteCustomItem(idx) { if(confirm("Delete?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); } }
         function saveMenuStatus() { db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ document.getElementById('menu-modal').classList.add('hidden'); showToast("Saved"); }); }
-        function tryEndDay(){ document.getElementById('confirm-title').innerText = "End Day & Save Report?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Day Ended Successfully"); }; }
-        function enableSound(){ if(!soundEnabled){ soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
-        function showToast(m){ const c=document.getElementById('toast-container'),e=document.createElement('div'); e.className='toast'; e.innerHTML=`<i class="fas fa-info-circle text-green-400"></i><span>${m}</span>`; c.appendChild(e); setTimeout(()=>e.classList.add('show'),10); setTimeout(()=>{e.classList.remove('show');e.remove()},2500); }
-        function toggleSalesPrivacy(){ salesHidden=!salesHidden; render(); document.getElementById('privacy-icon').className=salesHidden?"fas fa-eye-slash":"fas fa-eye"; }
-        function openPaymentLogs(){ const l = document.getElementById('logs-list'); if(!window.paymentsSnap || window.paymentsSnap.empty) l.innerHTML="<p class='text-center opacity-50 mt-10'>No logs</p>"; else { let grouped = {}; window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!grouped[p.phone]) grouped[p.phone]=[]; grouped[p.phone].push(p); }); l.innerHTML = Object.keys(grouped).map(ph => `<div class="aesthetic-card p-3 mb-2"><p class="font-bold text-sm mb-2 text-blue-400">${udhaarMap[ph]?.name||ph}</p>${grouped[ph].map(x=>`<div class="flex justify-between text-xs opacity-70 border-b border-gray-700 pb-1 mb-1"><span>${new Date(x.timestamp.toDate()).toLocaleDateString()}</span><span class="text-green-400 font-bold">+₹${x.amount}</span></div>`).join('')}</div>`).join(''); } document.getElementById('logs-modal').classList.remove('hidden'); }
+        function tryEndDay(){ document.getElementById('confirm-title').innerText = "Reset Day?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); }; }
         function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if(y&&pendingAction) pendingAction(); pendingAction=null; }
+        function enableSound(){ if(!soundEnabled){ soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
+        function showToast(m,t){ const c=document.getElementById('toast-container'),e=document.createElement('div'); e.className='toast'; e.innerHTML=`<i class="fas fa-info-circle text-green-400"></i><span>${m}</span>`; c.appendChild(e); setTimeout(()=>e.classList.add('show'),10); setTimeout(()=>{e.classList.remove('show');e.remove()},2500); }
+        function toggleSalesPrivacy(){ salesHidden=!salesHidden; render(); document.getElementById('privacy-icon').className=salesHidden?"fas fa-eye-slash":"fas fa-eye"; }
+        function openSalesAnalysis(){document.getElementById('sales-modal').classList.remove('hidden'); document.getElementById('an-sales').innerText=document.getElementById('total-sales').dataset.realValue; document.getElementById('an-count').innerText=todaysOrderCount; document.getElementById('today-breakdown-list').innerHTML=Object.entries(todaysItemsMap).map(([n,q])=>`<div class="flex justify-between p-2 border-b border-gray-800"><span class="text-white text-sm">${n}</span><span class="text-orange-400 font-bold">${q}</span></div>`).join('');}
+        function openPaymentLogs(){ const l = document.getElementById('logs-list'); if(!window.paymentsSnap || window.paymentsSnap.empty) l.innerHTML="<p class='text-center opacity-50 mt-10'>No logs</p>"; else { let grouped = {}; window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!grouped[p.phone]) grouped[p.phone]=[]; grouped[p.phone].push(p); }); l.innerHTML = Object.keys(grouped).map(ph => `<div class="aesthetic-card p-3 mb-2"><p class="font-bold text-sm mb-2 text-blue-400">${udhaarMap[ph]?.name||ph}</p>${grouped[ph].map(x=>`<div class="flex justify-between text-xs opacity-70 border-b border-gray-700 pb-1 mb-1"><span>${new Date(x.timestamp.toDate()).toLocaleDateString()}</span><span class="text-green-400 font-bold">+₹${x.amount}</span></div>`).join('')}</div>`).join(''); } document.getElementById('logs-modal').classList.remove('hidden'); }
 
         init();
     </script>
