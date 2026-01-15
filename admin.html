@@ -7,27 +7,56 @@
     <link rel="manifest" href="admin_manifest.json">
     <meta name="theme-color" content="#0f0f0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
         /* Modern Variables */
-        :root { --bg: #050505; --card: #141414; --border: #333; --accent: #F97316; --text: #fff; --text-sub: #9ca3af; --modal-bg: #050505; }
+        :root { 
+            --bg: #050505; 
+            --card: #141414; 
+            --border: #333; 
+            --accent: #F97316; 
+            --text: #fff; 
+            --text-sub: #9ca3af; 
+            --modal-bg: #050505; 
+        }
         
         /* Aesthetic Light Mode */
         body.light-mode { 
-            --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; 
-            --text: #1F2937; --text-sub: #6B7280; --modal-bg: #F9FAFB;
+            --bg: #F0F2F5; 
+            --card: #FFFFFF; 
+            --border: #E5E7EB; 
+            --accent: #EA580C; 
+            --text: #1F2937; 
+            --text-sub: #6B7280; 
+            --modal-bg: #F9FAFB;
         }
         
-        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Inter', sans-serif; 
+            transition: background 0.3s, color 0.3s; 
+            padding-bottom: 80px; 
+            -webkit-tap-highlight-color: transparent; 
+        }
         
         .aesthetic-card { 
-            background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative;
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 16px; 
+            padding: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            transition: transform 0.2s; 
+            position: relative;
         }
-        .aesthetic-card:active { transform: scale(0.98); }
+        .aesthetic-card:active { 
+            transform: scale(0.98); 
+        }
 
         /* LIVE ORDER SPECIFIC AESTHETICS */
         .live-card {
@@ -42,12 +71,18 @@
             margin-bottom: 12px;
             transition: all 0.3s ease;
         }
-        .live-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
-            pointer-events: none;
+        
+        .status-pill { 
+            padding: 4px 10px; 
+            border-radius: 6px; 
+            font-size: 10px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 4px; 
         }
-        .status-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
         .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); animation: pulse 2s infinite; }
         .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
         .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
@@ -80,7 +115,7 @@
         .chat-user { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
 
         /* Inputs */
-        input, textarea { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; }
+        input, textarea, select { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; margin-bottom: 8px; }
         
         /* Toast */
         #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 150; pointer-events: none; width: 90%; max-width: 300px; }
@@ -129,7 +164,7 @@
             </button>
 
             <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
-                <i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory
+                <i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory (Full Control)
             </button>
 
             <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
@@ -233,6 +268,32 @@
         </div>
     </div>
 
+    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col">
+            <div class="flex justify-between mb-4">
+                <h3 class="font-bold text-xl">Inventory Control</h3>
+                <button onclick="document.getElementById('menu-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div id="menu-list-items" class="overflow-y-auto flex-1 mb-4 space-y-2"></div>
+            
+            <div class="bg-gray-800 p-3 rounded-xl mb-2">
+                <div class="flex gap-2 mb-2">
+                    <input id="new-item-name" placeholder="Item Name (e.g. Adrak Chai)" class="flex-1">
+                    <input id="new-item-price" type="number" placeholder="₹" class="w-20">
+                </div>
+                <select id="new-item-cat" class="w-full mb-2 p-2 rounded bg-gray-900 border border-gray-700 text-white text-sm">
+                    <option value="Chai">Category: Chai</option>
+                    <option value="Snacks">Category: Snacks</option>
+                    <option value="Sutta">Category: Sutta</option>
+                </select>
+                <button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add Item</button>
+            </div>
+            
+            <button onclick="saveMenuStatus()" class="w-full bg-green-600 p-3 rounded font-bold text-white">Save Changes</button>
+        </div>
+    </div>
+
     <div id="chat-window" class="fs-modal flex flex-col">
         <div class="p-4 border-b border-gray-800 flex justify-between items-center" style="background:var(--card); border-color:var(--border)">
             <div class="flex items-center gap-3">
@@ -273,7 +334,6 @@
         </div>
     </div>
 
-    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Inventory</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="menu-list-items" class="overflow-y-auto flex-1 mb-4 space-y-2"></div><div class="bg-gray-800 p-3 rounded-xl mb-2"><div class="flex gap-2 mb-2"><input id="new-item-name" placeholder="Item Name"><input id="new-item-price" type="number" placeholder="₹" class="w-20"></div><button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add Item</button></div><button onclick="saveMenuStatus()" class="w-full bg-green-600 p-3 rounded font-bold text-white">Save Changes</button></div></div>
     <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
     <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-2">Broadcast</h3><textarea id="broadcast-input" rows="3" placeholder="Message..."></textarea><div class="flex gap-2 mt-4"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 p-2 rounded">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-xs text-gray-500">Cancel</button></div></div>
     <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold">Settle Payment</h3><p id="settle-name" class="text-gray-400 text-sm mb-4"></p><h1 class="text-4xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></h1><input id="settle-amount" type="number" class="text-center text-xl font-bold mb-4" placeholder="Amount"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500">Cancel</button></div></div>
@@ -283,43 +343,139 @@
     <audio id="order-sound"></audio>
 
     <script>
+        // --- CONFIGURATION ---
         const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
-        firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
+        firebase.initializeApp(firebaseConfig); 
+        const db = firebase.firestore();
 
-        let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={customItems:[]}, currentOpenOrder=null;
-        let pendingAction=null, salesHidden=false, todaysItemsMap={}, salesHistoryData=[], currentLimitPhone=null, currentSettlePhone=null, currentChatUser=null;
-        let allOrders=[], chatUsers=[], todaysOrderCount=0, limitsMap = {};
-        const baseItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarette",price:0},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
+        // --- GLOBAL VARIABLES ---
+        let isShopOpen = true;
+        let soundEnabled = false;
+        let udhaarMap = {};
+        let currentMenuData = { customItems: [] };
+        let currentOpenOrder = null;
+        let pendingAction = null;
+        let salesHidden = false;
+        let todaysItemsMap = {};
+        let salesHistoryData = [];
+        let currentLimitPhone = null;
+        let currentSettlePhone = null;
+        let currentChatUser = null;
+        let allOrders = [];
+        let chatUsers = [];
+        let todaysOrderCount = 0;
+        let limitsMap = {};
 
+        // --- INITIALIZATION ---
         function init() {
+            // FIX: Retrieve last active tab, default to 'live' if not found (Prevents going to messages on refresh)
             const lastTab = localStorage.getItem('admin_active_tab') || 'live';
-            db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists) { const dd=d.data(); window.lastReset=dd.lastReset?dd.lastReset.seconds:0; salesHistoryData=dd.salesHistory||[]; } render(); });
-            db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; const b=document.getElementById('shop-toggle-btn'); b.innerText=isShopOpen?"OPEN":"CLOSED"; b.className=isShopOpen?"px-3 py-1 rounded text-xs font-bold bg-green-600 text-white":"px-3 py-1 rounded text-xs font-bold bg-red-600 text-white"; });
-            db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) currentMenuData=d.data(); });
-            db.collection('user_limits').onSnapshot(s => { limitsMap={}; s.docs.forEach(d => limitsMap[d.id] = d.data().limit); if(document.getElementById('tab-udhaar').classList.contains('tab-active')) renderUdhaar(); });
-            db.collection('orders').orderBy('timestamp','desc').onSnapshot(s=>{ window.ordersSnap=s; render(); });
-            db.collection('payments').orderBy('timestamp','desc').onSnapshot(s=>{ window.paymentsSnap=s; render(); });
-            db.collection('chats').onSnapshot(s => { chatUsers = s.docs.map(d=>({id:d.id, ...d.data()})); const hasMsg = !s.empty; document.getElementById('header-msg-dot').classList.toggle('hidden', !hasMsg); document.getElementById('sidebar-msg-count').classList.toggle('hidden', !hasMsg); if(!document.getElementById('view-messages').classList.contains('hidden')) renderMessagesList(); });
+            
+            db.collection('settings').doc('config').onSnapshot(d => { 
+                if (d.exists) { 
+                    const dd = d.data(); 
+                    window.lastReset = dd.lastReset ? dd.lastReset.seconds : 0; 
+                    salesHistoryData = dd.salesHistory || []; 
+                } 
+                render(); 
+            });
+
+            db.collection('settings').doc('status').onSnapshot(d => { 
+                isShopOpen = d.exists ? d.data().isOpen : true; 
+                const b = document.getElementById('shop-toggle-btn'); 
+                b.innerText = isShopOpen ? "OPEN" : "CLOSED"; 
+                b.className = isShopOpen ? "px-3 py-1 rounded text-xs font-bold bg-green-600 text-white shadow" : "px-3 py-1 rounded text-xs font-bold bg-red-600 text-white shadow"; 
+            });
+
+            db.collection('settings').doc('menu_data').onSnapshot(d => { 
+                if (d.exists) currentMenuData = d.data(); 
+                if (!currentMenuData.customItems) currentMenuData.customItems = [];
+            });
+
+            db.collection('user_limits').onSnapshot(s => { 
+                limitsMap = {}; 
+                s.docs.forEach(d => limitsMap[d.id] = d.data().limit); 
+                if (document.getElementById('tab-udhaar').classList.contains('tab-active')) renderUdhaar(); 
+            });
+
+            db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(s => { 
+                window.ordersSnap = s; 
+                render(); 
+            });
+
+            db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(s => { 
+                window.paymentsSnap = s; 
+                render(); 
+            });
+
+            db.collection('chats').onSnapshot(s => { 
+                chatUsers = s.docs.map(d => ({id: d.id, ...d.data()})); 
+                const hasMsg = !s.empty; 
+                document.getElementById('header-msg-dot').classList.toggle('hidden', !hasMsg); 
+                document.getElementById('sidebar-msg-count').classList.toggle('hidden', !hasMsg); 
+                if (!document.getElementById('view-messages').classList.contains('hidden')) renderMessagesList(); 
+            });
+
             switchView(lastTab);
         }
 
+        // --- MAIN RENDER LOOP ---
         function render() {
-            if(!window.ordersSnap) return;
-            let active=0, sales=0, liveHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
-            if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0,lastOrder:0}; udhaarMap[p.phone].credit+=p.amount; });
+            if (!window.ordersSnap) return;
+            
+            let active = 0, sales = 0, liveHtml = ''; 
+            udhaarMap = {}; 
+            todaysItemsMap = {}; 
+            allOrders = []; 
+            todaysOrderCount = 0;
 
-            window.ordersSnap.docs.forEach(doc=>{
-                const d=doc.data(); const id=doc.id; d.id=id; allOrders.push(d);
-                if(d.paymentMode==='Udhaar' && d.status!=='cancelled') { if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0}; udhaarMap[d.customerPhone].debit+=d.totalAmount; udhaarMap[d.customerPhone].name=d.customerName; }
-                if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0};
-                if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) { udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds; udhaarMap[d.customerPhone].lastAmount = d.totalAmount; udhaarMap[d.customerPhone].name = d.customerName; }
-                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { sales+=d.totalAmount; todaysOrderCount++; d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); }
+            if (window.paymentsSnap) {
+                window.paymentsSnap.docs.forEach(d => { 
+                    const p = d.data(); 
+                    if (!udhaarMap[p.phone]) udhaarMap[p.phone] = {name: "User", debit: 0, credit: 0, lastOrder: 0}; 
+                    udhaarMap[p.phone].credit += p.amount; 
+                });
+            }
+
+            window.ordersSnap.docs.forEach(doc => {
+                const d = doc.data(); 
+                const id = doc.id; 
+                d.id = id; 
+                allOrders.push(d);
+
+                // Calculate Udhaar
+                if (d.paymentMode === 'Udhaar' && d.status !== 'cancelled') { 
+                    if (!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone] = {name: d.customerName, debit: 0, credit: 0, lastOrder: 0}; 
+                    udhaarMap[d.customerPhone].debit += d.totalAmount; 
+                    udhaarMap[d.customerPhone].name = d.customerName; 
+                }
                 
-                if(['pending','cooking','ready'].includes(d.status)) {
+                // Track User details
+                if (!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone] = {name: d.customerName, debit: 0, credit: 0, lastOrder: 0};
+                if (d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) { 
+                    udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds; 
+                    udhaarMap[d.customerPhone].lastAmount = d.totalAmount; 
+                    udhaarMap[d.customerPhone].name = d.customerName; 
+                }
+
+                // Calculate Today's Stats
+                if (d.status === 'completed' && d.timestamp && d.timestamp.seconds > (window.lastReset || 0)) { 
+                    sales += d.totalAmount; 
+                    todaysOrderCount++; 
+                    d.items.forEach(i => { 
+                        if (!todaysItemsMap[i.name]) todaysItemsMap[i.name] = 0; 
+                        todaysItemsMap[i.name] += i.qty; 
+                    }); 
+                }
+                
+                // Live Orders List
+                if (['pending', 'cooking', 'ready'].includes(d.status)) {
                     active++;
-                    const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
-                    const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
-                    liveHtml+=`<div class="live-card cursor-pointer" onclick="openFullModal('${id}')">
+                    const stClass = d.status === 'pending' ? 'status-pending' : d.status === 'cooking' ? 'status-cooking' : 'status-ready';
+                    const payClass = d.paymentMode === 'Udhaar' ? 'pay-udhaar' : d.paymentMode === 'Online' ? 'pay-online' : 'pay-cash';
+                    
+                    liveHtml += `
+                    <div class="live-card cursor-pointer" onclick="openFullModal('${id}')">
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="font-bold text-lg text-white">${d.customerName}</h3>
@@ -338,107 +494,329 @@
                 }
             });
 
-            document.getElementById('view-live').innerHTML=liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
-            document.getElementById('pending-count').innerText=active;
-            const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
+            document.getElementById('view-live').innerHTML = liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
+            document.getElementById('pending-count').innerText = active;
             
-            // Ensure Views Update
-            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
-            if(!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
+            const salesEl = document.getElementById('total-sales'); 
+            salesEl.innerText = salesHidden ? "****" : sales; 
+            salesEl.dataset.realValue = sales;
             
-            if(active > (window.lastActive||0)) { const a=document.getElementById('order-sound'); if(soundEnabled){a.src="https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; a.play();} }
-            window.lastActive=active;
+            // Re-render active view
+            if (!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            if (!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
+            
+            // Sound Alert
+            if (active > (window.lastActive || 0)) { 
+                const a = document.getElementById('order-sound'); 
+                if (soundEnabled) {
+                    a.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; 
+                    a.play();
+                } 
+            }
+            window.lastActive = active;
         }
 
-        // --- VIEWS ---
+        // --- VIEW SWITCHING ---
         function switchView(v) { 
-            localStorage.setItem('admin_active_tab', v);
-            ['live','history','udhaar','messages'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x)?.classList.remove('tab-active'); }); 
-            document.getElementById('view-'+v).classList.remove('hidden'); document.getElementById('tab-'+v)?.classList.add('tab-active');
-            // Hide Dashboard on Messages view to clean up
-            document.getElementById('dashboard-section').style.display = v==='messages' ? 'none' : 'grid';
-            document.getElementById('tabs-section').style.display = v==='messages' ? 'none' : 'flex';
-            if(v==='history') renderHistory(); if(v==='udhaar') renderUdhaar(); if(v==='messages') renderMessagesList();
+            // Fix: Only save tab if it's one of the main views (not messages) to prevent stuck loop
+            if (['live', 'history', 'udhaar'].includes(v)) {
+                localStorage.setItem('admin_active_tab', v);
+            }
+            
+            ['live', 'history', 'udhaar', 'messages'].forEach(x => { 
+                document.getElementById('view-' + x).classList.add('hidden'); 
+                document.getElementById('tab-' + x)?.classList.remove('tab-active'); 
+            }); 
+            
+            document.getElementById('view-' + v).classList.remove('hidden'); 
+            document.getElementById('tab-' + v)?.classList.add('tab-active');
+            
+            // Toggle Dashboard visibility
+            document.getElementById('dashboard-section').style.display = v === 'messages' ? 'none' : 'grid';
+            document.getElementById('tabs-section').style.display = v === 'messages' ? 'none' : 'flex';
+            
+            if (v === 'history') renderHistory(); 
+            if (v === 'udhaar') renderUdhaar(); 
+            if (v === 'messages') renderMessagesList();
         }
 
-        // --- HISTORY (FIXED: Improved Logic) ---
+        // --- HISTORY LOGIC ---
         function renderHistory() {
-            const list = document.getElementById('history-list'); 
+            const list = document.getElementById('history-list');
             const q = document.getElementById('search-history').value.toLowerCase();
             
-            if (!allOrders || allOrders.length === 0) {
-                list.innerHTML = "<p class='text-center opacity-50'>No history available.</p>";
-                return;
+            if (!allOrders || allOrders.length === 0) { 
+                list.innerHTML = "<p class='text-center opacity-50'>No history available.</p>"; 
+                return; 
             }
-
-            // Group by User for cleaner list
+            
             let historyUsers = {};
             allOrders.forEach(o => {
                 const key = o.customerPhone || o.customerName || "Unknown";
-                if(!historyUsers[key]) {
+                if (!historyUsers[key]) {
                     historyUsers[key] = { 
                         name: o.customerName || "Unknown", 
                         phone: o.customerPhone || "No Phone", 
                         lastOrder: 0, 
-                        lastAmount: 0,
+                        lastAmount: 0, 
                         id: key 
                     };
                 }
-                if(o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) {
-                    historyUsers[key].lastOrder = o.timestamp.seconds;
-                    historyUsers[key].lastAmount = o.totalAmount;
-                    historyUsers[key].name = o.customerName || historyUsers[key].name;
+                
+                if (o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) { 
+                    historyUsers[key].lastOrder = o.timestamp.seconds; 
+                    historyUsers[key].lastAmount = o.totalAmount; 
+                    historyUsers[key].name = o.customerName || historyUsers[key].name; 
                 }
             });
 
-            const users = Object.values(historyUsers).sort((a,b)=>b.lastOrder-a.lastOrder);
-            
-            // Filter
-            const filtered = users.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
+            const users = Object.values(historyUsers)
+                .sort((a, b) => b.lastOrder - a.lastOrder)
+                .filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
 
-            if(filtered.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No matching users found.</p>"; return; }
+            if (users.length === 0) { 
+                list.innerHTML = "<p class='text-center opacity-50'>No matching users.</p>"; 
+                return; 
+            }
             
-            list.innerHTML = filtered.map(u => {
-                return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
-                    <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
-                    <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
-                </div>`;
-            }).join('');
+            list.innerHTML = users.map(u => `
+                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div>
+                        <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] opacity-50">Latest</p>
+                        <p class="font-bold text-green-400">₹${u.lastAmount || 0}</p>
+                    </div>
+                </div>`
+            ).join('');
         }
         
         function openUserHistory(key, name) {
             const list = document.getElementById('history-list');
-            const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key==='Unknown' && !o.customerPhone && !o.customerName));
+            const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key === 'Unknown' && !o.customerPhone && !o.customerName));
             
             list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
             userOrders.map(d => {
                 const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-                const payClass = d.paymentMode==='Udhaar'?'text-red-400': d.paymentMode==='Online'?'text-blue-400':'text-green-400';
-                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
+                return `
+                <div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
                     <div>
-                        <p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p>
+                        <p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status === 'cancelled' ? 'text-red-500' : 'text-green-500'}">${d.status}</span></p>
                         <p class="text-sm font-bold mt-1">${d.items.length} Items</p>
                     </div>
                     <div class="text-right">
                         <span class="font-bold text-orange-400 block">₹${d.totalAmount}</span>
-                        <span class="text-[10px] font-bold ${payClass}">${d.paymentMode || 'Cash'}</span>
+                        <span class="text-[10px] font-bold ${d.paymentMode === 'Udhaar' ? 'text-red-400' : d.paymentMode === 'Online' ? 'text-blue-400' : 'text-green-400'}">${d.paymentMode || 'Cash'}</span>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // --- UDHAAR & LIMITS ---
+        // --- ORDER DETAIL MODAL LOGIC ---
+        function openFullModal(id) {
+            const d = allOrders.find(o => o.id === id); 
+            if (!d) return; 
+            currentOpenOrder = {id, ...d};
+            
+            // Check if this is a historical (completed/cancelled) order
+            const isHistorical = d.status === 'completed' || d.status === 'cancelled';
+
+            document.getElementById('fm-name').innerText = isHistorical ? "Order Details (History)" : d.customerName;
+            document.getElementById('fm-phone').innerText = d.customerPhone;
+            document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
+            
+            const badge = document.getElementById('fm-status-badge');
+            badge.innerText = d.status; 
+            badge.className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status === 'completed' ? 'bg-green-600' : d.status === 'cancelled' ? 'bg-red-600' : 'bg-yellow-600'}`;
+            
+            document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
+            
+            const payClass = d.paymentMode === 'Udhaar' ? 'pay-udhaar' : d.paymentMode === 'Online' ? 'pay-online' : 'pay-cash';
+            document.getElementById('fm-payment-info').innerHTML = `<span class="pay-badge ${payClass}" style="margin-left:0; font-size:12px">${d.paymentMode || 'Cash'}</span>`;
+
+            if (d.recipient) { 
+                document.getElementById('fm-recipient-box').classList.remove('hidden'); 
+                document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; 
+            } else {
+                document.getElementById('fm-recipient-box').classList.add('hidden');
+            }
+
+            if (d.orderNote) { 
+                document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; 
+                document.getElementById('fm-note').classList.remove('hidden'); 
+            } else {
+                document.getElementById('fm-note').classList.add('hidden');
+            }
+
+            const callPh = d.recipient ? d.recipient.phone : d.customerPhone; 
+            document.getElementById('fm-btn-call').href = `tel:${callPh}`; 
+            document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g, '')}`; 
+            document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
+            
+            // Render Items
+            renderFullModalItems(isHistorical);
+
+            // Render Controls (Buttons) - HIDE IF HISTORICAL
+            const c = document.getElementById('fm-controls');
+            if (isHistorical) {
+                c.innerHTML = ""; // Clear controls for history
+            } else {
+                c.innerHTML = `
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Pending</button>
+                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Cooking</button>
+                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button>
+                    <button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button>
+                </div>
+                <button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10">
+                    <i class="fas fa-trash mr-1"></i> DELETE ORDER
+                </button>`;
+            }
+            
+            document.getElementById('order-full-modal').classList.add('open');
+        }
+
+        function renderFullModalItems(isHistorical) {
+            const l = document.getElementById('fm-items-list'); 
+            let t = 0;
+            l.innerHTML = currentOpenOrder.items.map((i, idx) => { 
+                if (!i.originalQty) i.originalQty = i.qty; 
+                t += i.qty * i.price; 
+                return `
+                <div class="flex justify-between items-center p-2 rounded bg-gray-800/30 border border-gray-700">
+                    <div class="flex-1">
+                        <span class="text-sm font-bold">${i.name}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        ${!isHistorical ? `<button onclick="adjustPNA(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">-</button>` : ''}
+                        <span class="text-sm font-bold text-orange-400 w-4 text-center">${i.qty}</span>
+                        ${!isHistorical ? `<button onclick="adjustPNA(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">+</button>` : ''}
+                    </div>
+                </div>`; 
+            }).join('');
+            document.getElementById('fm-total').innerText = t; 
+            currentOpenOrder._liveTotal = t;
+        }
+
+        function adjustPNA(idx, change) { 
+            const item = currentOpenOrder.items[idx]; 
+            const newQty = item.qty + change; 
+            if (newQty >= 0) { 
+                item.qty = newQty; 
+                db.collection('orders').doc(currentOpenOrder.id).update({ items: currentOpenOrder.items, totalAmount: currentOpenOrder._liveTotal }); 
+                renderFullModalItems(false); 
+            } 
+        }
+
+        function updateStatus(s) { 
+            if (!currentOpenOrder) return; 
+            db.collection('orders').doc(currentOpenOrder.id).update({status: s}).then(() => { 
+                closeFullModal(); 
+                showToast("Updated"); 
+            }); 
+        }
+
+        function deleteOrder() { 
+            if (confirm("Permanently delete?")) {
+                db.collection('orders').doc(currentOpenOrder.id).delete().then(() => { 
+                    closeFullModal(); 
+                    showToast("Deleted"); 
+                }); 
+            }
+        }
+
+        function closeFullModal() { 
+            document.getElementById('order-full-modal').classList.remove('open'); 
+        }
+
+        // --- INVENTORY MANAGEMENT (FULL CONTROL) ---
+        function openMenuControl() { 
+            const container = document.getElementById('menu-list-items');
+            
+            if (currentMenuData.customItems && currentMenuData.customItems.length) {
+                container.innerHTML = currentMenuData.customItems.map((item, idx) => {
+                    const isAvail = item.available !== false; 
+                    return `
+                    <div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2">
+                        <span class="text-white ${isAvail ? '' : 'opacity-40 line-through'}">
+                            ${item.name} 
+                            <span class="text-xs text-gray-500">(${item.category})</span> 
+                            <span class="text-orange-400">₹${item.price}</span>
+                        </span>
+                        <div class="flex items-center gap-4">
+                            <i onclick="toggleItemAvailability(${idx})" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
+                            <i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                container.innerHTML = "<p class='text-gray-500 text-center text-xs'>No items. Add some.</p>";
+            }
+            
+            document.getElementById('menu-modal').classList.remove('hidden'); 
+        }
+
+        function toggleItemAvailability(idx) {
+            if (currentMenuData.customItems[idx].available === undefined) {
+                currentMenuData.customItems[idx].available = true;
+            }
+            currentMenuData.customItems[idx].available = !currentMenuData.customItems[idx].available;
+            openMenuControl();
+        }
+
+        function addNewItem() { 
+            const n = document.getElementById('new-item-name').value;
+            const p = parseInt(document.getElementById('new-item-price').value);
+            const c = document.getElementById('new-item-cat').value; 
+            
+            if (n && p && c) { 
+                if (!currentMenuData.customItems) currentMenuData.customItems = [];
+                currentMenuData.customItems.push({
+                    id: Date.now(), 
+                    name: n, 
+                    price: p, 
+                    category: c, 
+                    available: true
+                }); 
+                document.getElementById('new-item-name').value = ''; 
+                document.getElementById('new-item-price').value = ''; 
+                openMenuControl(); 
+            } else {
+                alert("Please fill Name, Price and Category");
+            }
+        }
+
+        function deleteCustomItem(idx) { 
+            if (confirm("Delete this item permanently?")) { 
+                currentMenuData.customItems.splice(idx, 1); 
+                openMenuControl(); 
+            } 
+        }
+        
+        function saveMenuStatus() { 
+            db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge: true}).then(() => { 
+                document.getElementById('menu-modal').classList.add('hidden'); 
+                showToast("Saved & Live!"); 
+            }); 
+        }
+
+        // --- UTILITY FUNCTIONS ---
         function renderUdhaar() { 
-            const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); 
-            let h=''; 
-            for(let p in udhaarMap){
-                const u=udhaarMap[p], d=u.debit-u.credit; 
-                const lim = limitsMap[p] || 0;
-                const perc = lim > 0 ? Math.min((d/lim)*100, 100) : 0;
-                const barColor = d > lim && lim > 0 ? 'bg-red-500' : 'bg-blue-500';
+            const l = document.getElementById('udhaar-list');
+            const q = document.getElementById('search-udhaar').value.toLowerCase(); 
+            let h = ''; 
+            
+            for (let p in udhaarMap) {
+                const u = udhaarMap[p];
+                const d = u.debit - u.credit; 
+                const lim = limitsMap[p] || 0; 
+                const perc = lim > 0 ? Math.min((d/lim)*100, 100) : 0; 
                 
-                if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) {
-                    h+=`<div class="aesthetic-card p-3 mb-2">
+                if (d > 0 && (u.name.toLowerCase().includes(q) || p.includes(q))) {
+                    h += `
+                    <div class="aesthetic-card p-3 mb-2">
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <div class="flex gap-2 items-center">
@@ -452,120 +830,73 @@
                                 <button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button>
                             </div>
                         </div>
-                        ${lim > 0 ? `<div class="limit-bar-bg"><div class="limit-bar-fill ${barColor}" style="width: ${perc}%"></div></div>` : ''}
+                        ${lim > 0 ? `<div class="limit-bar-bg"><div class="limit-bar-fill ${d > lim ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${perc}%"></div></div>` : ''}
                     </div>`;
                 }
             } 
-            l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; 
+            l.innerHTML = h || "<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; 
         }
 
-        // --- FULL MODAL ---
-        function openFullModal(id) {
-            const d = allOrders.find(o=>o.id===id); if(!d) return; currentOpenOrder = {id, ...d};
-            document.getElementById('fm-name').innerText = d.customerName; document.getElementById('fm-phone').innerText = d.customerPhone;
-            document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
-            document.getElementById('fm-status-badge').innerText = d.status; document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
-            document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
-            
-            // Payment Info in Modal
-            const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
-            document.getElementById('fm-payment-info').innerHTML = `<span class="pay-badge ${payClass}" style="margin-left:0; font-size:12px">${d.paymentMode || 'Cash'}</span>`;
-
-            if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } else document.getElementById('fm-recipient-box').classList.add('hidden');
-            if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); } else document.getElementById('fm-note').classList.add('hidden');
-            const callPh = d.recipient ? d.recipient.phone : d.customerPhone; document.getElementById('fm-btn-call').href = `tel:${callPh}`; document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g,'')}`; document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
-            renderFullModalItems();
-            const c = document.getElementById('fm-controls');
-            c.innerHTML = `<div class="grid grid-cols-4 gap-2"><button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Pending</button><button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Cooking</button><button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button><button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button></div><button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
-            document.getElementById('order-full-modal').classList.add('open');
-        }
-        function renderFullModalItems() {
-            const l = document.getElementById('fm-items-list'); let t=0;
-            l.innerHTML = currentOpenOrder.items.map((i, idx) => { if(!i.originalQty) i.originalQty = i.qty; t += i.qty * i.price; return `<div class="flex justify-between items-center p-2 rounded bg-gray-800/30 border border-gray-700"><div class="flex-1"><span class="text-sm font-bold">${i.name}</span></div><div class="flex items-center gap-3"><button onclick="adjustPNA(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">-</button><span class="text-sm font-bold text-orange-400 w-4 text-center">${i.qty}</span><button onclick="adjustPNA(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">+</button></div></div>`; }).join('');
-            document.getElementById('fm-total').innerText = t; currentOpenOrder._liveTotal = t;
-        }
-        function adjustPNA(idx, change) { const item = currentOpenOrder.items[idx]; const newQty = item.qty + change; if(newQty >= 0) { item.qty = newQty; db.collection('orders').doc(currentOpenOrder.id).update({ items: currentOpenOrder.items, totalAmount: currentOpenOrder._liveTotal }); renderFullModalItems(); } }
-        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); showToast("Updated"); }); }
-        function deleteOrder() { if(confirm("Permanently delete?")) db.collection('orders').doc(currentOpenOrder.id).delete().then(()=>{ closeFullModal(); showToast("Deleted"); }); }
-        function closeFullModal() { document.getElementById('order-full-modal').classList.remove('open'); }
-
-        // --- MESSAGES ---
-        function renderMessagesList() {
-            const list = document.getElementById('messages-list');
-            if(chatUsers.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No messages</p>"; return; }
-            list.innerHTML = chatUsers.map(u => { const name = udhaarMap[u.id]?.name || "Unknown"; return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openChat('${u.id}', '${name}')"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div><p class="font-bold text-sm">${name}</p><p class="text-xs opacity-50">${u.id}</p></div></div><i class="fas fa-chevron-right opacity-30"></i></div>`; }).join('');
-        }
-        function openChat(phone, name) { currentChatUser = phone; document.getElementById('chat-user-name').innerText = name; document.getElementById('chat-window').classList.add('open'); db.collection('chats').doc(phone).collection('messages').orderBy('timestamp').onSnapshot(snap => { document.getElementById('chat-messages').innerHTML = snap.docs.map(d => `<div class="chat-bubble ${d.data().sender==='admin'?'chat-admin':'chat-user'}">${d.data().text}</div>`).join(''); document.getElementById('chat-messages').scrollTop = 9999; }); }
-        function sendAdminMessage() { const t = document.getElementById('chat-input').value.trim(); if(t && currentChatUser) { db.collection('chats').doc(currentChatUser).collection('messages').add({ text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge:true}); document.getElementById('chat-input').value = ""; } }
-        function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); }
-
-        // --- UTILS ---
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
-        function toggleTheme() { document.body.classList.toggle('light-mode'); document.getElementById('theme-icon').className = document.body.classList.contains('light-mode') ? "fas fa-toggle-off text-gray-400" : "fas fa-toggle-on text-purple-500"; }
-        function setShopLocation() { showToast("Detecting...", "info"); navigator.geolocation.getCurrentPosition(p=>{ db.collection('settings').doc('config').set({location:{lat:p.coords.latitude,lng:p.coords.longitude}},{merge:true}).then(()=>showToast("Location Updated!")); }, e => showToast("Error: " + e.message)); }
-        function toggleShop() { db.collection('settings').doc('status').set({isOpen:!isShopOpen}); }
-        function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
-        function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage:m},{merge:true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Sent"); }
-        function openLimitModal(p,n){currentLimitPhone=p;document.getElementById('limit-name').innerText=n;document.getElementById('limit-input').value='';document.getElementById('limit-modal').classList.remove('hidden');}
-        function saveLimit(){db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(document.getElementById('limit-input').value)},{merge:true});document.getElementById('limit-modal').classList.add('hidden');showToast("Saved");}
-        function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
-        function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
-        
-        // --- INVENTORY FIX (Live Updates) ---
-        function openMenuControl() { 
-            document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? 
-            currentMenuData.customItems.map((item, idx) => {
-                const isAvail = item.available !== false; 
-                return `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2">
-                    <span class="text-white ${isAvail ? '' : 'opacity-40 line-through'}">${item.name} <span class="text-orange-400">₹${item.price}</span></span>
-                    <div class="flex items-center gap-4">
-                        <i onclick="toggleItemAvailability(${idx})" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
-                        <i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i>
+        function renderMessagesList() { 
+            const list = document.getElementById('messages-list'); 
+            if (chatUsers.length === 0) { 
+                list.innerHTML = "<p class='text-center opacity-50'>No messages</p>"; 
+                return; 
+            } 
+            list.innerHTML = chatUsers.map(u => { 
+                const name = udhaarMap[u.id]?.name || "Unknown"; 
+                return `
+                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openChat('${u.id}', '${name}')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-sm">${name}</p>
+                            <p class="text-xs opacity-50">${u.id}</p>
+                        </div>
                     </div>
-                </div>`;
-            }).join('') : baseItems.map(i=>`<div class="flex justify-between p-3 bg-gray-800 rounded mb-1"><span class="text-gray-400">${i.name}</span><span class="text-orange-400">₹${i.price}</span></div>`).join(''); 
-            document.getElementById('menu-modal').classList.remove('hidden'); 
+                    <i class="fas fa-chevron-right opacity-30"></i>
+                </div>`; 
+            }).join(''); 
         }
 
-        function toggleItemAvailability(idx) {
-            if(currentMenuData.customItems[idx].available === undefined) currentMenuData.customItems[idx].available = true;
-            currentMenuData.customItems[idx].available = !currentMenuData.customItems[idx].available;
-            openMenuControl();
-        }
-
-        function addNewItem() { 
-            const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value); 
-            if(n && p) { 
-                if(!currentMenuData.customItems) currentMenuData.customItems = []; 
-                currentMenuData.customItems.push({id: Date.now(), name: n, price: p, available: true}); 
-                document.getElementById('new-item-name').value=''; 
-                document.getElementById('new-item-price').value=''; 
-                openMenuControl(); 
-            } 
-        }
-
-        function deleteCustomItem(idx) { 
-            if(confirm("Delete this item?")) { 
-                currentMenuData.customItems.splice(idx, 1); 
-                openMenuControl(); 
-            } 
-        }
-        
-        function saveMenuStatus() { 
-            // Save the exact state, including availability
-            db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ 
-                document.getElementById('menu-modal').classList.add('hidden'); 
-                showToast("Saved & Live!"); 
+        function openChat(phone, name) { 
+            currentChatUser = phone; 
+            document.getElementById('chat-user-name').innerText = name; 
+            document.getElementById('chat-window').classList.add('open'); 
+            db.collection('chats').doc(phone).collection('messages').orderBy('timestamp').onSnapshot(snap => { 
+                document.getElementById('chat-messages').innerHTML = snap.docs.map(d => `<div class="chat-bubble ${d.data().sender === 'admin' ? 'chat-admin' : 'chat-user'}">${d.data().text}</div>`).join(''); 
+                document.getElementById('chat-messages').scrollTop = 9999; 
             }); 
         }
-        
-        function tryEndDay(){ document.getElementById('confirm-title').innerText = "Reset Day?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); }; }
-        function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if(y&&pendingAction) pendingAction(); pendingAction=null; }
-        function enableSound(){ if(!soundEnabled){ soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
-        function showToast(m,t){ const c=document.getElementById('toast-container'),e=document.createElement('div'); e.className='toast'; e.innerHTML=`<i class="fas fa-info-circle text-green-400"></i><span>${m}</span>`; c.appendChild(e); setTimeout(()=>e.classList.add('show'),10); setTimeout(()=>{e.classList.remove('show');e.remove()},2500); }
-        function toggleSalesPrivacy(){ salesHidden=!salesHidden; render(); document.getElementById('privacy-icon').className=salesHidden?"fas fa-eye-slash":"fas fa-eye"; }
-        function openSalesAnalysis(){document.getElementById('sales-modal').classList.remove('hidden'); document.getElementById('an-sales').innerText=document.getElementById('total-sales').dataset.realValue; document.getElementById('an-count').innerText=todaysOrderCount; document.getElementById('today-breakdown-list').innerHTML=Object.entries(todaysItemsMap).map(([n,q])=>`<div class="flex justify-between p-2 border-b border-gray-800"><span class="text-white text-sm">${n}</span><span class="text-orange-400 font-bold">${q}</span></div>`).join('');}
-        function openPaymentLogs(){ const l = document.getElementById('logs-list'); if(!window.paymentsSnap || window.paymentsSnap.empty) l.innerHTML="<p class='text-center opacity-50 mt-10'>No logs</p>"; else { let grouped = {}; window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!grouped[p.phone]) grouped[p.phone]=[]; grouped[p.phone].push(p); }); l.innerHTML = Object.keys(grouped).map(ph => `<div class="aesthetic-card p-3 mb-2"><p class="font-bold text-sm mb-2 text-blue-400">${udhaarMap[ph]?.name||ph}</p>${grouped[ph].map(x=>`<div class="flex justify-between text-xs opacity-70 border-b border-gray-700 pb-1 mb-1"><span>${new Date(x.timestamp.toDate()).toLocaleDateString()}</span><span class="text-green-400 font-bold">+₹${x.amount}</span></div>`).join('')}</div>`).join(''); } document.getElementById('logs-modal').classList.remove('hidden'); }
+
+        function sendAdminMessage() { 
+            const t = document.getElementById('chat-input').value.trim(); 
+            if (t && currentChatUser) { 
+                db.collection('chats').doc(currentChatUser).collection('messages').add({ text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); 
+                db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge: true}); 
+                document.getElementById('chat-input').value = ""; 
+            } 
+        }
+
+        function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); document.getElementById('theme-icon').className = document.body.classList.contains('light-mode') ? "fas fa-toggle-off text-gray-400" : "fas fa-toggle-on text-purple-500"; }
+        function setShopLocation() { showToast("Detecting...", "info"); navigator.geolocation.getCurrentPosition(p => { db.collection('settings').doc('config').set({location: {lat: p.coords.latitude, lng: p.coords.longitude}}, {merge: true}).then(() => showToast("Location Updated!")); }, e => showToast("Error: " + e.message)); }
+        function toggleShop() { db.collection('settings').doc('status').set({isOpen: !isShopOpen}); }
+        function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
+        function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage: m}, {merge: true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Sent"); }
+        function openLimitModal(p, n){ currentLimitPhone = p; document.getElementById('limit-name').innerText = n; document.getElementById('limit-input').value = ''; document.getElementById('limit-modal').classList.remove('hidden'); }
+        function saveLimit(){ db.collection('user_limits').doc(currentLimitPhone).set({limit: parseInt(document.getElementById('limit-input').value)}, {merge: true}); document.getElementById('limit-modal').classList.add('hidden'); showToast("Saved"); }
+        function openSettle(p, n, d){ currentSettlePhone = p; document.getElementById('settle-name').innerText = n; document.getElementById('settle-due').innerText = d; document.getElementById('settle-amount').value = ''; document.getElementById('settle-modal').classList.remove('hidden'); }
+        function submitPayment(){ const a = parseInt(document.getElementById('settle-amount').value); if (a) db.collection('payments').add({phone: currentSettlePhone, amount: a, timestamp: firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('settle-modal').classList.add('hidden'); showToast("Settled"); }
+        function tryEndDay(){ document.getElementById('confirm-title').innerText = "Reset Day?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s = parseInt(document.getElementById('total-sales').dataset.realValue || 0); const h = [...salesHistoryData, {date: new Date().toLocaleDateString(), total: s}].slice(-30); db.collection('settings').doc('config').set({lastReset: firebase.firestore.FieldValue.serverTimestamp(), salesHistory: h}, {merge: true}); showToast("Reset Done"); }; }
+        function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if (y && pendingAction) pendingAction(); pendingAction = null; }
+        function enableSound(){ if (!soundEnabled){ soundEnabled = true; document.getElementById('sound-status').innerText = "Sound 🔊"; } }
+        function showToast(m, t){ const c = document.getElementById('toast-container'), e = document.createElement('div'); e.className = 'toast'; e.innerHTML = `<i class="fas fa-info-circle text-green-400"></i><span>${m}</span>`; c.appendChild(e); setTimeout(() => e.classList.add('show'), 10); setTimeout(() => {e.classList.remove('show'); e.remove()}, 2500); }
+        function openSalesAnalysis(){ document.getElementById('sales-modal').classList.remove('hidden'); document.getElementById('an-sales').innerText = document.getElementById('total-sales').dataset.realValue; document.getElementById('an-count').innerText = todaysOrderCount; document.getElementById('today-breakdown-list').innerHTML = Object.entries(todaysItemsMap).map(([n, q]) => `<div class="flex justify-between p-2 border-b border-gray-800"><span class="text-white text-sm">${n}</span><span class="text-orange-400 font-bold">${q}</span></div>`).join(''); }
+        function openPaymentLogs(){ const l = document.getElementById('logs-list'); if (!window.paymentsSnap || window.paymentsSnap.empty) l.innerHTML = "<p class='text-center opacity-50 mt-10'>No logs</p>"; else { let grouped = {}; window.paymentsSnap.docs.forEach(d => { const p = d.data(); if (!grouped[p.phone]) grouped[p.phone] = []; grouped[p.phone].push(p); }); l.innerHTML = Object.keys(grouped).map(ph => `<div class="aesthetic-card p-3 mb-2"><p class="font-bold text-sm mb-2 text-blue-400">${udhaarMap[ph]?.name || ph}</p>${grouped[ph].map(x => `<div class="flex justify-between text-xs opacity-70 border-b border-gray-700 pb-1 mb-1"><span>${new Date(x.timestamp.toDate()).toLocaleDateString()}</span><span class="text-green-400 font-bold">+₹${x.amount}</span></div>`).join('')}</div>`).join(''); } document.getElementById('logs-modal').classList.remove('hidden'); }
 
         init();
     </script>
