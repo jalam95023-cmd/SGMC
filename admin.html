@@ -378,10 +378,43 @@
         function saveLimit(){db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(document.getElementById('limit-input').value)},{merge:true});document.getElementById('limit-modal').classList.add('hidden');showToast("Saved");}
         function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
         function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
-        function openMenuControl() { document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? currentMenuData.customItems.map((item, idx) => `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2"><span class="text-white">${item.name} <span class="text-orange-400">₹${item.price}</span></span><i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i></div>`).join('') : baseItems.map(i=>`<div class="flex justify-between p-3 bg-gray-800 rounded mb-1"><span class="text-gray-400">${i.name}</span><span class="text-orange-400">₹${i.price}</span></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }
-        function addNewItem() { const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value); if(n && p) { if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push({id: Date.now(), name: n, price: p}); document.getElementById('new-item-name').value=''; document.getElementById('new-item-price').value=''; openMenuControl(); } }
+        
+        // --- NEW & UPDATED INVENTORY FUNCTIONS ---
+        function openMenuControl() { 
+            document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? 
+            currentMenuData.customItems.map((item, idx) => {
+                const isAvail = item.available !== false; 
+                return `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2">
+                    <span class="text-white ${isAvail ? '' : 'opacity-40 line-through'}">${item.name} <span class="text-orange-400">₹${item.price}</span></span>
+                    <div class="flex items-center gap-4">
+                        <i onclick="toggleItemAvailability(${idx})" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
+                        <i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i>
+                    </div>
+                </div>`;
+            }).join('') : baseItems.map(i=>`<div class="flex justify-between p-3 bg-gray-800 rounded mb-1"><span class="text-gray-400">${i.name}</span><span class="text-orange-400">₹${i.price}</span></div>`).join(''); 
+            document.getElementById('menu-modal').classList.remove('hidden'); 
+        }
+
+        function toggleItemAvailability(idx) {
+            if(currentMenuData.customItems[idx].available === undefined) currentMenuData.customItems[idx].available = true;
+            currentMenuData.customItems[idx].available = !currentMenuData.customItems[idx].available;
+            openMenuControl();
+        }
+
+        function addNewItem() { 
+            const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value); 
+            if(n && p) { 
+                if(!currentMenuData.customItems) currentMenuData.customItems = []; 
+                currentMenuData.customItems.push({id: Date.now(), name: n, price: p, available: true}); 
+                document.getElementById('new-item-name').value=''; 
+                document.getElementById('new-item-price').value=''; 
+                openMenuControl(); 
+            } 
+        }
+
         function deleteCustomItem(idx) { if(confirm("Delete?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); } }
         function saveMenuStatus() { db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ document.getElementById('menu-modal').classList.add('hidden'); showToast("Saved"); }); }
+        
         function tryEndDay(){ document.getElementById('confirm-title').innerText = "Reset Day?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); }; }
         function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if(y&&pendingAction) pendingAction(); pendingAction=null; }
         function enableSound(){ if(!soundEnabled){ soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
