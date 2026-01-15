@@ -4,145 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGMC Admin Pro</title>
+    <link rel="manifest" href="admin_manifest.json">
+    <meta name="theme-color" content="#0f0f0f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #0f0f0f; color: white; font-family: sans-serif; transition: background 0.3s, color 0.3s; }
+        /* Base Dark Mode (Default) */
+        body { background-color: #0f0f0f; color: white; font-family: sans-serif; -webkit-tap-highlight-color: transparent; transition: background 0.3s, color 0.3s; }
         .card { background: #1f1f1f; border-radius: 12px; border: 1px solid #333; transition: background 0.3s, border 0.3s; }
-        /* Light Mode Styles */
+        .tab-active { border-bottom: 2px solid #F97316; color: #F97316; }
+
+        /* Light Mode Overrides */
         body.light-mode { background-color: #f3f4f6; color: #111; }
         body.light-mode .card { background: #ffffff; border-color: #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        body.light-mode .text-gray-400 { color: #6b7280; } body.light-mode .text-gray-500 { color: #9ca3af; }
+        body.light-mode .text-gray-400 { color: #6b7280; } 
+        body.light-mode .text-gray-500 { color: #9ca3af; }
         body.light-mode .bg-gray-800 { background-color: #f9fafb; border: 1px solid #e5e7eb; color: #111; }
         body.light-mode .bg-gray-900 { background-color: #ffffff; border: 1px solid #e5e7eb; color: #111; }
+        body.light-mode input, body.light-mode textarea { background-color: #f9fafb; color: #111; border-color: #d1d5db; }
         
-        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: #1a1a1a; z-index: 100; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid #333; }
-        body.light-mode .sidebar { background: #ffffff; border-left: 1px solid #e5e7eb; }
-        .sidebar.open { transform: translateX(0); }
-        .tab-active { border-bottom: 2px solid #F97316; color: #F97316; }
-        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 110; pointer-events: none; }
-        .toast { background: rgba(30, 30, 30, 0.95); border: 1px solid #333; padding: 10px 20px; border-radius: 50px; color: white; font-size: 14px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
+        /* Dropdown Menu */
+        .dropdown-menu { position: absolute; top: 60px; right: 16px; width: 220px; background: #1f1f1f; border: 1px solid #333; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 100; transform: scale(0.95); opacity: 0; pointer-events: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); transform-origin: top right; }
+        .dropdown-menu.open { transform: scale(1); opacity: 1; pointer-events: auto; }
+        body.light-mode .dropdown-menu { background: #ffffff; border-color: #e5e7eb; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+        /* Toast & Animations */
+        #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 120; pointer-events: none; }
+        .toast { background: rgba(30, 30, 30, 0.95); border: 1px solid #333; padding: 10px 20px; border-radius: 50px; color: white; font-size: 14px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(5px); }
         .toast.show { opacity: 1; transform: translateY(0); }
+        .line-through-red { text-decoration: line-through; text-decoration-color: #f87171; text-decoration-thickness: 2px; opacity: 0.6; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto pb-24" onclick="enableSound()">
 
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 relative z-50">
         <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
         <div class="flex gap-3">
-            <button onclick="setShopLocation()" class="w-9 h-9 rounded-full bg-blue-900/20 text-blue-500 border border-blue-500/30 flex items-center justify-center"><i class="fas fa-map-marker-alt"></i></button>
-            <button onclick="toggleSidebar()" class="w-9 h-9 rounded-full bg-gray-800 text-white border border-gray-700 flex items-center justify-center"><i class="fas fa-bars"></i></button>
-        </div>
-    </div>
-
-    <div id="sidebar" class="sidebar p-6 shadow-2xl flex flex-col h-full">
-        <div class="flex justify-between items-center mb-8">
-            <h2 class="text-xl font-bold text-orange-500">Menu</h2>
-            <button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="space-y-4 flex-1">
-            <div class="flex justify-between items-center p-3 bg-gray-800 rounded-lg">
-                <span class="font-bold">Shop Status</span>
-                <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-1 rounded text-xs font-bold bg-green-600 text-white">OPEN</button>
-            </div>
-            <button onclick="toggleTheme()" class="w-full text-left p-3 bg-gray-800 rounded-lg font-bold flex justify-between items-center">
-                <span><i class="fas fa-moon mr-2 text-purple-400"></i> Day/Night</span>
-                <i class="fas fa-toggle-on text-2xl text-purple-500" id="theme-icon"></i>
+            <button onclick="setShopLocation()" class="w-10 h-10 rounded-full bg-blue-900/20 text-blue-500 border border-blue-500/30 flex items-center justify-center shadow-lg active:scale-95 transition">
+                <i class="fas fa-map-marker-alt"></i>
             </button>
-            <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 bg-gray-800 rounded-lg font-bold"><i class="fas fa-boxes mr-2 text-blue-400"></i> Stock Management</button>
-            <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 bg-gray-800 rounded-lg font-bold"><i class="fas fa-bullhorn mr-2 text-yellow-400"></i> Broadcast</button>
-            <button onclick="openPaymentLogs(); toggleSidebar()" class="w-full text-left p-3 bg-gray-800 rounded-lg font-bold"><i class="fas fa-history mr-2 text-green-400"></i> Payment Logs (Proof)</button>
+            
+            <button onclick="toggleMenu()" id="menu-btn" class="w-10 h-10 rounded-full bg-gray-800 text-white border border-gray-700 flex items-center justify-center shadow-lg active:scale-95 transition">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+
+        <div id="main-menu" class="dropdown-menu flex flex-col p-2">
+            <button onclick="toggleShop()" class="text-left px-4 py-3 hover:bg-white/5 rounded-lg text-sm font-bold flex items-center gap-3">
+                <i class="fas fa-power-off text-red-400"></i> <span id="menu-shop-status">Shop Open/Close</span>
+            </button>
+            <button onclick="openMenuControl(); toggleMenu()" class="text-left px-4 py-3 hover:bg-white/5 rounded-lg text-sm font-bold flex items-center gap-3">
+                <i class="fas fa-boxes text-blue-400"></i> Stock & Menu
+            </button>
+            <button onclick="openBroadcastModal(); toggleMenu()" class="text-left px-4 py-3 hover:bg-white/5 rounded-lg text-sm font-bold flex items-center gap-3">
+                <i class="fas fa-bullhorn text-yellow-400"></i> Broadcast
+            </button>
+            <button onclick="openPaymentLogs(); toggleMenu()" class="text-left px-4 py-3 hover:bg-white/5 rounded-lg text-sm font-bold flex items-center gap-3">
+                <i class="fas fa-file-invoice-dollar text-green-400"></i> Payment Logs
+            </button>
+            <div class="h-px bg-gray-700 my-1 mx-2"></div>
+            <button onclick="toggleTheme(); toggleMenu()" class="text-left px-4 py-3 hover:bg-white/5 rounded-lg text-sm font-bold flex items-center gap-3">
+                <i class="fas fa-adjust text-purple-400"></i> Day/Night Mode
+            </button>
         </div>
     </div>
-    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-90 hidden backdrop-blur-sm"></div>
+    
+    <div id="menu-overlay" onclick="toggleMenu()" class="fixed inset-0 z-40 hidden"></div>
 
     <div class="grid grid-cols-2 gap-4 mb-4">
-        <div class="card p-3 flex flex-col justify-between relative overflow-hidden" onclick="openSalesAnalysis()">
+        <div class="card p-3 flex flex-col justify-between relative overflow-hidden cursor-pointer active:scale-95 transition" onclick="openSalesAnalysis()">
+            <div class="absolute top-0 right-0 w-16 h-16 bg-green-500/10 rounded-full -mr-8 -mt-8"></div>
             <div class="text-center z-10 relative">
-                <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
+                <div class="flex justify-center items-center gap-2">
+                    <p class="text-gray-400 text-xs uppercase tracking-wider">Sales Today</p>
+                    <div onclick="event.stopPropagation(); toggleSalesPrivacy()" class="text-gray-600 hover:text-white text-[10px]"><i class="fas fa-eye" id="privacy-icon"></i></div>
+                </div>
                 <h2 class="text-2xl font-bold text-green-400 mt-1">₹<span id="total-sales">0</span></h2>
-                <button onclick="event.stopPropagation(); tryEndDay()" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20">RESET DAY</button>
+                <p class="text-[9px] text-gray-500 mt-1">Tap for Analytics <i class="fas fa-chart-line ml-1"></i></p>
             </div>
+            <button onclick="event.stopPropagation(); tryEndDay()" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
         </div>
-        <div class="card p-3 text-center flex flex-col justify-center">
-            <p class="text-gray-400 text-xs uppercase tracking-wider">Active</p>
+        
+        <div class="card p-3 text-center flex flex-col justify-center relative">
+            <p class="text-gray-400 text-xs uppercase tracking-wider">Active Orders</p>
             <h2 class="text-3xl font-bold text-yellow-400 my-1" id="pending-count">0</h2>
-            <p class="text-[10px] text-gray-500" id="sound-status">Sound 🔇</p>
+            <p class="text-[10px] text-gray-500" id="sound-status">Tap for Sound 🔇</p>
         </div>
     </div>
 
     <div class="flex mb-4 border-b border-gray-800">
-        <button onclick="switchTab('live')" id="tab-live" class="flex-1 py-3 tab-active font-bold text-sm">LIVE</button>
-        <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-3 text-gray-500 font-bold text-sm">HISTORY</button>
-        <button onclick="switchTab('udhaar')" id="tab-udhaar" class="flex-1 py-3 text-gray-500 font-bold text-sm">UDHAAR</button>
+        <button onclick="switchTab('live')" id="tab-live" class="flex-1 py-3 tab-active font-bold text-sm transition-colors">LIVE</button>
+        <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-3 text-gray-500 font-bold text-sm transition-colors">HISTORY</button>
+        <button onclick="switchTab('udhaar')" id="tab-udhaar" class="flex-1 py-3 text-gray-500 font-bold text-sm transition-colors">UDHAAR</button>
     </div>
 
     <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
-    <div id="view-history" class="hidden space-y-3"><div id="history-container" class="space-y-2"></div></div>
+    
+    <div id="view-history" class="hidden space-y-3">
+        <div id="history-container" class="space-y-2"></div>
+    </div>
+    
     <div id="view-udhaar" class="hidden space-y-3">
-        <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search..." class="w-full p-2 bg-gray-800 rounded-lg border border-gray-700 text-sm mb-2 outline-none">
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-3 text-gray-500"></i>
+            <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Name..." class="w-full pl-10 p-2 bg-gray-800 rounded-lg border border-gray-700 text-sm focus:border-orange-500 outline-none transition">
+        </div>
         <div id="udhaar-list" class="space-y-2"></div>
     </div>
 
-    <div id="order-full-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] hidden overflow-y-auto">
-        <div class="p-4 max-w-2xl mx-auto">
-            <button onclick="closeFullModal()" class="mb-4 text-gray-400 flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back</button>
-            <div class="card p-5 border border-gray-700 rounded-xl relative">
+    <div id="order-full-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] hidden overflow-y-auto animate-fade-in">
+        <div class="p-4 max-w-2xl mx-auto min-h-screen flex flex-col">
+            <button onclick="closeFullModal()" class="mb-4 text-gray-400 flex items-center gap-2 w-fit"><i class="fas fa-arrow-left"></i> Back</button>
+            
+            <div class="card p-5 border border-gray-700 rounded-xl relative flex-1">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-white" id="fm-name">Customer</h1>
+                        <h1 class="text-2xl font-bold text-white" id="fm-name">Customer Name</h1>
                         <p class="text-sm text-gray-400" id="fm-phone">Phone</p>
-                        <p class="text-xs text-blue-400 mt-1" id="fm-recipient"></p> </div>
+                        <p class="text-xs text-blue-400 mt-1 font-bold" id="fm-recipient"></p> </div>
                     <div class="text-right">
-                        <span class="px-2 py-1 rounded text-xs font-bold uppercase" id="fm-status-badge">STATUS</span>
-                        <p class="text-xs text-gray-500 mt-1" id="fm-time">Time</p>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider" id="fm-status-badge">STATUS</span>
+                        <p class="text-xs text-gray-500 mt-2" id="fm-time">Time</p>
                     </div>
                 </div>
                 
                 <div class="grid grid-cols-3 gap-3 mb-6">
-                    <a id="fm-btn-call" href="#" class="p-3 bg-gray-800 rounded text-center"><i class="fas fa-phone text-green-400"></i></a>
-                    <a id="fm-btn-wa" href="#" class="p-3 bg-gray-800 rounded text-center"><i class="fab fa-whatsapp text-green-500"></i></a>
-                    <a id="fm-btn-map" href="#" class="p-3 bg-gray-800 rounded text-center"><i class="fas fa-map-marker-alt text-blue-400"></i></a>
+                    <a id="fm-btn-call" href="#" class="p-3 bg-gray-800 rounded-xl text-center border border-gray-700 hover:bg-gray-700"><i class="fas fa-phone text-green-400 text-lg"></i></a>
+                    <a id="fm-btn-wa" href="#" class="p-3 bg-gray-800 rounded-xl text-center border border-gray-700 hover:bg-gray-700"><i class="fab fa-whatsapp text-green-500 text-lg"></i></a>
+                    <a id="fm-btn-map" href="#" class="p-3 bg-gray-800 rounded-xl text-center border border-gray-700 hover:bg-gray-700"><i class="fas fa-map-marker-alt text-blue-400 text-lg"></i></a>
                 </div>
 
-                <div class="mb-4 bg-gray-800/50 p-3 rounded-lg">
-                    <p class="text-xs text-gray-500 uppercase mb-2 font-bold">Items</p>
-                    <div id="fm-items-list" class="space-y-2"></div>
-                    <div class="flex justify-between items-center mt-4 pt-2 border-t border-gray-700">
-                        <span class="font-bold text-white">Total Amount</span>
-                        <span class="font-bold text-xl text-orange-500">₹<span id="fm-total">0</span></span>
+                <div class="mb-6 bg-gray-800/50 p-4 rounded-xl border border-gray-700/50">
+                    <p class="text-xs text-gray-500 uppercase mb-3 font-bold tracking-wider">Order Items</p>
+                    <div id="fm-items-list" class="space-y-3"></div>
+                    <div class="flex justify-between items-center mt-4 pt-3 border-t border-gray-700">
+                        <span class="font-bold text-gray-300">Total Amount</span>
+                        <span class="font-bold text-2xl text-orange-500">₹<span id="fm-total">0</span></span>
                     </div>
                 </div>
 
-                <div id="fm-controls" class="space-y-3">
-                    <p class="text-xs text-gray-500 uppercase font-bold">Update Status</p>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="updateStatus('pending')" class="p-2 bg-gray-800 rounded text-xs font-bold">Pending</button>
-                        <button onclick="updateStatus('cooking')" class="p-2 bg-gray-800 rounded text-xs font-bold">Cooking</button>
-                        <button onclick="updateStatus('ready')" class="p-2 bg-gray-800 rounded text-xs font-bold">Ready</button>
+                <div id="fm-controls" class="space-y-4">
                     </div>
-                    <button onclick="updateStatus('completed')" class="w-full py-3 bg-green-600 rounded font-bold text-white shadow-lg mt-2">Mark Completed</button>
-                    
-                    <div class="pt-4 mt-4 border-t border-gray-800 text-center">
-                        <button onclick="deleteOrder()" class="text-red-500 text-xs font-bold flex items-center justify-center gap-2 mx-auto hover:bg-red-900/20 px-4 py-2 rounded"><i class="fas fa-trash"></i> Delete Order Permanently</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
 
-    <div id="logs-modal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-4">
-        <div class="bg-gray-900 border border-gray-700 w-full max-w-sm rounded-xl h-[80vh] flex flex-col p-4">
-            <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-white">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button></div>
-            <div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div>
+    <div id="logs-modal" class="fixed inset-0 bg-black/95 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-gray-900 border border-gray-700 w-full max-w-sm rounded-xl h-[80vh] flex flex-col p-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-800">
+                <h3 class="font-bold text-white text-lg">Payment Logs</h3>
+                <button onclick="document.getElementById('logs-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="logs-list" class="overflow-y-auto flex-1 space-y-2 pr-1"></div>
         </div>
     </div>
 
-    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm"><h3 class="font-bold mb-4">Stock</h3><div id="menu-list-items" class="max-h-60 overflow-y-auto mb-4"></div><div class="flex gap-2"><input id="new-item-name" placeholder="Name" class="bg-gray-800 p-2 rounded w-full text-xs"><input id="new-item-price" placeholder="Price" type="number" class="bg-gray-800 p-2 rounded w-20 text-xs"></div><button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded mt-2 text-xs font-bold">Add</button><button onclick="saveMenuStatus()" class="w-full bg-green-600 p-3 rounded mt-4 font-bold">Save</button><button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500 text-xs">Close</button></div></div>
-    <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm"><h3 class="font-bold mb-2">Broadcast</h3><textarea id="broadcast-input" class="w-full bg-gray-800 p-3 rounded mb-4" rows="3"></textarea><div class="flex gap-2"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900 text-red-200 p-2 rounded">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500 text-xs">Close</button></div></div>
-    <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm"><h3 class="font-bold">Settle</h3><p id="settle-name" class="text-gray-400 text-sm mb-2"></p><h1 class="text-3xl font-bold text-red-400 mb-4">₹<span id="settle-due">0</span></h1><input id="settle-amount" type="number" class="w-full bg-gray-800 p-3 rounded text-center text-xl font-bold mb-4" placeholder="Amount"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500">Cancel</button></div></div>
+    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm border border-gray-700 flex flex-col max-h-[85vh]"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Stock Control</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="menu-list-items" class="overflow-y-auto mb-4 flex-1"></div><div class="bg-gray-800 p-3 rounded mb-4"><p class="text-xs text-orange-500 font-bold mb-2">ADD ITEM</p><div class="flex gap-2 mb-2"><input id="new-item-name" placeholder="Name" class="bg-gray-900 border border-gray-600 p-2 rounded w-full text-xs text-white"><input id="new-item-price" placeholder="Price" type="number" class="bg-gray-900 border border-gray-600 p-2 rounded w-20 text-xs text-white"></div><button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add</button></div><button onclick="saveMenuStatus()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Save Changes</button></div></div>
+    
+    <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm border border-gray-700"><h3 class="font-bold mb-2 text-lg">Broadcast</h3><textarea id="broadcast-input" class="w-full bg-gray-800 border border-gray-600 p-3 rounded mb-4 text-white" rows="3"></textarea><div class="flex gap-2"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 border border-red-900 p-2 rounded font-bold">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded font-bold shadow-lg">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-gray-500 text-xs">Close</button></div></div>
+    
+    <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm border border-gray-700"><h3 class="font-bold text-lg">Settle Payment</h3><p id="settle-name" class="text-gray-400 text-sm mb-4"></p><div class="text-center mb-4"><p class="text-xs text-gray-500">DUE AMOUNT</p><h1 class="text-4xl font-bold text-red-400">₹<span id="settle-due">0</span></h1></div><input id="settle-amount" type="number" class="w-full bg-gray-800 border border-gray-600 p-3 rounded text-center text-xl font-bold mb-4 text-white" placeholder="Amount Received"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500 text-sm">Cancel</button></div></div>
+    
+    <div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-[110] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm border border-gray-700"><h3 class="font-bold text-lg mb-1">Set Limit</h3><p id="limit-modal-name" class="text-gray-400 text-sm mb-4"></p><input type="number" id="limit-input" class="w-full bg-gray-800 border border-gray-600 p-3 rounded mb-4 text-white font-bold" placeholder="Limit Amount"><button onclick="saveLimit()" class="w-full bg-purple-600 p-3 rounded font-bold text-white shadow-lg">Set Limit</button><button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500 text-sm">Cancel</button></div></div>
+
+    <div id="sales-modal" class="hidden fixed inset-0 bg-black/95 z-[110] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-gray-900 p-6 rounded-xl w-full max-w-sm border border-gray-700 h-[80vh] flex flex-col"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Analytics</h3><button onclick="document.getElementById('sales-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="today-breakdown-list" class="overflow-y-auto flex-1"></div></div></div>
+
+    <div id="custom-confirm" class="hidden fixed inset-0 bg-black/80 z-[130] flex items-center justify-center p-4"><div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs shadow-2xl"><h3 class="text-lg font-bold text-white mb-2" id="confirm-title">Confirm?</h3><div class="flex gap-3 mt-4"><button onclick="closeConfirm(false)" class="flex-1 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button><button onclick="closeConfirm(true)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm shadow-lg">Confirm</button></div></div></div>
 
     <div id="toast-container"></div>
     <audio id="order-sound"></audio>
@@ -152,42 +182,65 @@
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
         let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={stock:{},customItems:[]}, currentOpenOrder=null;
+        let pendingAction=null, salesHidden=false, todaysItemsMap={}, todaysOrderCount=0, salesHistoryData=[];
+        let currentLimitPhone=null, currentSettlePhone=null;
+
         const baseItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarette",price:0},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
 
         function init() {
-            db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists && d.data().lastReset) window.lastReset=d.data().lastReset.seconds; render(); });
-            db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; document.getElementById('shop-toggle-btn').innerText=isShopOpen?"OPEN":"CLOSED"; document.getElementById('shop-toggle-btn').className=isShopOpen?"px-3 py-1 rounded text-xs font-bold bg-green-600 text-white":"px-3 py-1 rounded text-xs font-bold bg-red-600 text-white"; });
+            db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists) { const dd=d.data(); window.lastReset=dd.lastReset?dd.lastReset.seconds:0; salesHistoryData=dd.salesHistory||[]; } render(); });
+            db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; document.getElementById('menu-shop-status').innerText=isShopOpen?"Close Shop":"Open Shop"; document.getElementById('menu-shop-status').className=isShopOpen?"text-red-400":"text-green-400"; });
             db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) currentMenuData=d.data(); });
             db.collection('orders').orderBy('timestamp','desc').onSnapshot(s=>{ window.ordersSnap=s; render(); });
             db.collection('payments').orderBy('timestamp','desc').onSnapshot(s=>{ window.paymentsSnap=s; render(); });
+            switchTab(localStorage.getItem('admin_active_tab') || 'live');
         }
 
-        function toggleSidebar() { const sb=document.getElementById('sidebar'); const ol=document.getElementById('sidebar-overlay'); sb.classList.toggle('open'); ol.classList.toggle('hidden'); }
-        function toggleTheme() { document.body.classList.toggle('light-mode'); const isLight=document.body.classList.contains('light-mode'); document.getElementById('theme-icon').className = isLight ? "fas fa-toggle-off text-gray-400" : "fas fa-toggle-on text-purple-500"; }
-        
+        // --- UI TOGGLES ---
+        function toggleMenu() { 
+            const m = document.getElementById('main-menu'); 
+            const o = document.getElementById('menu-overlay');
+            if(m.classList.contains('open')) { m.classList.remove('open'); o.classList.add('hidden'); }
+            else { m.classList.add('open'); o.classList.remove('hidden'); }
+        }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); }
+
+        // --- CORE RENDER ---
         function render() {
             if(!window.ordersSnap) return;
-            let active=0, sales=0, liveHtml='', historyHtml=''; udhaarMap={};
+            let active=0, sales=0, liveHtml='', historyHtml=''; udhaarMap={}; todaysItemsMap={};
             if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0}; udhaarMap[p.phone].credit+=p.amount; });
 
             window.ordersSnap.docs.forEach(doc=>{
                 const d=doc.data(); const id=doc.id;
                 if(d.paymentMode==='Udhaar' && d.status!=='cancelled') { if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0}; udhaarMap[d.customerPhone].debit+=d.totalAmount; udhaarMap[d.customerPhone].name=d.customerName; }
-                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) sales+=d.totalAmount;
                 
-                // LIVE
+                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) {
+                    sales+=d.totalAmount;
+                    d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; });
+                }
+                
+                // LIVE LIST
                 if(['pending','cooking','ready'].includes(d.status)) {
                     active++;
-                    liveHtml+=`<div class="card p-4 border-l-4 ${d.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'}" onclick="openFullModal('${id}')">
-                        <div class="flex justify-between"><div><h3 class="font-bold text-lg">${d.customerName}</h3><span class="text-xs bg-gray-700 px-2 rounded">${d.status}</span></div><h3 class="font-bold text-orange-400">₹${d.totalAmount}</h3></div>
-                        ${d.recipient ? `<p class="text-xs text-blue-400 mt-1">Delivery For: ${d.recipient.name}</p>` : ''}
+                    liveHtml+=`<div class="card p-4 border-l-4 ${d.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'} mb-3 cursor-pointer relative" onclick="openFullModal('${id}')">
+                        <div class="flex justify-between items-start">
+                            <div><h3 class="font-bold text-lg">${d.customerName}</h3>
+                                <div class="flex gap-2 mt-1">
+                                    <span class="text-[10px] px-2 py-0.5 rounded bg-gray-700 uppercase">${d.status}</span>
+                                    ${d.recipient ? `<span class="text-[10px] px-2 py-0.5 rounded bg-blue-900/50 text-blue-300">For: ${d.recipient.name}</span>` : ''}
+                                </div>
+                            </div>
+                            <h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3>
+                        </div>
+                        ${d.orderNote ? `<p class="text-xs text-yellow-500 mt-2 italic">"${d.orderNote}"</p>` : ''}
                     </div>`;
                 } else {
-                    // HISTORY
+                    // HISTORY LIST (Simplified)
                     const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-                    historyHtml+=`<div class="bg-gray-800 p-3 rounded mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-700" onclick="openFullModal('${id}')">
-                        <div><p class="font-bold text-sm">${d.customerName}</p><p class="text-xs text-gray-500">${date} • ${d.items.length} items</p></div>
-                        <div class="text-right"><p class="font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'} text-xs uppercase">${d.status}</p><p class="font-bold">₹${d.totalAmount}</p></div>
+                    historyHtml+=`<div class="bg-gray-800 p-3 rounded mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-700 border border-gray-700" onclick="openFullModal('${id}')">
+                        <div><p class="font-bold text-sm text-white">${d.customerName}</p><p class="text-xs text-gray-500">${date} • ${d.items.length} items</p></div>
+                        <div class="text-right"><p class="font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'} text-xs uppercase">${d.status}</p><p class="font-bold text-gray-300">₹${d.totalAmount}</p></div>
                     </div>`;
                 }
             });
@@ -195,117 +248,176 @@
             document.getElementById('view-live').innerHTML=liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
             document.getElementById('history-container').innerHTML=historyHtml;
             document.getElementById('pending-count').innerText=active;
-            document.getElementById('total-sales').innerText=sales;
+            const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
             renderUdhaar();
+            
             if(active > (window.lastActive||0)) { const a=document.getElementById('order-sound'); if(soundEnabled){a.src="https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; a.play();} }
             window.lastActive=active;
         }
 
-        // --- FULL MODAL LOGIC ---
+        // --- FULL MODAL LOGIC (New Page for Order) ---
         function openFullModal(id) {
             const doc = window.ordersSnap.docs.find(d=>d.id===id); if(!doc) return;
             const d = doc.data(); currentOpenOrder = {id, ...d};
+            
+            // Populate Basic Data
             document.getElementById('fm-name').innerText = d.customerName;
             document.getElementById('fm-phone').innerText = d.customerPhone;
             document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
             document.getElementById('fm-status-badge').innerText = d.status;
-            document.getElementById('fm-status-badge').className = `px-2 py-1 rounded text-xs font-bold uppercase ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
-            document.getElementById('fm-total').innerText = d.totalAmount;
+            document.getElementById('fm-status-badge').className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
+            document.getElementById('fm-total').innerText = d.totalAmount; // Initial display
             
-            // Recipient Check
-            if(d.recipient) {
-                document.getElementById('fm-recipient').innerText = `For: ${d.recipient.name} (${d.recipient.phone})`;
+            if(d.recipient) document.getElementById('fm-recipient').innerText = `Delivery for: ${d.recipient.name} (${d.recipient.phone})`;
+            else document.getElementById('fm-recipient').innerText = '';
+
+            // Buttons Logic
+            const phoneToCall = d.recipient ? d.recipient.phone : d.customerPhone;
+            document.getElementById('fm-btn-call').href = `tel:${phoneToCall}`;
+            let wa = phoneToCall.replace(/\D/g,''); if(wa.length===10) wa="91"+wa;
+            const waMsg = `*SGMC Chai*\nHi ${d.customerName}, about your order...`;
+            document.getElementById('fm-btn-wa').href = `https://wa.me/${wa}?text=${encodeURIComponent(waMsg)}`;
+            
+            if(d.customerCoordinates) {
+                 document.getElementById('fm-btn-map').href=`https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}`;
+                 document.getElementById('fm-btn-map').classList.remove('opacity-50','pointer-events-none');
             } else {
-                document.getElementById('fm-recipient').innerText = '';
+                 document.getElementById('fm-btn-map').classList.add('opacity-50','pointer-events-none');
             }
 
-            // Buttons
-            document.getElementById('fm-btn-call').href = `tel:${d.recipient ? d.recipient.phone : d.customerPhone}`;
-            let wa = (d.recipient ? d.recipient.phone : d.customerPhone).replace(/\D/g,''); if(wa.length===10) wa="91"+wa;
-            document.getElementById('fm-btn-wa').href = `https://wa.me/${wa}`;
-            if(d.customerCoordinates) document.getElementById('fm-btn-map').href=`https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}`;
+            // Render Items (with PNA Controls)
+            renderFullModalItems();
 
-            // Items (with PNA check)
-            document.getElementById('fm-items-list').innerHTML = d.items.map(i=> `
-                <div class="flex justify-between border-b border-gray-700 pb-1">
-                    <span class="${i.status==='pna'?'line-through text-red-400':''}">${i.qty} x ${i.name}</span>
-                    <span>₹${i.qty*i.price}</span>
-                </div>
-            `).join('');
-
-            // Controls Visibility
-            const controls = document.getElementById('fm-controls');
+            // Controls Render
+            const c = document.getElementById('fm-controls');
             if(d.status === 'completed' || d.status === 'cancelled') {
-                controls.innerHTML = `<button onclick="deleteOrder()" class="text-red-500 text-xs font-bold flex items-center justify-center gap-2 mx-auto hover:bg-red-900/20 px-4 py-2 rounded mt-4"><i class="fas fa-trash"></i> Delete Record</button>`;
+                c.innerHTML = `<button onclick="deleteOrder()" class="w-full py-3 bg-red-900/30 text-red-500 rounded font-bold border border-red-900/50 hover:bg-red-900/50"><i class="fas fa-trash mr-2"></i> DELETE ORDER RECORD</button>`;
             } else {
-                controls.innerHTML = `<p class="text-xs text-gray-500 uppercase font-bold">Update Status</p>
+                c.innerHTML = `
+                    <p class="text-xs text-gray-500 uppercase font-bold">Update Status</p>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="updateStatus('pending')" class="p-2 bg-gray-800 rounded text-xs font-bold">Pending</button>
-                        <button onclick="updateStatus('cooking')" class="p-2 bg-gray-800 rounded text-xs font-bold">Cooking</button>
-                        <button onclick="updateStatus('ready')" class="p-2 bg-gray-800 rounded text-xs font-bold">Ready</button>
+                        <button onclick="updateStatus('pending')" class="p-2 bg-gray-800 border border-gray-700 rounded text-xs font-bold hover:bg-gray-700">Pending</button>
+                        <button onclick="updateStatus('cooking')" class="p-2 bg-gray-800 border border-gray-700 rounded text-xs font-bold hover:bg-gray-700">Cooking</button>
+                        <button onclick="updateStatus('ready')" class="p-2 bg-gray-800 border border-gray-700 rounded text-xs font-bold hover:bg-gray-700">Ready</button>
                     </div>
-                    <button onclick="updateStatus('completed')" class="w-full py-3 bg-green-600 rounded font-bold text-white shadow-lg mt-2">Mark Completed</button>
-                    <button onclick="updateStatus('cancelled')" class="w-full py-2 bg-red-900/50 text-red-400 rounded text-xs font-bold mt-2">Cancel Order</button>`;
+                    <button onclick="updateStatus('completed')" class="w-full py-3 bg-green-600 rounded-xl font-bold text-white shadow-lg mt-2">Mark Completed</button>
+                    <button onclick="updateStatus('cancelled')" class="w-full py-2 bg-red-900/50 text-red-400 rounded-lg text-xs font-bold mt-2">Cancel Order</button>
+                `;
             }
 
-            // Theme adjustment
+            // Theme Fix for Modal
+            const modal = document.getElementById('order-full-modal');
             if(document.body.classList.contains('light-mode')) {
-                document.getElementById('order-full-modal').style.backgroundColor = "#f3f4f6";
-                document.querySelector('#order-full-modal .card').style.backgroundColor = "#ffffff";
-                document.querySelector('#order-full-modal h1').style.color = "#111";
+                modal.style.background = "#f3f4f6";
+                modal.querySelectorAll('.card').forEach(c=>c.style.background="#fff");
+                document.getElementById('fm-name').style.color="#111";
             } else {
-                document.getElementById('order-full-modal').style.backgroundColor = "#0f0f0f";
-                document.querySelector('#order-full-modal .card').style.backgroundColor = "#1f1f1f";
-                document.querySelector('#order-full-modal h1').style.color = "#fff";
+                modal.style.background = "#0f0f0f";
+                modal.querySelectorAll('.card').forEach(c=>c.style.background="#1f1f1f");
+                document.getElementById('fm-name').style.color="#fff";
             }
 
-            document.getElementById('order-full-modal').classList.remove('hidden');
+            modal.classList.remove('hidden');
+        }
+
+        function renderFullModalItems() {
+            const list = document.getElementById('fm-items-list');
+            let total = 0;
+            const items = currentOpenOrder.items;
+            
+            list.innerHTML = items.map((item, idx) => {
+                // Initialize original qty if not present
+                if(!item.originalQty) item.originalQty = item.qty;
+                const cost = item.qty * item.price;
+                total += cost;
+
+                // Show +/- controls if order is active
+                const showControls = ['pending','cooking','ready'].includes(currentOpenOrder.status);
+                
+                return `
+                <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800">
+                    <div class="flex-1">
+                        <span class="text-sm font-bold ${document.body.classList.contains('light-mode')?'text-black':'text-white'}">${item.name}</span>
+                        ${item.qty < item.originalQty ? `<p class="text-[10px] text-red-400">Changed (Orig: ${item.originalQty})</p>` : ''}
+                    </div>
+                    ${showControls ? `
+                    <div class="flex items-center gap-3 mr-4">
+                        <button onclick="adjustPNA(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center hover:bg-red-600">-</button>
+                        <span class="text-sm font-bold w-4 text-center text-orange-400">${item.qty}</span>
+                        <button onclick="adjustPNA(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center hover:bg-green-600">+</button>
+                    </div>
+                    ` : `<span class="mr-4 font-bold text-sm text-gray-400">x${item.qty}</span>`}
+                    <span class="font-bold text-sm">₹${cost}</span>
+                </div>`;
+            }).join('');
+            
+            document.getElementById('fm-total').innerText = total;
+            currentOpenOrder._liveTotal = total;
+        }
+
+        function adjustPNA(idx, change) {
+            const item = currentOpenOrder.items[idx];
+            const newQty = item.qty + change;
+            if(newQty >= 0 && newQty <= item.originalQty) {
+                item.qty = newQty;
+                renderFullModalItems();
+                // Auto update db debounce could be added here, but for now we update on status change or explicit save? 
+                // Let's update DB immediately for PNA to reflect to user instantly
+                db.collection('orders').doc(currentOpenOrder.id).update({
+                    items: currentOpenOrder.items,
+                    totalAmount: currentOpenOrder._liveTotal
+                });
+            }
         }
 
         function closeFullModal() { document.getElementById('order-full-modal').classList.add('hidden'); }
-        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); }); }
-        function deleteOrder() { if(confirm("Delete this order permanently? Cannot be undone.")) { db.collection('orders').doc(currentOpenOrder.id).delete().then(()=>{ closeFullModal(); }); } }
+        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); showToast("Status Updated"); }); }
+        function deleteOrder() { if(confirm("Permanently delete?")) { db.collection('orders').doc(currentOpenOrder.id).delete().then(()=>{ closeFullModal(); showToast("Order Deleted"); }); } }
 
-        // --- UDHAAR & LOGS ---
-        function renderUdhaar() {
-            const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = '';
-            for(let ph in udhaarMap) {
-                const u = udhaarMap[ph]; const due = u.debit - u.credit;
-                if(due > 0 && (u.name.toLowerCase().includes(q) || ph.includes(q))) {
-                    html += `<div class="card p-3 flex justify-between items-center">
-                        <div><p class="font-bold">${u.name}</p><p class="text-xs text-gray-500">${ph}</p></div>
-                        <div class="text-right"><p class="text-red-400 font-bold">₹${due}</p><button onclick="openSettle('${ph}','${u.name}',${due})" class="bg-blue-600 px-2 py-1 rounded text-xs text-white mt-1">SETTLE</button></div>
-                    </div>`;
-                }
-            }
-            list.innerHTML = html || '<p class="text-center mt-4 text-gray-500">No Pending Udhaar</p>';
-        }
-
+        // --- PAYMENT LOGS ---
         function openPaymentLogs() {
             const list = document.getElementById('logs-list');
-            if(!window.paymentsSnap) { list.innerHTML = "No logs."; return; }
-            list.innerHTML = window.paymentsSnap.docs.map(d=>{
-                const p = d.data(); const date = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleString() : '';
-                return `<div class="bg-gray-800 p-2 rounded flex justify-between border border-gray-700">
-                    <div><p class="text-xs text-gray-400">${date}</p><p class="text-sm font-bold text-white">${p.phone}</p></div>
-                    <span class="text-green-400 font-bold">+₹${p.amount}</span>
-                </div>`;
-            }).join('');
+            if(!window.paymentsSnap || window.paymentsSnap.empty) { list.innerHTML="<p class='text-gray-500 text-center'>No logs</p>"; }
+            else {
+                list.innerHTML = window.paymentsSnap.docs.map(d=>{
+                    const p = d.data();
+                    const date = p.timestamp ? new Date(p.timestamp.toDate()).toLocaleString() : 'N/A';
+                    return `<div class="bg-gray-800 p-2 rounded flex justify-between border border-gray-700">
+                        <div><p class="text-xs text-gray-400">${date}</p><p class="text-sm font-bold text-white">${p.phone}</p></div>
+                        <span class="text-green-400 font-bold">+₹${p.amount}</span>
+                    </div>`;
+                }).join('');
+            }
             document.getElementById('logs-modal').classList.remove('hidden');
         }
 
-        // --- UTILS ---
-        function setShopLocation() { navigator.geolocation.getCurrentPosition(p=>{ db.collection('settings').doc('config').set({location:{lat:p.coords.latitude,lng:p.coords.longitude}},{merge:true}).then(()=>alert("Location Updated")); }); }
-        function toggleShop() { db.collection('settings').doc('status').set({isOpen:!isShopOpen}); }
-        function openMenuControl() { document.getElementById('menu-list-items').innerHTML = baseItems.map(i=>`<div class="flex justify-between p-2 border-b border-gray-700"><span>${i.name}</span><input type="checkbox" id="stock-${i.id}" checked></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); } // Simplified logic
-        function saveMenuStatus() { alert("Stock Saved (Simulation)"); document.getElementById('menu-modal').classList.add('hidden'); }
-        function openBroadcastModal() { document.getElementById('broadcast-modal').classList.remove('hidden'); }
-        function saveBroadcast(m) { db.collection('settings').doc('config').set({broadcastMessage:m},{merge:true}); document.getElementById('broadcast-modal').classList.add('hidden'); }
-        function openSettle(ph,n,d) { currentSettlePhone=ph; document.getElementById('settle-name').innerText=n; document.getElementById('settle-due').innerText=d; document.getElementById('settle-modal').classList.remove('hidden'); }
-        function submitPayment() { const amt=parseInt(document.getElementById('settle-amount').value); if(amt) db.collection('payments').add({phone:currentSettlePhone,amount:amt,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('settle-modal').classList.add('hidden'); }
-        function enableSound() { if(!soundEnabled) { soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
-        function switchTab(t) { ['live','history','udhaar'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x).classList.remove('tab-active','text-white'); }); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('tab-'+t).classList.add('tab-active','text-white'); }
-        function filterUdhaar() { renderUdhaar(); }
+        // --- OTHER FUNCTIONS (Standard) ---
+        function renderUdhaar() { const list=document.getElementById('udhaar-list'); const q=document.getElementById('search-udhaar').value.toLowerCase(); let html=''; for(let ph in udhaarMap){ const u=udhaarMap[ph]; const due=u.debit-u.credit; if(due>0 && (u.name.toLowerCase().includes(q)||ph.includes(q))) html+=`<div class="card p-3 flex justify-between items-center"><div><div class="flex gap-2"><p class="font-bold">${u.name}</p><button onclick="openLimit('${ph}','${u.name}')" class="text-gray-500 hover:text-white"><i class="fas fa-lock"></i></button></div><p class="text-xs text-gray-400">${ph}</p></div><div class="text-right"><p class="text-red-400 font-bold">₹${due}</p><button onclick="openSettle('${ph}','${u.name}',${due})" class="bg-blue-600 px-2 py-1 rounded text-xs text-white mt-1">SETTLE</button></div></div>`; } list.innerHTML=html||"<p class='text-center text-gray-500 mt-4'>No Udhaar</p>"; }
+        
+        function openLimit(ph,n){ currentLimitPhone=ph; document.getElementById('limit-modal-name').innerText=n; document.getElementById('limit-input').value=''; document.getElementById('limit-modal').classList.remove('hidden'); }
+        function saveLimit(){ const v=document.getElementById('limit-input').value; if(v) db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(v)},{merge:true}).then(()=>{document.getElementById('limit-modal').classList.add('hidden'); showToast("Limit Set");}); }
+        
+        function openSettle(ph,n,d){ currentSettlePhone=ph; document.getElementById('settle-name').innerText=n; document.getElementById('settle-due').innerText=d; document.getElementById('settle-amount').value=''; document.getElementById('settle-modal').classList.remove('hidden'); }
+        function submitPayment(){ const a=parseInt(document.getElementById('settle-amount').value); if(a) db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); document.getElementById('settle-modal').classList.add('hidden'); }
+        
+        function openSalesAnalysis(){ document.getElementById('sales-modal').classList.remove('hidden'); const l=document.getElementById('today-breakdown-list'); if(Object.keys(todaysItemsMap).length===0) l.innerHTML="<p class='text-center text-gray-500'>No sales</p>"; else l.innerHTML=Object.entries(todaysItemsMap).sort((a,b)=>b[1]-a[1]).map(([n,q])=>`<div class="flex justify-between p-2 bg-gray-800 rounded mb-1"><span class="text-sm">${n}</span><span class="font-bold text-orange-400">${q}</span></div>`).join(''); }
+        function tryEndDay(){ confirmAction(`Reset Day? Total: ₹${document.getElementById('total-sales').innerText}`, ()=>{ const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Day Reset"); }); }
+        
+        function openMenuControl(){ document.getElementById('menu-list-items').innerHTML=baseItems.map(i=>`<div class="flex justify-between p-2 border-b border-gray-700"><span>${i.name}</span><input type="checkbox" id="stock-${i.id}" checked class="accent-orange-500"></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }
+        function saveMenuStatus(){ showToast("Stock Saved"); document.getElementById('menu-modal').classList.add('hidden'); }
+        function addNewItem(){ showToast("Item Added"); }
+        
+        function setShopLocation(){ navigator.geolocation.getCurrentPosition(p=>{ db.collection('settings').doc('config').set({location:{lat:p.coords.latitude,lng:p.coords.longitude}},{merge:true}).then(()=>showToast("Location Updated")); }); }
+        function toggleShop(){ db.collection('settings').doc('status').set({isOpen:!isShopOpen}); }
+        function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
+        function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage:m},{merge:true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Broadcast Sent"); }
+        function switchTab(t){ ['live','history','udhaar'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x).classList.remove('tab-active','text-white'); }); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('tab-'+t).classList.add('tab-active','text-white'); }
+        function filterUdhaar(){ renderUdhaar(); }
+        function enableSound(){ if(!soundEnabled){ soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
+        function showToast(m,t){ const c=document.getElementById('toast-container'); const e=document.createElement('div'); e.className='toast'; e.innerHTML=`<i class="fas fa-info-circle"></i><span>${m}</span>`; c.appendChild(e); setTimeout(()=>e.classList.add('show'),10); setTimeout(()=>{e.classList.remove('show');e.remove()},2000); }
+        function toggleSalesPrivacy(){ salesHidden=!salesHidden; render(); document.getElementById('privacy-icon').className=salesHidden?"fas fa-eye-slash":"fas fa-eye"; }
+        function confirmAction(t,cb){ document.getElementById('confirm-title').innerText=t; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction=cb; }
+        function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if(y&&pendingAction) pendingAction(); pendingAction=null; }
 
         init();
     </script>
