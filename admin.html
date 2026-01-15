@@ -7,7 +7,6 @@
     <link rel="manifest" href="admin_manifest.json">
     <meta name="theme-color" content="#0f0f0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
@@ -23,9 +22,7 @@
         #custom-confirm { backdrop-filter: blur(5px); }
         .confirm-box { transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .confirm-box.open { transform: scale(1); }
-        /* PNA Strikethrough Style */
-        .line-through-red { text-decoration: line-through; text-decoration-color: #f87171; text-decoration-thickness: 2px; opacity: 0.5; }
-        /* Graph Bars */
+        /* Bars for Graph */
         .bar-container { display: flex; align-items: flex-end; height: 100px; gap: 8px; }
         .bar { background: #F97316; border-radius: 4px 4px 0 0; flex: 1; transition: height 0.5s ease; position: relative; min-height: 2px;}
         .bar span { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; color: #aaa; }
@@ -53,9 +50,9 @@
                     <div onclick="event.stopPropagation(); toggleSalesPrivacy()" class="text-gray-600 hover:text-white text-[10px]"><i class="fas fa-eye" id="privacy-icon"></i></div>
                 </div>
                 <h2 class="text-2xl font-bold text-green-400 mt-1">₹<span id="total-sales">0</span></h2>
-                <p class="text-[9px] text-gray-500 mt-1">Tap for details & history <i class="fas fa-chart-bar ml-1"></i></p>
+                <p class="text-[9px] text-gray-500 mt-1">Tap for Analytics <i class="fas fa-chart-line ml-1"></i></p>
             </div>
-            <button onclick="event.stopPropagation(); confirmAction('End Day & Save History?', endDay)" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
+            <button onclick="event.stopPropagation(); tryEndDay()" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20 hover:bg-red-500/20 transition">RESET DAY</button>
         </div>
         
         <div class="card p-3 text-center flex flex-col justify-center relative">
@@ -72,7 +69,11 @@
     </div>
 
     <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
-    <div id="view-history" class="hidden space-y-3"><div id="history-container" class="space-y-2"></div></div>
+    
+    <div id="view-history" class="hidden space-y-3">
+        <div id="history-container" class="space-y-2"></div>
+    </div>
+    
     <div id="view-udhaar" class="hidden space-y-3">
         <div class="relative">
             <i class="fas fa-search absolute left-3 top-3 text-gray-500"></i>
@@ -86,34 +87,25 @@
             <div class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
                 <div>
                     <h3 class="text-lg font-bold text-white" id="ac-name">Customer</h3>
-                    <p class="text-xs text-gray-400" id="ac-phone">+91 XXXXX XXXXX</p>
+                    <p class="text-xs text-gray-400" id="ac-phone">...</p>
                 </div>
                 <button onclick="closeActionModal()" class="w-8 h-8 rounded-full bg-gray-700 text-gray-300 flex items-center justify-center hover:bg-gray-600"><i class="fas fa-times"></i></button>
             </div>
 
             <div class="p-4 overflow-y-auto flex-1">
                 <div class="grid grid-cols-3 gap-3 mb-6">
-                    <a id="btn-call" href="#" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-gray-800 border border-gray-600 active:bg-gray-700">
-                        <i class="fas fa-phone text-green-400 text-xl"></i>
-                        <span class="text-[10px] text-gray-300">Call</span>
-                    </a>
-                    <a id="btn-wa" href="#" target="_blank" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-gray-800 border border-gray-600 active:bg-gray-700">
-                        <i class="fab fa-whatsapp text-green-500 text-xl"></i>
-                        <span class="text-[10px] text-gray-300">WhatsApp</span>
-                    </a>
-                    <a id="btn-map" href="#" target="_blank" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-gray-800 border border-gray-600 active:bg-gray-700">
-                        <i class="fas fa-location-arrow text-blue-400 text-xl"></i>
-                        <span class="text-[10px] text-gray-300">Navigate</span>
-                    </a>
+                    <a id="btn-call" href="#" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-gray-800 border border-gray-600 active:bg-gray-700"><i class="fas fa-phone text-green-400 text-xl"></i><span class="text-[10px] text-gray-300">Call</span></a>
+                    <a id="btn-wa" href="#" target="_blank" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-gray-800 border border-gray-600 active:bg-gray-700"><i class="fab fa-whatsapp text-green-500 text-xl"></i><span class="text-[10px] text-gray-300">WhatsApp</span></a>
+                    <a id="btn-map" href="#" target="_blank" class="flex flex-col items-center gap-1 p-3 rounded-xl bg-gray-800 border border-gray-600 active:bg-gray-700"><i class="fas fa-location-arrow text-blue-400 text-xl"></i><span class="text-[10px] text-gray-300">Navigate</span></a>
                 </div>
 
                 <div class="mb-4">
-                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-2">Order Items (Uncheck if PNA)</p>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-2">Adjust Quantity (PNA)</p>
                     <div id="ac-items-list" class="space-y-2 bg-gray-800/50 p-2 rounded-xl border border-gray-700"></div>
                 </div>
 
                 <div class="flex justify-between items-center mb-6 px-2">
-                    <span class="text-gray-400 text-xs">Adjusted Total</span>
+                    <span class="text-gray-400 text-xs">New Total</span>
                     <span class="text-2xl font-bold text-orange-500">₹<span id="ac-total">0</span></span>
                 </div>
 
@@ -125,27 +117,24 @@
             </div>
 
             <div class="p-4 border-t border-gray-700 bg-gray-800">
-                <button onclick="saveActionModal()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-orange-900/40">Update Order</button>
+                <button onclick="saveActionModal()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl shadow-lg">Update Order</button>
             </div>
         </div>
     </div>
 
     <div id="sales-modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-[70] backdrop-blur-sm">
         <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-white">Business Insights</h3>
-                <button onclick="document.getElementById('sales-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">Analytics</h3><button onclick="document.getElementById('sales-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button></div>
             <div class="flex mb-4 border-b border-gray-700">
-                <button onclick="switchSalesTab('today')" id="sale-tab-today" class="flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500">Today's Items</button>
+                <button onclick="switchSalesTab('today')" id="sale-tab-today" class="flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500">Today</button>
                 <button onclick="switchSalesTab('past')" id="sale-tab-past" class="flex-1 py-2 text-sm font-bold text-gray-500">Past 7 Days</button>
             </div>
             <div id="sales-view-today">
-                <p class="text-xs text-gray-400 mb-3">Item-wise breakdown of today's sales:</p>
+                <div class="bg-gray-800 p-3 rounded mb-3 flex justify-between"><span class="text-xs text-gray-400">Total Orders</span><span class="font-bold text-white" id="today-total-orders">0</span></div>
+                <p class="text-xs text-gray-400 mb-2">Item Breakdown:</p>
                 <div id="today-breakdown-list" class="space-y-2"></div>
             </div>
             <div id="sales-view-past" class="hidden">
-                <p class="text-xs text-gray-400 mb-3">Sales performance over the last week:</p>
                 <div id="past-graph-container" class="mb-4 bg-gray-800/50 p-4 rounded-xl border border-gray-700"></div>
                 <div id="past-list-container" class="space-y-2"></div>
             </div>
@@ -154,10 +143,7 @@
 
     <div id="menu-modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
         <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-white">Stock & Prices</h3>
-                <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
+            <div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-white">Stock Control</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button></div>
             <div class="flex-1 overflow-y-auto space-y-3 mb-4 pr-1" id="menu-list-items"></div>
             <div class="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-4">
                 <p class="text-xs text-orange-400 font-bold mb-2 uppercase">Add New Item</p>
@@ -171,276 +157,103 @@
         </div>
     </div>
 
-    <div id="broadcast-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i> Broadcast</h3>
-                <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="text-gray-400"><i class="fas fa-times"></i></button>
-            </div>
-            <textarea id="broadcast-input" rows="3" class="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-sm focus:border-orange-500 outline-none" placeholder="e.g. Aaj 4 baje shop band rahegi..."></textarea>
-            <div class="flex gap-3 mt-4">
-                <button onclick="saveBroadcast('')" class="flex-1 py-2 rounded-lg bg-red-900/50 text-red-400 font-bold text-xs border border-red-900">Clear</button>
-                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-xs shadow-lg">Publish</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="settle-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 class="text-lg font-bold mb-1 text-white">Settle Payment</h3>
-            <p class="text-gray-400 text-sm mb-4" id="settle-name"></p>
-            <div class="text-center mb-6">
-                <p class="text-xs text-gray-500 uppercase">Current Due</p>
-                <p class="text-3xl font-bold text-red-400">₹<span id="settle-due">0</span></p>
-            </div>
-            <input type="number" id="settle-amount" class="w-full p-4 bg-gray-800 rounded-lg text-white mb-4 border border-gray-700 outline-none text-center text-xl font-bold focus:border-blue-500" placeholder="Amount Received">
-            <button onclick="submitPayment()" class="w-full py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg shadow-green-900/50">Settle</button>
-        </div>
-    </div>
-
-    <div id="limit-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-        <div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-1">Set Udhaar Limit</h3>
-            <p class="text-sm text-gray-400 mb-4" id="limit-modal-name">User</p>
-            <div class="bg-gray-800 p-4 rounded-xl mb-4 border border-gray-700">
-                <label class="text-xs text-gray-500 mb-1 block">Max Amount Allowed (₹)</label>
-                <input type="number" id="limit-input" class="w-full bg-transparent text-white text-2xl font-bold outline-none border-b border-gray-600 focus:border-orange-500 pb-1" placeholder="500">
-            </div>
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="flex-1 py-3 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button>
-                <button onclick="saveLimit()" class="flex-1 py-3 rounded-lg bg-purple-600 text-white font-bold text-sm shadow-lg shadow-purple-900/50">Set Limit</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="custom-confirm" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs confirm-box shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-2" id="confirm-title">Confirm?</h3>
-            <div class="flex gap-3 mt-4">
-                <button onclick="closeConfirm(false)" class="flex-1 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button>
-                <button onclick="closeConfirm(true)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-900/50">Confirm</button>
-            </div>
-        </div>
-    </div>
-
+    <div id="broadcast-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm"><div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl"><h3 class="text-lg font-bold text-white mb-2">Broadcast</h3><textarea id="broadcast-input" rows="3" class="w-full bg-gray-800 border border-gray-600 rounded-lg p-3 text-white text-sm outline-none" placeholder="Message..."></textarea><div class="flex gap-3 mt-4"><button onclick="saveBroadcast('')" class="flex-1 py-2 rounded-lg bg-red-900/50 text-red-400 font-bold text-xs border border-red-900">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-xs shadow-lg">Publish</button></div></div></div>
+    <div id="limit-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm"><div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl"><h3 class="text-lg font-bold text-white mb-1">Set Udhaar Limit</h3><p class="text-sm text-gray-400 mb-4" id="limit-modal-name"></p><input type="number" id="limit-input" class="w-full bg-gray-800 text-white p-3 rounded border border-gray-600 mb-4" placeholder="Amount"><button onclick="saveLimit()" class="w-full py-3 rounded-lg bg-purple-600 text-white font-bold">Set Limit</button></div></div>
+    <div id="settle-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-4 z-40 backdrop-blur-sm"><div class="bg-gray-900 border border-gray-700 p-6 rounded-2xl w-full max-w-sm shadow-2xl"><h3 class="text-lg font-bold mb-1 text-white">Settle Payment</h3><p class="text-gray-400 text-sm mb-4" id="settle-name"></p><p class="text-3xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></p><input type="number" id="settle-amount" class="w-full p-4 bg-gray-800 rounded-lg text-white mb-4 border border-gray-700 text-center text-xl font-bold" placeholder="Amount"><button onclick="submitPayment()" class="w-full py-3 rounded-lg bg-green-600 text-white font-bold shadow-lg">Settle</button></div></div>
+    
+    <div id="custom-confirm" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-50"><div class="bg-gray-900 border border-gray-700 p-5 rounded-2xl w-full max-w-xs confirm-box shadow-2xl"><h3 class="text-lg font-bold text-white mb-2" id="confirm-title">Confirm?</h3><div class="flex gap-3 mt-4"><button onclick="closeConfirm(false)" class="flex-1 py-2 rounded-lg bg-gray-800 text-gray-400 font-bold text-sm">Cancel</button><button onclick="closeConfirm(true)" class="flex-1 py-2 rounded-lg bg-orange-600 text-white font-bold text-sm shadow-lg">Confirm</button></div></div></div>
+    
     <div id="toast-container"></div>
     <audio id="order-sound"></audio>
 
     <script>
-        // --- CONFIG ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
-            authDomain: "sgmc-16568.firebaseapp.com",
-            projectId: "sgmc-16568",
-            storageBucket: "sgmc-16568.firebasestorage.app",
-            messagingSenderId: "339041646158",
-            appId: "1:339041646158:web:85d9a50a3b51b30aae351f",
-            measurementId: "G-4996NPF55N"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
+        firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-        const baseAdminItems = [
-            { id: 1, name: "Normal Chai", defaultPrice: 10 },
-            { id: 2, name: "Adrak Chai", defaultPrice: 15 },
-            { id: 3, name: "Cigarette", defaultPrice: 0 },
-            { id: 4, name: "Matthi", defaultPrice: 5 },
-            { id: 5, name: "Cream Roll", defaultPrice: 10 },
-            { id: 6, name: "Biscuit", defaultPrice: 5 },
-            { id: 7, name: "Namkeen", defaultPrice: 10 }
-        ];
+        const baseAdminItems = [{id:1,name:"Normal Chai",defaultPrice:10},{id:2,name:"Adrak Chai",defaultPrice:15},{id:3,name:"Cigarette",defaultPrice:0},{id:4,name:"Matthi",defaultPrice:5},{id:5,name:"Cream Roll",defaultPrice:10},{id:6,name:"Biscuit",defaultPrice:5},{id:7,name:"Namkeen",defaultPrice:10}];
 
-        // --- STATE ---
-        let isShopOpen = false;
-        let udhaarMap = {}; 
-        let currentSettlePhone = null; 
-        let allHistoryOrders = [];
-        let lastResetSeconds = 0; 
-        let lastPendingCount = 0; 
-        let soundEnabled = false;
-        let pendingAction = null; 
-        let currentMenuData = { stock: {}, prices: {}, customItems: [] };
-        let currentLimitPhone = null;
-        let salesHidden = false;
-        let todaysItemsMap = {}; 
-        let salesHistoryData = []; 
+        let isShopOpen = false; let udhaarMap = {}; let currentSettlePhone = null; let allHistoryOrders = [];
+        let lastResetSeconds = 0; let lastPendingCount = 0; let soundEnabled = false; let pendingAction = null;
+        let currentMenuData = { stock: {}, prices: {}, customItems: [] }; let currentLimitPhone = null; let salesHidden = false;
+        let todaysItemsMap = {}; let salesHistoryData = []; let todaysOrderCount = 0;
         
-        // Modal State Variables
-        let currentEditingOrder = null;
-        let currentEditingItems = [];
-        let currentEditingStatus = '';
+        let currentEditingOrder = null; let currentEditingItems = []; let currentEditingStatus = '';
 
         function init() {
-            db.collection('settings').doc('config').onSnapshot(doc => { 
-                if(doc.exists) {
-                    const data = doc.data();
-                    if(data.lastReset) lastResetSeconds = data.lastReset.seconds; 
-                    if(data.salesHistory) salesHistoryData = data.salesHistory; 
-                }
-                recalculateData(); 
-            });
-            db.collection('settings').doc('status').onSnapshot(doc => { 
-                isShopOpen = doc.exists ? doc.data().isOpen : true; 
-                const btn = document.getElementById('shop-toggle-btn'); 
-                btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; 
-                btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white shadow-lg shadow-green-900/50" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white shadow-lg shadow-red-900/50"; 
-            });
-            db.collection('settings').doc('menu_data').onSnapshot(doc => {
-                 if(doc.exists) currentMenuData = doc.data();
-            });
+            db.collection('settings').doc('config').onSnapshot(doc => { if(doc.exists) { const data = doc.data(); if(data.lastReset) lastResetSeconds = data.lastReset.seconds; if(data.salesHistory) salesHistoryData = data.salesHistory; } recalculateData(); });
+            db.collection('settings').doc('status').onSnapshot(doc => { isShopOpen = doc.exists ? doc.data().isOpen : true; const btn = document.getElementById('shop-toggle-btn'); btn.innerText = isShopOpen ? "OPEN" : "CLOSED"; btn.className = isShopOpen ? "px-3 py-2 rounded text-xs font-bold bg-green-600 text-white shadow-lg shadow-green-900/50" : "px-3 py-2 rounded text-xs font-bold bg-red-600 text-white shadow-lg shadow-red-900/50"; });
+            db.collection('settings').doc('menu_data').onSnapshot(doc => { if(doc.exists) currentMenuData = doc.data(); });
             db.collection('payments').orderBy('timestamp', 'desc').onSnapshot(snap => { window.paymentsSnapshot = snap; recalculateData(); });
             db.collection('orders').orderBy('timestamp', 'desc').onSnapshot(snap => { window.ordersSnapshot = snap; recalculateData(); });
-
-            const lastTab = localStorage.getItem('admin_active_tab') || 'live';
-            switchTab(lastTab);
+            switchTab(localStorage.getItem('admin_active_tab') || 'live');
         }
 
-        // --- GEO LOCATION SETUP ---
-        function setShopLocation() {
-            if(!navigator.geolocation) { showToast("Geolocation not supported", "error"); return; }
-            showToast("Getting Location...");
-            navigator.geolocation.getCurrentPosition((position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                db.collection('settings').doc('config').set({ location: { lat, lng } }, { merge: true })
-                .then(() => showToast("Shop Location Set!"))
-                .catch(e => showToast("Error saving location", "error"));
-            }, () => showToast("Location Access Denied", "error"), { enableHighAccuracy: true });
-        }
-
-        function enableSound() { 
-            if(!soundEnabled) { 
-                const audio = document.getElementById('order-sound'); 
-                audio.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; 
-                audio.play().then(() => { audio.pause(); audio.currentTime = 0; soundEnabled = true; document.getElementById('sound-status').innerHTML = '<i class="fas fa-volume-up text-green-500"></i> Sound Active'; }).catch(e => console.log("Init Sound Error", e)); 
-            } 
-        }
-
-        function playNotification() { 
-            if(soundEnabled) { 
-                const audio = document.getElementById('order-sound'); audio.loop = true; audio.play().catch(e => {}); 
-                document.body.addEventListener('click', () => { audio.pause(); audio.currentTime = 0; }, { once: true });
-            } 
-        }
-
-        // --- CORE DATA LOGIC ---
+        // --- CORE LOGIC ---
         function recalculateData() {
             if(!window.ordersSnapshot) return;
-            udhaarMap = {}; allHistoryOrders = []; todaysItemsMap = {}; 
+            udhaarMap = {}; allHistoryOrders = []; todaysItemsMap = {}; todaysOrderCount = 0;
             let liveHtml = '', sales = 0, activeCount = 0;
 
-            if(window.paymentsSnapshot) { 
-                window.paymentsSnapshot.docs.forEach(doc => { 
-                    const d = doc.data(); 
-                    if(!udhaarMap[d.phone]) udhaarMap[d.phone] = { name: "Unknown", debit: 0, credit: 0 }; 
-                    udhaarMap[d.phone].credit += d.amount; 
-                }); 
-            }
+            if(window.paymentsSnapshot) { window.paymentsSnapshot.docs.forEach(doc => { const d = doc.data(); if(!udhaarMap[d.phone]) udhaarMap[d.phone] = { name: "Unknown", debit: 0, credit: 0 }; udhaarMap[d.phone].credit += d.amount; }); }
 
             window.ordersSnapshot.docs.forEach(doc => {
-                const data = doc.data(); const id = doc.id;
-                const orderTime = data.timestamp ? data.timestamp.seconds : 0;
+                const data = doc.data(); const id = doc.id; const orderTime = data.timestamp ? data.timestamp.seconds : 0;
                 if(data.status === 'completed' || data.status === 'cancelled') allHistoryOrders.push({id, ...data});
-                
-                if(data.paymentMode === 'Udhaar' && data.customerPhone) { 
-                    if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 }; 
-                    if(data.status !== 'cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; } 
-                }
+                if(data.paymentMode === 'Udhaar' && data.customerPhone) { if(!udhaarMap[data.customerPhone]) udhaarMap[data.customerPhone] = { name: data.customerName, debit: 0, credit: 0 }; if(data.status !== 'cancelled') { udhaarMap[data.customerPhone].debit += data.totalAmount; udhaarMap[data.customerPhone].name = data.customerName; } }
                 
                 if(orderTime > lastResetSeconds && data.status === 'completed') {
-                    sales += data.totalAmount;
-                    data.items.forEach(item => {
-                        const key = item.name;
-                        if(!todaysItemsMap[key]) todaysItemsMap[key] = 0;
-                        todaysItemsMap[key] += item.qty;
-                    });
+                    sales += data.totalAmount; todaysOrderCount++;
+                    data.items.forEach(item => { const key = item.name; if(!todaysItemsMap[key]) todaysItemsMap[key] = 0; todaysItemsMap[key] += item.qty; });
                 }
 
-                const isActive = ['pending', 'cooking', 'ready'].includes(data.status);
-                if(isActive) {
+                if(['pending', 'cooking', 'ready'].includes(data.status)) {
                     activeCount++;
-                    const isUpiPending = (data.paymentMode === 'UPI' && !data.paymentVerified);
                     const statusColors = { 'pending': 'bg-gray-700', 'cooking': 'bg-yellow-900 text-yellow-500', 'ready': 'bg-green-900 text-green-500' };
-                    
-                    // Construct Live Order Card
                     liveHtml += `
                     <div class="card p-4 border-l-4 ${data.paymentMode === 'Udhaar' ? 'border-red-500' : 'border-blue-500'} animate-fade-in relative mb-3">
                         <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="font-bold text-lg leading-tight">${data.customerName}</h3>
-                                <div class="flex gap-2 mt-1">
-                                    <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${data.paymentMode === 'Udhaar' ? 'bg-red-900 text-red-200' : 'bg-blue-900 text-blue-200'}">${data.paymentMode}</span>
-                                    <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded font-bold ${statusColors[data.status] || 'bg-gray-700'}">${data.status}</span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <h3 class="font-bold text-xl text-orange-400">₹${data.totalAmount}</h3>
-                                <p class="text-[10px] text-gray-500">${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</p>
-                            </div>
+                            <div><h3 class="font-bold text-lg leading-tight">${data.customerName}</h3><div class="flex gap-2 mt-1"><span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded ${data.paymentMode === 'Udhaar' ? 'bg-red-900 text-red-200' : 'bg-blue-900 text-blue-200'}">${data.paymentMode}</span><span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded font-bold ${statusColors[data.status] || 'bg-gray-700'}">${data.status}</span></div></div>
+                            <div class="text-right"><h3 class="font-bold text-xl text-orange-400">₹${data.totalAmount}</h3><p class="text-[10px] text-gray-500">${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</p></div>
                         </div>
-                        
                         ${data.customerAddress ? `<div class="bg-gray-800/50 p-2 rounded mb-2 flex items-start gap-2"><i class="fas fa-map-marker-alt text-orange-500 mt-0.5 text-xs"></i><p class="text-xs text-gray-300 leading-tight">${data.customerAddress}</p></div>` : ''}
                         ${data.orderNote ? `<div class="bg-yellow-900/20 p-2 rounded mb-2 border border-yellow-800/30"><p class="text-xs text-yellow-500 italic">"${data.orderNote}"</p></div>` : ''}
-                        
-                        <ul class="text-sm text-gray-300 mb-3 space-y-1 pl-1 border-l border-gray-700 ml-1">
-                            ${data.items.map(i => `<li class="${i.status === 'pna' ? 'line-through-red' : ''}"><span class="font-bold text-white">${i.qty}</span> ${i.name}</li>`).join('')}
-                        </ul>
-
-                        ${isUpiPending ? `<div class="bg-yellow-900/30 border border-yellow-700/50 text-yellow-200 text-xs p-2 rounded mb-3 flex justify-between items-center"><span><i class="fas fa-exclamation-circle"></i> UPI Check!</span><button onclick="confirmAction('Verify UPI Payment?', () => verifyPayment('${id}'))" class="bg-yellow-600 text-white px-3 py-1 rounded shadow-lg">Verify</button></div>` : ''}
-                        
+                        <ul class="text-sm text-gray-300 mb-3 space-y-1 pl-1 border-l border-gray-700 ml-1">${data.items.map(i => `<li><span class="font-bold text-white">${i.qty}</span> ${i.name}</li>`).join('')}</ul>
                         <div class="flex gap-2 items-center mt-2">
-                             <button onclick='openOrderActionModal(${JSON.stringify({id, ...data}).replace(/'/g, "&#39;")})' class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold shadow border border-gray-600 uppercase tracking-wider">
-                                <i class="fas fa-cog mr-1"></i> Manage Order
-                             </button>
+                             <button onclick='openOrderActionModal(${JSON.stringify({id, ...data}).replace(/'/g, "'")})' class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded text-xs font-bold shadow border border-gray-600 uppercase tracking-wider"><i class="fas fa-cog mr-1"></i> Manage</button>
                              <button onclick="markComplete('${id}')" class="bg-green-600 text-white py-2 px-4 rounded text-xs font-bold shadow-lg shadow-green-900/20 active:scale-95 transition">DONE</button>
                         </div>
                     </div>`;
                 }
             });
 
-            if(activeCount > lastPendingCount) playNotification();
-            lastPendingCount = activeCount;
+            if(activeCount > lastPendingCount) playNotification(); lastPendingCount = activeCount;
             document.getElementById('view-live').innerHTML = liveHtml || '<div class="flex flex-col items-center justify-center pt-20 opacity-50"><i class="fas fa-mug-hot text-4xl mb-2 text-gray-600"></i><p class="text-gray-500">No active orders</p></div>';
-            
-            const salesEl = document.getElementById('total-sales');
-            salesEl.innerText = salesHidden ? "****" : sales;
-            salesEl.dataset.realValue = sales; 
-            
-            document.getElementById('pending-count').innerText = activeCount;
-            renderUdhaar(); 
-            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
+            document.getElementById('pending-count').innerText = activeCount; document.getElementById('today-total-orders').innerText = todaysOrderCount;
+            renderUdhaar(); if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
         }
 
-        // --- NEW: ACTION MODAL LOGIC (Map, PNA, Call) ---
+        // --- MANAGE ORDER MODAL (QUANTITY PNA) ---
         function openOrderActionModal(order) {
             currentEditingOrder = order;
-            // Deep copy items to avoid ref issues
+            // Store original items to check limits
             currentEditingItems = JSON.parse(JSON.stringify(order.items)); 
             currentEditingStatus = order.status;
 
             document.getElementById('ac-name').innerText = order.customerName;
             document.getElementById('ac-phone').innerText = order.customerPhone;
             
-            // Set Call & WA Links
             document.getElementById('btn-call').href = `tel:${order.customerPhone}`;
-            let waPhone = order.customerPhone.replace(/\D/g,'');
-            if(waPhone.length === 10) waPhone = "91" + waPhone;
+            let waPhone = order.customerPhone.replace(/\D/g,''); if(waPhone.length === 10) waPhone = "91" + waPhone;
             const itemStr = order.items.map(i => `${i.qty} x ${i.name}`).join(', ');
-            document.getElementById('btn-wa').href = `https://wa.me/${waPhone}?text=${encodeURIComponent(`*SGMC Chai*\nHello ${order.customerName},\nOrder: ${itemStr}\nTotal: ₹${order.totalAmount}\nStatus: ${order.status.toUpperCase()}`)}`;
-
-            // Map Navigation (Google Maps Link)
-            if(order.customerCoordinates && order.customerCoordinates.lat) {
-                 // Open Google Maps Navigation
-                 document.getElementById('btn-map').href = `https://www.google.com/maps/dir/?api=1&destination=${order.customerCoordinates.lat},${order.customerCoordinates.lng}`;
-                 document.getElementById('btn-map').classList.remove('opacity-50', 'pointer-events-none');
-            } else {
-                 document.getElementById('btn-map').href = "#";
-                 document.getElementById('btn-map').classList.add('opacity-50', 'pointer-events-none');
-            }
-
-            renderModalItems();
-            updateModalStatusUI();
+            document.getElementById('btn-wa').href = `https://wa.me/${waPhone}?text=${encodeURIComponent(`*SGMC Chai*\nOrder Update for ${order.customerName}\nItems: ${itemStr}\nTotal: ₹${order.totalAmount}`)}`;
             
+            if(order.customerCoordinates) {
+                 document.getElementById('btn-map').href = `https://www.google.com/maps/dir/?api=1&destination=$?q=${order.customerCoordinates.lat},${order.customerCoordinates.lng}`;
+                 document.getElementById('btn-map').classList.remove('opacity-50', 'pointer-events-none');
+            } else { document.getElementById('btn-map').classList.add('opacity-50', 'pointer-events-none'); }
+
+            renderModalItems(); updateModalStatusUI();
             document.getElementById('action-modal').classList.remove('hidden');
         }
 
@@ -448,137 +261,146 @@
             const list = document.getElementById('ac-items-list');
             let total = 0;
             list.innerHTML = currentEditingItems.map((item, idx) => {
-                const isPna = item.status === 'pna';
-                if(!isPna) total += (item.qty * (item.price || 0)); // Only add price if not PNA
+                const itemTotal = item.qty * (item.price || 0);
+                total += itemTotal;
+                // Using a 'safe' copy of original qty if present, else assume current is max
+                const maxQty = item.originalQty || item.qty; 
+                // Store original qty for reference if not already stored
+                if(!item.originalQty) currentEditingItems[idx].originalQty = item.qty;
+
                 return `
-                <div class="flex justify-between items-center p-2 rounded ${isPna ? 'bg-red-900/20' : 'bg-gray-900'} mb-1 border border-gray-700">
-                    <div class="${isPna ? 'line-through-red text-gray-500' : 'text-white'}">
-                        <span class="font-bold text-xs">${item.qty} x</span>
-                        <span class="text-sm">${item.name}</span>
+                <div class="flex justify-between items-center p-2 rounded bg-gray-900 mb-1 border border-gray-700">
+                    <div class="flex-1">
+                        <span class="text-sm font-bold text-white">${item.name}</span>
+                        <p class="text-[10px] text-gray-500">Ordered: ${currentEditingItems[idx].originalQty}</p>
                     </div>
-                    <input type="checkbox" onchange="toggleItemPNA(${idx})" ${!isPna ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded">
+                    <div class="flex items-center gap-3">
+                         <button onclick="adjustItemQty(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center hover:bg-red-900">-</button>
+                         <span class="font-bold w-4 text-center text-orange-400">${item.qty}</span>
+                         <button onclick="adjustItemQty(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center hover:bg-green-900">+</button>
+                    </div>
                 </div>`;
             }).join('');
             document.getElementById('ac-total').innerText = total;
-            currentEditingOrder._calculatedTotal = total; // Temporary storage for save
+            currentEditingOrder._calculatedTotal = total;
         }
 
-        function toggleItemPNA(index) {
-            if(currentEditingItems[index].status === 'pna') {
-                delete currentEditingItems[index].status;
-            } else {
-                currentEditingItems[index].status = 'pna';
+        function adjustItemQty(index, change) {
+            const item = currentEditingItems[index];
+            const newQty = item.qty + change;
+            if(newQty >= 0 && newQty <= item.originalQty) {
+                item.qty = newQty;
+                renderModalItems();
             }
-            renderModalItems();
-        }
-
-        function setModalStatus(status) {
-            currentEditingStatus = status;
-            updateModalStatusUI();
-        }
-
-        function updateModalStatusUI() {
-            ['pending', 'cooking', 'ready'].forEach(s => {
-                const btn = document.getElementById('st-' + s);
-                if(s === currentEditingStatus) {
-                    btn.classList.add('bg-orange-600', 'text-white');
-                    btn.classList.remove('text-gray-400');
-                } else {
-                    btn.classList.remove('bg-orange-600', 'text-white');
-                    btn.classList.add('text-gray-400');
-                }
-            });
         }
 
         function saveActionModal() {
             if(!currentEditingOrder) return;
-            const newTotal = currentEditingOrder._calculatedTotal;
+            // Remove items with 0 qty or keep them with 0? Let's keep them with 0 but they won't cost anything.
+            // Better to keep so customer knows it was removed.
             
             db.collection('orders').doc(currentEditingOrder.id).update({
                 items: currentEditingItems,
                 status: currentEditingStatus,
-                totalAmount: newTotal
-            }).then(() => {
-                showToast("Order Updated");
-                closeActionModal();
-            }).catch(e => showToast("Error updating", "error"));
+                totalAmount: currentEditingOrder._calculatedTotal
+            }).then(() => { showToast("Order Updated"); closeActionModal(); });
         }
 
-        function closeActionModal() {
-            document.getElementById('action-modal').classList.add('hidden');
-            currentEditingOrder = null;
+        function closeActionModal() { document.getElementById('action-modal').classList.add('hidden'); }
+        function setModalStatus(s) { currentEditingStatus = s; updateModalStatusUI(); }
+        function updateModalStatusUI() { ['pending', 'cooking', 'ready'].forEach(s => { const btn = document.getElementById('st-' + s); if(s === currentEditingStatus) { btn.classList.add('bg-orange-600', 'text-white'); btn.classList.remove('text-gray-400'); } else { btn.classList.remove('bg-orange-600', 'text-white'); btn.classList.add('text-gray-400'); } }); }
+
+        // --- HISTORY EXPANSION ---
+        function renderHistory() {
+            const container = document.getElementById('history-container'); let groups = {};
+            allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); });
+            
+            if(Object.keys(groups).length === 0) { container.innerHTML = "<p class='text-center text-gray-500 mt-4'>No history.</p>"; return; }
+            
+            container.innerHTML = Object.keys(groups).map(p => {
+                const g = groups[p];
+                return `<div class="card overflow-hidden mb-2">
+                    <div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-750 transition">
+                        <div><h3 class="font-bold text-white text-sm">${g.name}</h3><p class="text-[10px] text-gray-400">${p}</p></div>
+                        <div class="text-right"><span class="text-[10px] text-gray-500">${g.orders.length} orders</span> <i class="fas fa-chevron-down ml-1 text-xs"></i></div>
+                    </div>
+                    <div class="hidden bg-black/20 p-2 space-y-2 border-t border-gray-700">
+                        ${g.orders.map(o => {
+                            const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() + ' ' + new Date(o.timestamp.toDate()).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '';
+                            return `<div class="bg-gray-800 p-2 rounded border border-gray-700/50 flex justify-between items-start">
+                                <div><p class="text-[10px] text-gray-500">${dateStr}</p><p class="text-xs text-gray-300 font-bold">${o.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p><span class="text-[10px] px-1 rounded ${o.status==='completed'?'bg-green-900 text-green-300':'bg-red-900 text-red-300'}">${o.status}</span></div>
+                                <span class="font-bold text-orange-400 text-sm">₹${o.totalAmount}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }).join('');
         }
 
-        // --- UTILS (Sales, Udhaar, Menu) ---
-        function openSalesAnalysis() {
-            document.getElementById('sales-modal').classList.remove('hidden');
-            switchSalesTab('today');
-        }
-        function switchSalesTab(tab) {
-             if(tab === 'today') {
-                document.getElementById('sale-tab-today').className = "flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500";
-                document.getElementById('sale-tab-past').className = "flex-1 py-2 text-sm font-bold text-gray-500";
-                document.getElementById('sales-view-today').classList.remove('hidden');
-                document.getElementById('sales-view-past').classList.add('hidden');
-                renderTodayAnalysis();
-            } else {
-                document.getElementById('sale-tab-past').className = "flex-1 py-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500";
-                document.getElementById('sale-tab-today').className = "flex-1 py-2 text-sm font-bold text-gray-500";
-                document.getElementById('sales-view-past').classList.remove('hidden');
-                document.getElementById('sales-view-today').classList.add('hidden');
-                renderPastHistory();
+        // --- INVENTORY (DELETE CUSTOM ITEMS) ---
+        function renderMenuModalList() {
+            const list = document.getElementById('menu-list-items');
+            const stocks = currentMenuData.stock || {};
+            // Base Items
+            let html = baseAdminItems.map(item => `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700"><span class="text-sm font-bold text-white">${item.name}</span><label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${stocks[item.id] !== false ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label></div>`).join('');
+            // Custom Items
+            if(currentMenuData.customItems) {
+                html += currentMenuData.customItems.map((item, idx) => `
+                <div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700">
+                    <div><span class="text-sm font-bold text-blue-300">${item.name}</span></div>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${stocks[item.id] !== false ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label>
+                        <button onclick="deleteCustomItem(${idx})" class="text-red-500 hover:text-red-400"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`).join('');
             }
+            list.innerHTML = html;
         }
-        function renderTodayAnalysis() {
-            const container = document.getElementById('today-breakdown-list');
-            if(Object.keys(todaysItemsMap).length === 0) { container.innerHTML = '<p class="text-gray-500 text-center text-sm">No sales.</p>'; return; }
-            const sorted = Object.entries(todaysItemsMap).sort((a,b) => b[1] - a[1]);
-            container.innerHTML = sorted.map(([n, q]) => `<div class="flex justify-between items-center bg-gray-800 p-2 rounded"><span class="text-sm font-bold">${n}</span><span class="text-orange-400 text-sm font-bold">${q}</span></div>`).join('');
+        function deleteCustomItem(index) {
+            if(!confirm("Permanently delete this item?")) return;
+            currentMenuData.customItems.splice(index, 1);
+            saveMenuStatus();
         }
-        function renderPastHistory() {
-             const listContainer = document.getElementById('past-list-container');
-             const graphContainer = document.getElementById('past-graph-container');
-             if(!salesHistoryData || salesHistoryData.length === 0) {
-                 listContainer.innerHTML = '<p class="text-gray-500 text-center text-sm py-4">No history data.</p>';
-                 graphContainer.classList.add('hidden'); return;
-             }
-             graphContainer.classList.remove('hidden');
-             const displayData = [...salesHistoryData].reverse().slice(0, 7);
-             listContainer.innerHTML = displayData.map(d => `<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700"><span class="text-xs text-gray-400">${d.date}</span><span class="text-sm font-bold text-green-400">₹${d.total}</span></div>`).join('');
-             const maxVal = Math.max(...displayData.map(d => d.total));
-             const barHtml = displayData.reverse().map(d => { const height = maxVal > 0 ? (d.total / maxVal) * 80 : 0; return `<div style="flex:1; display:flex; flex-direction:column; align-items:center;"><div class="bar w-full" style="height:${height}px; min-height:4px; opacity:0.8;"><span>₹${d.total}</span></div><div class="bar-label">${d.date.split('/')[0]}</div></div>`; }).join('');
-             graphContainer.innerHTML = `<div class="bar-container">${barHtml}</div>`;
+
+        // --- ANALYTICS (Better End Day) ---
+        function tryEndDay() {
+            // Find top item
+            let topItem = "None"; let maxQ = 0;
+            for(let [k,v] of Object.entries(todaysItemsMap)) { if(v > maxQ) { maxQ = v; topItem = k; } }
+            const sales = parseInt(document.getElementById('total-sales').dataset.realValue || 0);
+            
+            const msg = `Ending Day...\n\nTotal Sales: ₹${sales}\nTop Item: ${topItem} (${maxQ})\nTotal Orders: ${todaysOrderCount}\n\nProceed to reset?`;
+            confirmAction(msg, endDay);
         }
-        
-        function endDay() {
-            const currentSales = parseInt(document.getElementById('total-sales').dataset.realValue || 0);
-            const todayStr = new Date().toLocaleDateString('en-IN');
-            const updatedHistory = [...salesHistoryData, {date: todayStr, total: currentSales}];
-            if(updatedHistory.length > 30) updatedHistory.shift();
-            db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp(), salesHistory: updatedHistory }, { merge: true }).then(() => { showToast("Day Reset & History Saved"); });
-        }
-        
-        function toggleSalesPrivacy() { salesHidden = !salesHidden; const salesEl = document.getElementById('total-sales'); const icon = document.getElementById('privacy-icon'); if(salesHidden) { salesEl.innerText = "****"; icon.className = "fas fa-eye-slash"; } else { salesEl.innerText = salesEl.dataset.realValue; icon.className = "fas fa-eye"; } }
-        function openBroadcastModal() { document.getElementById('broadcast-modal').classList.remove('hidden'); }
-        function saveBroadcast(msg) { db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true }).then(() => { document.getElementById('broadcast-modal').classList.add('hidden'); showToast(msg ? "Broadcast Active" : "Broadcast Removed"); }); }
+
+        // --- STANDARD FUNCTIONS ---
+        function setShopLocation() { if(!navigator.geolocation) { showToast("No Geo support", "error"); return; } showToast("Getting Location..."); navigator.geolocation.getCurrentPosition((pos) => { db.collection('settings').doc('config').set({ location: { lat: pos.coords.latitude, lng: pos.coords.longitude } }, { merge: true }).then(() => showToast("Location Set!")); }, () => showToast("Access Denied", "error"), { enableHighAccuracy: true }); }
+        function enableSound() { if(!soundEnabled) { const audio = document.getElementById('order-sound'); audio.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; audio.play().then(() => { audio.pause(); audio.currentTime = 0; soundEnabled = true; document.getElementById('sound-status').innerHTML = '<i class="fas fa-volume-up text-green-500"></i> Sound Active'; }).catch(e => {}); } }
+        function playNotification() { if(soundEnabled) { const audio = document.getElementById('order-sound'); audio.loop = true; audio.play().catch(e => {}); document.body.addEventListener('click', () => { audio.pause(); audio.currentTime = 0; }, { once: true }); } }
+        function openSalesAnalysis() { document.getElementById('sales-modal').classList.remove('hidden'); switchSalesTab('today'); }
+        function switchSalesTab(tab) { if(tab === 'today') { document.getElementById('sale-tab-today').classList.add('text-orange-500','border-orange-500'); document.getElementById('sale-tab-past').classList.remove('text-orange-500','border-orange-500'); document.getElementById('sales-view-today').classList.remove('hidden'); document.getElementById('sales-view-past').classList.add('hidden'); renderTodayAnalysis(); } else { document.getElementById('sale-tab-past').classList.add('text-orange-500','border-orange-500'); document.getElementById('sale-tab-today').classList.remove('text-orange-500','border-orange-500'); document.getElementById('sales-view-past').classList.remove('hidden'); document.getElementById('sales-view-today').classList.add('hidden'); renderPastHistory(); } }
+        function renderTodayAnalysis() { const c = document.getElementById('today-breakdown-list'); if(Object.keys(todaysItemsMap).length === 0) { c.innerHTML = '<p class="text-gray-500 text-center text-sm">No sales.</p>'; return; } const sorted = Object.entries(todaysItemsMap).sort((a,b) => b[1] - a[1]); c.innerHTML = sorted.map(([n, q]) => `<div class="flex justify-between items-center bg-gray-800 p-2 rounded"><span class="text-sm font-bold">${n}</span><span class="text-orange-400 text-sm font-bold">${q}</span></div>`).join(''); }
+        function renderPastHistory() { const list = document.getElementById('past-list-container'); const graph = document.getElementById('past-graph-container'); const data = [...salesHistoryData].reverse().slice(0, 7); if(data.length === 0) { list.innerHTML = "<p class='text-center text-gray-500'>No Data</p>"; graph.classList.add('hidden'); return; } graph.classList.remove('hidden'); list.innerHTML = data.map(d => `<div class="flex justify-between p-2 border-b border-gray-700"><span class="text-gray-400 text-xs">${d.date}</span><span class="text-green-400 font-bold">₹${d.total}</span></div>`).join(''); const max = Math.max(...data.map(d=>d.total)); graph.innerHTML = `<div class="bar-container">${data.reverse().map(d => `<div class="bar" style="height:${(d.total/max)*80}px"><span>${d.total}</span></div>`).join('')}</div>`; }
+        function endDay() { const sales = parseInt(document.getElementById('total-sales').dataset.realValue || 0); const today = new Date().toLocaleDateString('en-IN'); const hist = [...salesHistoryData, {date: today, total: sales}].slice(-30); db.collection('settings').doc('config').set({ lastReset: firebase.firestore.FieldValue.serverTimestamp(), salesHistory: hist }, { merge: true }).then(() => { showToast("Day Ended"); }); }
+        function toggleSalesPrivacy() { salesHidden = !salesHidden; recalculateData(); document.getElementById('privacy-icon').className = salesHidden ? "fas fa-eye-slash" : "fas fa-eye"; }
+        function renderUdhaar() { const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = ''; for(let phone in udhaarMap) { const u = udhaarMap[phone]; const due = u.debit - u.credit; if(due > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) { html += `<div class="card p-3 flex justify-between items-center"><div><div class="flex items-center gap-2"><h4 class="font-bold text-white">${u.name}</h4><button onclick="openLimitModal('${phone}', '${u.name}')" class="text-gray-500 hover:text-orange-500"><i class="fas fa-lock"></i></button></div><p class="text-xs text-gray-400">${phone}</p></div><div class="text-right"><h4 class="text-red-400 font-bold">₹${due}</h4><button onclick="openSettle('${phone}', '${u.name}', ${due})" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded mt-1">SETTLE</button></div></div>`; } } list.innerHTML = html || "<p class='text-center text-gray-500 mt-4'>No Udhaar.</p>"; }
+        function openLimitModal(phone, name) { currentLimitPhone = phone; document.getElementById('limit-modal-name').innerText = name; document.getElementById('limit-input').value = ""; document.getElementById('limit-modal').classList.remove('hidden'); }
         function saveLimit() { const val = document.getElementById('limit-input').value; if(!val) return; db.collection('user_limits').doc(currentLimitPhone).set({ limit: parseInt(val) }, { merge: true }).then(() => { document.getElementById('limit-modal').classList.add('hidden'); showToast("Limit Set"); }); }
-        function renderUdhaar() { const list = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let html = ''; for(let phone in udhaarMap) { const u = udhaarMap[phone]; const netDue = u.debit - u.credit; if(netDue > 0 && (u.name.toLowerCase().includes(q) || phone.includes(q))) { html += `<div class="card p-3 flex justify-between items-center animate-fade-in"><div><h4 class="font-bold text-white">${u.name}</h4><p class="text-xs text-gray-400 tracking-wide">${phone}</p></div><div class="text-right"><h4 class="text-red-400 font-bold text-lg">₹${netDue}</h4><button onclick="openSettle('${phone}', '${u.name}', ${netDue})" class="bg-blue-600 text-white text-[10px] px-2 py-1 rounded font-bold shadow mt-1">SETTLE</button></div></div>`; } } list.innerHTML = html || "<p class='text-center text-gray-500 text-sm mt-10'>No Udhaar pending.</p>"; }
-        function renderHistory() { const container = document.getElementById('history-container'); let groups = {}; allHistoryOrders.forEach(o => { const k = o.customerPhone || "Unknown"; if(!groups[k]) groups[k] = { name: o.customerName, orders: [] }; groups[k].orders.push(o); }); container.innerHTML = Object.keys(groups).map(p => { const g = groups[p]; const t = g.orders.reduce((s, o) => s + (o.status === 'completed' ? o.totalAmount : 0), 0); return `<div class="card overflow-hidden"><div onclick="this.nextElementSibling.classList.toggle('hidden')" class="p-3 bg-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-750 transition"><div><h3 class="font-bold text-white text-sm">${g.name}</h3><p class="text-[10px] text-gray-400">${p}</p></div><div class="text-right"><p class="text-orange-400 font-bold text-sm">₹${t}</p></div></div><div class="hidden bg-black/20 p-2 space-y-2 border-t border-gray-700">${g.orders.map(o => { const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="flex justify-between items-center bg-gray-800 p-2 rounded border border-gray-700/50"><div><span class="text-gray-500 text-[10px]">${dateStr}</span><p class="text-xs text-gray-300">${o.items.map(i=>i.name).join(', ')}</p></div><span class="font-bold text-white text-sm">₹${o.totalAmount}</span></div>`; }).join('')}</div></div>`; }).join(''); }
-        function showToast(msg, type = 'success') { const container = document.getElementById('toast-container'); const el = document.createElement('div'); el.className = `toast ${type === 'success' ? 'toast-success' : 'toast-error'}`; el.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`; container.appendChild(el); setTimeout(() => el.classList.add('show'), 10); setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 2000); }
-        function confirmAction(title, callback) { document.getElementById('confirm-title').innerText = title; document.getElementById('custom-confirm').classList.remove('hidden'); setTimeout(() => document.querySelector('.confirm-box').classList.add('open'), 10); pendingAction = callback; }
-        function closeConfirm(result) { document.querySelector('.confirm-box').classList.remove('open'); setTimeout(() => document.getElementById('custom-confirm').classList.add('hidden'), 200); if(result && pendingAction) pendingAction(); pendingAction = null; }
         function openSettle(phone, name, due) { currentSettlePhone = phone; document.getElementById('settle-name').innerText = name; document.getElementById('settle-due').innerText = due; document.getElementById('settle-amount').value = ""; document.getElementById('settle-modal').classList.remove('hidden'); }
-        function submitPayment() { const amount = parseInt(document.getElementById('settle-amount').value); if(!amount) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Cash (Admin)' }).then(() => { document.getElementById('settle-modal').classList.add('hidden'); showToast("Payment Settled"); }); }
-        function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast(isShopOpen ? "Shop Closed" : "Shop Opened")); }
-        function markComplete(id) { confirmAction('Mark as Delivered?', () => { db.collection('orders').doc(id).update({ status: 'completed' }).then(() => showToast("Order Completed")); }); }
-        function verifyPayment(id) { db.collection('orders').doc(id).update({ paymentVerified: true }).then(() => showToast("Payment Verified")); }
+        function submitPayment() { const amt = parseInt(document.getElementById('settle-amount').value); if(!amt) return; db.collection('payments').add({ phone: currentSettlePhone, amount: amt, timestamp: firebase.firestore.FieldValue.serverTimestamp(), mode: 'Cash (Admin)' }).then(() => { document.getElementById('settle-modal').classList.add('hidden'); showToast("Settled"); }); }
+        function toggleShop() { db.collection('settings').doc('status').set({ isOpen: !isShopOpen }).then(() => showToast("Updated")); }
+        function markComplete(id) { confirmAction('Mark Delivered?', () => db.collection('orders').doc(id).update({ status: 'completed' })); }
         function switchTab(t) { localStorage.setItem('admin_active_tab', t); ['live', 'history', 'udhaar'].forEach(x => { document.getElementById(`view-${x}`).classList.add('hidden'); document.getElementById(`tab-${x}`).classList.remove('tab-active', 'text-white'); document.getElementById(`tab-${x}`).classList.add('text-gray-500'); }); document.getElementById(`view-${t}`).classList.remove('hidden'); document.getElementById(`tab-${t}`).classList.add('tab-active', 'text-white'); document.getElementById(`tab-${t}`).classList.remove('text-gray-500'); if(t==='history') renderHistory(); }
         function filterUdhaar() { renderUdhaar(); }
         function openMenuControl() { renderMenuModalList(); document.getElementById('menu-modal').classList.remove('hidden'); }
-        function addNewItem() { const name = document.getElementById('new-item-name').value.trim(); const price = parseInt(document.getElementById('new-item-price').value); if(!name || !price) { showToast("Enter Name & Price", "error"); return; } const newItem = { id: Date.now(), name: name, price: price }; if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push(newItem); document.getElementById('new-item-name').value = ''; document.getElementById('new-item-price').value = ''; renderMenuModalList(); }
-        function saveMenuStatus() { const stocks = {}; const prices = {}; baseAdminItems.forEach(item => { stocks[item.id] = document.getElementById(`stock-${item.id}`).checked; }); db.collection('settings').doc('menu_data').set({ stock: stocks, customItems: currentMenuData.customItems || [] }, { merge: true }).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Menu Updated Successfully"); }); }
-        function renderMenuModalList() { const list = document.getElementById('menu-list-items'); const stocks = currentMenuData.stock || {}; list.innerHTML = baseAdminItems.map(item => `<div class="flex justify-between items-center bg-gray-800 p-3 rounded border border-gray-700"><span class="text-sm font-bold text-white">${item.name}</span><label class="flex items-center cursor-pointer"><input type="checkbox" id="stock-${item.id}" ${stocks[item.id] !== false ? 'checked' : ''} class="w-5 h-5 accent-green-500 bg-gray-700 border-gray-600 rounded"></label></div>`).join(''); }
-        
+        function addNewItem() { const name = document.getElementById('new-item-name').value.trim(); const price = parseInt(document.getElementById('new-item-price').value); if(!name || !price) return; const newItem = { id: Date.now(), name: name, price: price }; if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push(newItem); renderMenuModalList(); }
+        function saveMenuStatus() { const s = {}; baseAdminItems.forEach(i => s[i.id] = document.getElementById(`stock-${i.id}`).checked); if(currentMenuData.customItems) currentMenuData.customItems.forEach(i => s[i.id] = document.getElementById(`stock-${i.id}`).checked); db.collection('settings').doc('menu_data').set({ stock: s, customItems: currentMenuData.customItems || [] }, { merge: true }).then(() => { document.getElementById('menu-modal').classList.add('hidden'); showToast("Saved"); }); }
+        function openBroadcastModal() { document.getElementById('broadcast-modal').classList.remove('hidden'); }
+        function saveBroadcast(msg) { db.collection('settings').doc('config').set({ broadcastMessage: msg || "" }, { merge: true }).then(() => { document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Saved"); }); }
+        function showToast(msg, type='success') { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className = `toast ${type==='success'?'toast-success':'toast-error'}`; e.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i> <span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.classList.add('show'),10); setTimeout(()=>{e.classList.remove('show'); setTimeout(()=>e.remove(),300)},2000); }
+        function confirmAction(t, cb) { document.getElementById('confirm-title').innerText = t; document.getElementById('custom-confirm').classList.remove('hidden'); setTimeout(()=>document.querySelector('.confirm-box').classList.add('open'),10); pendingAction = cb; }
+        function closeConfirm(res) { document.querySelector('.confirm-box').classList.remove('open'); setTimeout(()=>document.getElementById('custom-confirm').classList.add('hidden'),200); if(res && pendingAction) pendingAction(); pendingAction = null; }
+
         init();
     </script>
 </body>
