@@ -56,8 +56,10 @@
         .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 13px; }
         .chat-user { background: #F97316; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .chat-admin { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-color); align-self: flex-start; border-bottom-left-radius: 4px; }
-        .ticker-wrap { position: fixed; top: 60px; left: 0; right: 0; background: linear-gradient(90deg, #F97316, #ec4899); color: white; font-size: 11px; overflow: hidden; height: 24px; line-height: 24px; z-index: 30; }
-        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; }
+        
+        /* Broadcast Ticker */
+        .ticker-wrap { width: 100%; overflow: hidden; height: 30px; background: linear-gradient(90deg, #F97316, #ec4899); color: white; line-height: 30px; position: relative; }
+        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; font-size: 12px; font-weight: bold; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
         
         #cooking-screen { position: fixed; inset: 0; background: var(--bg-color); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
@@ -69,14 +71,21 @@
 </head>
 <body>
 
-    <div class="fixed top-0 left-0 right-0 bg-opacity-90 backdrop-blur-md z-40 px-4 py-4 flex justify-between items-center border-b border-white/5" style="background-color: var(--bg-color); border-color: var(--border-color);">
-        <div>
-            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal" style="color:var(--text-color)">Chai</span></h1>
-            <p class="text-[10px] text-green-500 font-bold tracking-wide" id="shop-status-badge">● LIVE</p>
+    <div class="fixed top-0 left-0 right-0 bg-opacity-90 backdrop-blur-md z-40" style="background-color: var(--bg-color); border-bottom: 1px solid var(--border-color);">
+        <div class="px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal" style="color:var(--text-color)">Chai</span></h1>
+                <p class="text-[10px] text-green-500 font-bold tracking-wide" id="shop-status-badge">● LIVE</p>
+            </div>
+            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-700 active:scale-95 transition" style="background: var(--card-bg); border-color: var(--border-color);">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
-        <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-700 active:scale-95 transition" style="background: var(--card-bg); border-color: var(--border-color);">
-            <i class="fas fa-bars"></i>
-        </button>
+        <div id="broadcast-bar" class="hidden">
+            <div class="ticker-wrap">
+                <div class="ticker" id="broadcast-msg"></div>
+            </div>
+        </div>
     </div>
 
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -101,13 +110,11 @@
                 <span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</span>
             </button>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v4.1 Fixed History</div>
+        <div class="text-center text-xs text-gray-500 mt-4">v4.2 Fixed Updates</div>
     </div>
 
-    <div class="h-20"></div>
-
-    <div id="view-menu" class="pb-10">
-        <div class="sticky top-[60px] z-30 pt-2 pb-1 px-4 border-b border-white/5" style="background: var(--bg-color); border-color: var(--border-color);">
+    <div class="h-24"></div> <div id="view-menu" class="pb-10">
+        <div class="sticky top-[85px] z-30 pt-2 pb-1 px-4 border-b border-white/5" style="background: var(--bg-color); border-color: var(--border-color);">
             <div class="relative mb-3">
                 <i class="fas fa-search absolute left-3 top-3 text-gray-500"></i>
                 <input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search..." class="w-full rounded-xl py-3 pl-10 pr-4 text-sm outline-none border transition-all" style="background:var(--input-bg); color:var(--text-color); border-color:var(--border-color)">
@@ -213,7 +220,6 @@
 
         function init() { loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); switchTab('menu'); fetchShopLocation(); }
 
-        // --- CORE LOGIC ---
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; } else setTimeout(()=>document.getElementById('login-modal').classList.remove('hidden'),1000); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.add('hidden'); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.remove('hidden'); toggleSidebar(); }
@@ -221,7 +227,6 @@
         function handlePlaceOrderClick() {
             if(Object.keys(cart).length === 0) return;
             if(!userProfile.phone) return openProfileEdit();
-            
             const isSelf = !document.getElementById('form-self').classList.contains('hidden');
             let finalAddress="", finalCoords=null, recipient=null;
 
@@ -232,32 +237,24 @@
                 if(!flat) return showAlert("Enter Flat/Room No.");
                 finalAddress = `${flat}, ${document.getElementById('self-landmark').value}, [${gpsTxt}]`;
                 finalCoords = userLocation;
-                
                 if(shopLocation && userLocation) {
                     const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng);
                     if(d > MAX_DISTANCE_KM) return showAlert(`Too far (${d.toFixed(1)}km). Only 3km allowed.`);
                 }
             } else {
-                // Others
                 const name = document.getElementById('rec-name').value;
                 const phone = document.getElementById('rec-phone').value;
                 const area = document.getElementById('search-area').value;
                 const flat = document.getElementById('others-flat').value;
-                
                 if(!name || !phone || !area || !flat) return showAlert("Fill all details");
                 if(!otherOrderCoords) return showAlert("Click 'Check' to verify area distance.");
-                
                 recipient = { name, phone };
                 finalAddress = `${flat}, ${area}`;
                 finalCoords = otherOrderCoords;
             }
 
             const total = parseInt(document.getElementById('checkout-total').innerText);
-            
-            // Udhaar Limit Check
-            if(selectedPayment === 'Udhaar') {
-               // ... (Standard Logic) ...
-            }
+            if(selectedPayment === 'Udhaar') { /* Logic handled in admin/backend mostly */ }
 
             userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
             
@@ -274,7 +271,6 @@
                 document.getElementById('upi-confirm-modal').classList.remove('hidden');
                 window.tempOrderData = orderData; return;
             }
-
             placeOrderDB(orderData);
         }
 
@@ -290,7 +286,6 @@
         }
         function finalizeOrder() { placeOrderDB(window.tempOrderData); }
 
-        // --- HISTORY & CANCEL FIX ---
         function fetchMyHistory() {
             if(!userProfile.phone) return;
             const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500"></i> Loading...</div>';
@@ -313,7 +308,6 @@
         }
         function cancelOrder(id) { if(confirm("Cancel Order?")) db.collection('orders').doc(id).update({status:'cancelled'}).then(()=>fetchMyHistory()); }
 
-        // --- UDHAAR FIX ---
         function fetchMyUdhaar() {
             if(!userProfile.phone) return;
             const l=document.getElementById('udhaar-history'); l.innerHTML='<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>';
@@ -333,14 +327,13 @@
             });
         }
 
-        // --- STANDARD FUNCTIONS (Same as before) ---
         function detectLocation(mode) { if(mode==='self'){const t=document.getElementById('gps-address-text'); t.innerText="Detecting..."; if(!navigator.geolocation) return alert("No Geo"); navigator.geolocation.getCurrentPosition(async p=>{ userLocation={lat:p.coords.latitude,lng:p.coords.longitude}; t.innerText="Lat: "+p.coords.latitude.toFixed(4); try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`);const d=await r.json();if(d&&d.display_name)t.innerText=d.display_name.split(',').slice(0,3).join(',');}catch(e){} },()=>{alert("Denied");t.innerText="Retry";},{enableHighAccuracy:true}); } }
         async function verifyArea() { const t=document.getElementById('search-area').value; const b=document.getElementById('btn-verify'); const s=document.getElementById('area-status'); if(t.length<3)return alert("Enter Area"); b.innerText="..."; try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&limit=1`);const d=await r.json(); b.innerText="Check"; if(d.length>0){const la=parseFloat(d[0].lat),lo=parseFloat(d[0].lon); otherOrderCoords={lat:la,lng:lo}; if(shopLocation){const dist=haversine(shopLocation.lat,shopLocation.lng,la,lo); if(dist<=MAX_DISTANCE_KM){s.innerText=`✅ OK (${dist.toFixed(1)}km)`;s.className="text-[10px] text-green-500 mt-1 block";}else{s.innerText=`❌ Too Far (${dist.toFixed(1)}km)`;s.className="text-[10px] text-red-500 mt-1 block";otherOrderCoords=null;}}}else{s.innerText="Not Found";}}catch(e){b.innerText="Check";alert("Error");} }
         function haversine(a,b,c,d){const R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;const z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
         
         function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');}
         function toggleTheme(){document.body.classList.toggle('light-mode');const l=document.body.classList.contains('light-mode');document.getElementById('theme-icon').className=l?"fas fa-toggle-off text-gray-400":"fas fa-toggle-on text-purple-500";}
-        function openCheckout(){const c=document.getElementById('checkout-items');let h='',t=0;for(let k in cart){h+=`<div class="flex justify-between text-sm mb-2" style="color:var(--text-color)"><span>${cart[k].name} x${cart[k].qty}</span><span>₹${cart[k].qty*cart[k].price}</span></div>`;t+=cart[k].qty*cart[k].price}c.innerHTML=h;document.getElementById('checkout-total').innerText=t;document.getElementById('checkout-modal').classList.remove('hidden');setPayment('Cash');document.getElementById('order-for-others').checked=false;toggleOrderType('self');}
+        function openCheckout(){const c=document.getElementById('checkout-items');let h='',t=0;for(let k in cart){h+=`<div class="flex justify-between text-sm mb-2" style="color:var(--text-color)"><span>${cart[k].name} x${cart[k].qty}</span><span>₹${cart[k].qty*cart[k].price}</span></div>`;t+=cart[k].qty*cart[k].price}c.innerHTML=h;document.getElementById('checkout-total').innerText=t;document.getElementById('checkout-modal').classList.remove('hidden');setPayment('Cash');document.getElementById('tab-others').classList.remove('active');toggleOrderType('self');}
         function closeCheckout(){document.getElementById('checkout-modal').classList.add('hidden')}
         function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>{ b.classList.remove('bg-orange-600','text-white'); b.classList.add('bg-gray-800','text-gray-300'); }); document.getElementById('pay-'+m.toLowerCase()).classList.add('bg-orange-600','text-white'); }
         function toggleOrderType(t){const s=t==='self';document.getElementById('tab-self').className=s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 transition":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition";document.getElementById('tab-others').className=!s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 transition":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition";document.getElementById('form-self').classList.toggle('hidden',!s);document.getElementById('form-others').classList.toggle('hidden',s);}
@@ -350,10 +343,13 @@
         function closeChat(){document.getElementById('chat-modal').classList.remove('open');setTimeout(()=>document.getElementById('chat-modal').classList.add('hidden'),300);}
         function sendMessage(){const t=document.getElementById('chat-input').value.trim();if(t){db.collection('chats').doc(userProfile.phone).collection('messages').add({text:t,sender:'user',timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('chat-input').value="";}}
         function loadMessages(){db.collection('chats').doc(userProfile.phone).collection('messages').orderBy('timestamp').onSnapshot(s=>{document.getElementById('chat-messages').innerHTML=s.docs.map(d=>`<div class="chat-bubble ${d.data().sender==='user'?'chat-user':'chat-admin'}">${d.data().text}</div>`).join('');});}
-        function loadMenuData(){db.collection('settings').doc('menu_data').onSnapshot(d=>{if(d.exists){let D=d.data(),S=D.stock||{},P=D.prices||{},C=D.customItems||[];let M=baseMenuItems.map(i=>({...i,price:P[i.id]?parseInt(P[i.id]):i.price}));if(C.length)M=[...M,...C.map(i=>({...i,category:i.name.toLowerCase().includes('chai')?'Chai':i.name.toLowerCase().includes('cig')?'Sutta':'Snacks',price:P[i.id]?parseInt(P[i.id]):parseInt(i.price)}))];M.forEach(i=>i.inStock=S[i.id]!==false);displayMenuItems=M;renderMenu();}})}
+        
+        // FIXED: Menu Filter to hide unavailable items
+        function loadMenuData(){db.collection('settings').doc('menu_data').onSnapshot(d=>{if(d.exists){let D=d.data(),S=D.stock||{},P=D.prices||{},C=D.customItems||[];let M=baseMenuItems.map(i=>({...i,price:P[i.id]?parseInt(P[i.id]):i.price, available:true}));if(C.length)M=[...M,...C.map(i=>({...i,category:i.name.toLowerCase().includes('chai')?'Chai':i.name.toLowerCase().includes('cig')?'Sutta':'Snacks',price:P[i.id]?parseInt(P[i.id]):parseInt(i.price), available: i.available}))];displayMenuItems=M.filter(i => i.available !== false); renderMenu();}})}
+        
         function setCategory(c){currentCategory=c;document.querySelectorAll('.cat-chip').forEach(e=>e.className="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700");document.getElementById('cat-'+c).className="cat-chip font-bold bg-white text-black";renderMenu()}
         function filterMenu(){searchQuery=document.getElementById('search-input').value.toLowerCase();renderMenu()}
-        function renderMenu(){const c=document.getElementById('menu-container'),f=displayMenuItems.filter(i=>(currentCategory==='All'||i.category===currentCategory)&&i.name.toLowerCase().includes(searchQuery)&&i.inStock);if(!f.length){c.innerHTML='<p class="text-center text-gray-500 mt-10">No items.</p>';return}c.innerHTML=f.map(i=>`<div class="glass-card p-4 flex justify-between items-center mb-3"><div class="flex gap-3"><div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shadow-inner"><i class="fas ${i.isSpecial?'fa-smoking':'fa-utensils'} text-gray-500"></i></div><div><h3 class="font-bold text-sm" style="color:var(--text-color)">${i.name}</h3><p class="text-orange-400 text-xs">₹${i.price}</p></div></div><div class="flex gap-2 bg-black/40 rounded-lg p-1"><button onclick="updateCart('${i.id}',-1)" class="w-7 h-7 bg-gray-700 rounded text-white">-</button><span class="font-bold w-4 text-center text-sm" style="color:var(--text-color)" id="qty-${i.id}">0</span><button onclick="updateCart('${i.id}',1)" class="w-7 h-7 bg-orange-600 rounded text-white">+</button></div></div>`).join('');for(let k in cart)if(document.getElementById(`qty-${k}`))document.getElementById(`qty-${k}`).innerText=cart[k].qty}
+        function renderMenu(){const c=document.getElementById('menu-container'),f=displayMenuItems.filter(i=>(currentCategory==='All'||i.category===currentCategory)&&i.name.toLowerCase().includes(searchQuery));if(!f.length){c.innerHTML='<p class="text-center text-gray-500 mt-10">No items.</p>';return}c.innerHTML=f.map(i=>`<div class="glass-card p-4 flex justify-between items-center mb-3"><div class="flex gap-3"><div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shadow-inner"><i class="fas ${i.isSpecial?'fa-smoking':'fa-utensils'} text-gray-500"></i></div><div><h3 class="font-bold text-sm" style="color:var(--text-color)">${i.name}</h3><p class="text-orange-400 text-xs">₹${i.price}</p></div></div><div class="flex gap-2 bg-black/40 rounded-lg p-1"><button onclick="updateCart('${i.id}',-1)" class="w-7 h-7 bg-gray-700 rounded text-white">-</button><span class="font-bold w-4 text-center text-sm" style="color:var(--text-color)" id="qty-${i.id}">0</span><button onclick="updateCart('${i.id}',1)" class="w-7 h-7 bg-orange-600 rounded text-white">+</button></div></div>`).join('');for(let k in cart)if(document.getElementById(`qty-${k}`))document.getElementById(`qty-${k}`).innerText=cart[k].qty}
         function loadCartFromStorage(){const s=localStorage.getItem('sgmc_cart');if(s){cart=JSON.parse(s);updateCartUI()}}
         function saveCartToStorage(){localStorage.setItem('sgmc_cart',JSON.stringify(cart))}
         function updateCart(id,c){if(!isShopOpen)return alert("Shop Closed");if(!cart[id]){const i=displayMenuItems.find(x=>x.id==id);if(!i)return;cart[id]={id,name:i.name,price:i.price,qty:0}}cart[id].qty+=c;if(cart[id].qty<=0)delete cart[id];if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0;updateCartUI()}
@@ -364,7 +360,10 @@
         function confirmCigSelection(){for(let k in tempCigQuantities)if(tempCigQuantities[k]>0){const o=cigaretteOptions.find(x=>x.id==k);if(!cart[k])cart[k]={id:k,name:o.name,price:o.price,qty:0};cart[k].qty+=tempCigQuantities[k];}document.getElementById('cig-modal').classList.add('hidden');updateCartUI();}
         function closeCigModal(){document.getElementById('cig-modal').classList.add('hidden');}
         function listenToShopStatus(){db.collection('settings').doc('status').onSnapshot(d=>{isShopOpen=d.exists?d.data().isOpen:true;document.getElementById('closed-banner').classList.toggle('hidden',isShopOpen);document.getElementById('shop-status-badge').innerText=isShopOpen?"● LIVE":"● CLOSED";document.getElementById('shop-status-badge').className=isShopOpen?"text-[10px] text-green-500 font-bold tracking-wide":"text-[10px] text-red-500 font-bold tracking-wide";updateCartUI();});}
+        
+        // FIXED: Broadcast now displays correctly
         function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
+        
         function switchTab(t){localStorage.setItem('activeTab',t);['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')});document.getElementById('view-'+t).classList.remove('hidden');document.getElementById('nav-'+t).classList.add('active');updateCartUI();if(t==='orders')fetchMyHistory();if(t==='udhaar')fetchMyUdhaar()}
         function openOrderDetail(id){const d=cachedOrders[id];if(!d)return;document.getElementById('od-date').innerText=d.timestamp?new Date(d.timestamp.toDate()).toLocaleString():'';document.getElementById('od-total').innerText='₹'+d.totalAmount;document.getElementById('od-items').innerHTML=d.items.map(i=>`<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)"><span>${i.name} x${i.qty}</span><span>₹${i.qty*i.price}</span></div>`).join('');document.getElementById('order-detail-modal').classList.remove('hidden')}
         function payUdhaarViaUPI(){const a=document.getElementById('my-udhaar-amount').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${a}&cu=INR`}
