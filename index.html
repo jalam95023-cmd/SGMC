@@ -17,6 +17,9 @@
         .ticker-wrap { position: fixed; top: 60px; left: 0; right: 0; background: linear-gradient(90deg, #F97316, #ec4899); color: white; font-size: 11px; overflow: hidden; height: 24px; line-height: 24px; z-index: 30; }
         .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; }
         @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        /* Transitions */
+        .animate-fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -68,29 +71,29 @@
             
             <div class="bg-gray-900 p-3 rounded-lg mb-4 border border-gray-800">
                 <label class="flex items-center gap-2 mb-2 cursor-pointer">
-                    <input type="checkbox" id="order-for-others" onchange="toggleRecipientFields()" class="accent-orange-500">
-                    <span class="text-xs text-gray-300">Ordering for someone else?</span>
+                    <input type="checkbox" id="order-for-others" onchange="toggleRecipientFields()" class="accent-orange-500 w-4 h-4">
+                    <span class="text-xs text-gray-300 font-bold">Ordering for someone else?</span>
                 </label>
                 <div id="recipient-fields" class="hidden space-y-2 animate-fade-in">
-                    <input type="text" id="recipient-name" placeholder="Friend's Name" class="w-full bg-black border border-gray-700 rounded p-2 text-xs">
-                    <input type="tel" id="recipient-phone" placeholder="Friend's Phone" class="w-full bg-black border border-gray-700 rounded p-2 text-xs">
+                    <input type="text" id="recipient-name" placeholder="Friend's Name" class="w-full bg-black border border-gray-700 rounded p-2 text-xs text-white">
+                    <input type="tel" id="recipient-phone" placeholder="Friend's Phone" class="w-full bg-black border border-gray-700 rounded p-2 text-xs text-white">
                 </div>
             </div>
 
-            <textarea id="order-note" class="w-full bg-gray-900 border border-gray-800 rounded p-2 text-sm mb-4" placeholder="Instructions..."></textarea>
+            <textarea id="order-note" class="w-full bg-gray-900 border border-gray-800 rounded p-2 text-sm mb-4 text-white" placeholder="Instructions..."></textarea>
             
             <div class="flex gap-2 mb-4">
-                <div class="relative flex-1"><input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-800 rounded p-3 text-sm" placeholder="Address"></div>
-                <button onclick="detectLocation()" class="bg-gray-800 px-3 rounded text-orange-500 border border-gray-700" id="btn-detect"><i class="fas fa-crosshairs"></i></button>
+                <div class="relative flex-1"><input type="text" id="order-address" class="w-full bg-gray-900 border border-gray-800 rounded p-3 text-sm text-white" placeholder="Address"></div>
+                <button onclick="detectLocation()" class="bg-gray-800 px-3 rounded text-orange-500 border border-gray-700 active:scale-95" id="btn-detect"><i class="fas fa-crosshairs"></i></button>
             </div>
             
             <div class="grid grid-cols-3 gap-2 mb-4">
-                <button onclick="setPayment('Cash')" id="pay-cash" class="p-2 bg-gray-800 rounded text-xs border border-gray-700">Cash</button>
-                <button onclick="setPayment('UPI')" id="pay-upi" class="p-2 bg-gray-800 rounded text-xs border border-gray-700">UPI</button>
-                <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-2 bg-gray-800 rounded text-xs border border-gray-700">Udhaar</button>
+                <button onclick="setPayment('Cash')" id="pay-cash" class="p-2 bg-gray-800 rounded text-xs border border-gray-700 text-gray-300 font-bold">Cash</button>
+                <button onclick="setPayment('UPI')" id="pay-upi" class="p-2 bg-gray-800 rounded text-xs border border-gray-700 text-gray-300 font-bold">UPI</button>
+                <button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-2 bg-gray-800 rounded text-xs border border-gray-700 text-gray-300 font-bold">Udhaar</button>
             </div>
 
-            <button onclick="placeOrder()" class="w-full bg-orange-600 py-3 rounded font-bold">Place Order (₹<span id="chk-total">0</span>)</button>
+            <button onclick="placeOrder()" class="w-full bg-orange-600 py-3 rounded font-bold text-white shadow-lg">Place Order (₹<span id="chk-total">0</span>)</button>
         </div>
     </div>
 
@@ -100,14 +103,14 @@
         <div class="nav-item text-gray-500" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet block text-center mb-1"></i>Udhaar</div>
     </div>
 
-    <div id="login-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-6 z-[60]"><div class="bg-gray-900 w-full max-w-xs p-6 rounded-2xl"><h2 class="text-xl font-bold mb-4">Profile</h2><input id="user-name" placeholder="Name" class="w-full bg-black p-3 rounded mb-2"><input id="user-phone" placeholder="Phone" class="w-full bg-black p-3 rounded mb-4"><button onclick="saveProfile()" class="w-full bg-orange-600 p-3 rounded font-bold">Save</button></div></div>
+    <div id="login-modal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center p-6 z-[60]"><div class="bg-gray-900 w-full max-w-xs p-6 rounded-2xl"><h2 class="text-xl font-bold mb-4">Profile</h2><input id="user-name" placeholder="Name" class="w-full bg-black p-3 rounded mb-2 text-white"><input id="user-phone" placeholder="Phone" class="w-full bg-black p-3 rounded mb-4 text-white"><button onclick="saveProfile()" class="w-full bg-orange-600 p-3 rounded font-bold text-white">Save</button></div></div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
         let cart={}, userProfile={}, selectedPayment='Cash', isShopOpen=true, userLocation=null, shopLocation=null;
-        const baseItems = [{id:1,name:"Normal Chai",price:10,category:"Chai"},{id:2,name:"Adrak Chai",price:15,category:"Chai"},{id:3,name:"Cigarette",price:0,category:"Sutta"},{id:4,name:"Matthi",price:5,category:"Snacks"}]; // Shortened for space
+        const baseItems = [{id:1,name:"Normal Chai",price:10,category:"Chai"},{id:2,name:"Adrak Chai",price:15,category:"Chai"},{id:3,name:"Cigarette",price:0,category:"Sutta"},{id:4,name:"Matthi",price:5,category:"Snacks"}]; 
 
         function init() {
             if(localStorage.getItem('sgmc_customer_profile')) userProfile=JSON.parse(localStorage.getItem('sgmc_customer_profile')); else document.getElementById('login-modal').classList.remove('hidden');
@@ -163,7 +166,6 @@
             navigator.geolocation.getCurrentPosition(p=>{
                 userLocation={lat:p.coords.latitude,lng:p.coords.longitude};
                 document.getElementById('btn-detect').innerHTML='<i class="fas fa-check"></i>';
-                // Use OpenStreetMap for Addr
                 fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`)
                 .then(r=>r.json()).then(d=>{ if(d.display_name) document.getElementById('order-address').value=d.display_name.split(',').slice(0,3).join(','); });
             });
@@ -175,7 +177,7 @@
             if(shopLocation && userLocation) {
                 const R=6371, dLat=(userLocation.lat-shopLocation.lat)*Math.PI/180, dLon=(userLocation.lng-shopLocation.lng)*Math.PI/180;
                 const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(shopLocation.lat*Math.PI/180)*Math.cos(userLocation.lat*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
-                if((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))) > 3) return alert("Too far (>3km)");
+                if((R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))) > 3) return alert("Too far (>3km). We can't deliver.");
             }
 
             const total = parseInt(document.getElementById('chk-total').innerText);
@@ -185,7 +187,7 @@
             if(document.getElementById('order-for-others').checked) {
                 const rName = document.getElementById('recipient-name').value;
                 const rPhone = document.getElementById('recipient-phone').value;
-                if(!rName || !rPhone) return alert("Enter friend's details");
+                if(!rName || !rPhone) return alert("Enter friend's name & phone");
                 recipient = { name: rName, phone: rPhone };
             }
 
@@ -195,7 +197,7 @@
                 customerAddress: document.getElementById('order-address').value,
                 orderNote: document.getElementById('order-note').value,
                 customerCoordinates: userLocation,
-                recipient: recipient, // New field
+                recipient: recipient, 
                 status: 'pending', timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -217,15 +219,17 @@
                 document.getElementById('orders-list').innerHTML = s.docs.map(d=>{
                     const o=d.data();
                     const canCancel = o.status === 'pending';
-                    return `<div class="glass-card p-4">
+                    const dateStr = o.timestamp ? new Date(o.timestamp.toDate()).toLocaleDateString() : '';
+                    return `<div class="glass-card p-4 border-l-4 ${o.status==='completed'?'border-green-500':o.status==='cancelled'?'border-red-500':'border-yellow-500'}">
                         <div class="flex justify-between mb-2">
-                            <span class="font-bold">${o.timestamp?new Date(o.timestamp.toDate()).toLocaleDateString():''}</span>
+                            <span class="font-bold">${dateStr}</span>
                             <span class="text-xs uppercase px-2 py-1 rounded bg-gray-700">${o.status}</span>
                         </div>
                         <p class="text-sm text-gray-400">${o.items.map(i=>i.name).join(', ')}</p>
+                        ${o.recipient ? `<p class="text-xs text-blue-400 mt-1">For: ${o.recipient.name}</p>` : ''}
                         <div class="flex justify-between items-center mt-3">
                             <span class="font-bold text-orange-400">₹${o.totalAmount}</span>
-                            ${canCancel ? `<button onclick="cancelOrder('${d.id}')" class="text-red-500 text-xs border border-red-500 px-3 py-1 rounded">Cancel</button>` : ''}
+                            ${canCancel ? `<button onclick="cancelOrder('${d.id}')" class="text-red-500 text-xs border border-red-500 px-3 py-1 rounded font-bold hover:bg-red-900/20">Cancel Order</button>` : ''}
                         </div>
                     </div>`;
                 }).join('');
@@ -233,7 +237,7 @@
         }
 
         function cancelOrder(id) {
-            if(confirm("Cancel this order?")) db.collection('orders').doc(id).update({status:'cancelled'}).then(()=>fetchOrders());
+            if(confirm("Are you sure you want to cancel?")) db.collection('orders').doc(id).update({status:'cancelled'}).then(()=>fetchOrders());
         }
 
         function saveProfile() {
