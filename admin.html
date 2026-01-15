@@ -47,10 +47,17 @@
             background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
             pointer-events: none;
         }
-        .status-pill { padding: 4px 12px; border-radius: 30px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
         .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); animation: pulse 2s infinite; }
         .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
         .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        
+        /* Payment Badges */
+        .pay-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px; text-transform: uppercase; }
+        .pay-cash { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .pay-udhaar { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .pay-online { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
 
         /* Sidebar */
@@ -195,6 +202,9 @@
                 <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
                 <h1 class="text-2xl font-bold" id="fm-name">Customer</h1>
                 <p class="text-sm opacity-70" id="fm-phone">Phone</p>
+                
+                <div class="mt-2" id="fm-payment-info"></div>
+
                 <div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p>
                     <p class="text-sm" id="fm-recipient">Name (Phone)</p>
@@ -308,13 +318,17 @@
                 if(['pending','cooking','ready'].includes(d.status)) {
                     active++;
                     const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
+                    const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
                     liveHtml+=`<div class="live-card cursor-pointer" onclick="openFullModal('${id}')">
                         <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="font-bold text-lg text-white">${d.customerName}</h3>
                                 ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block"><i class="fas fa-gift"></i> ${d.recipient.name}</span>` : ''}
                             </div>
-                            <span class="status-pill ${stClass}">${d.status}</span>
+                            <div>
+                                <span class="status-pill ${stClass}">${d.status}</span>
+                                <span class="pay-badge ${payClass}">${d.paymentMode || 'Cash'}</span>
+                            </div>
                         </div>
                         <div class="flex justify-between items-end">
                             <span class="text-xs text-gray-400 font-bold">${d.items.length} Items</span>
@@ -351,16 +365,27 @@
         function renderHistory() {
             const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
             
-            // NEW LOGIC: Build user list from ALL orders, not just udhaarMap
+            // NEW LOGIC: Robust Grouping
             let historyUsers = {};
             allOrders.forEach(o => {
-                if(!historyUsers[o.customerPhone]) {
-                    historyUsers[o.customerPhone] = { name: o.customerName, phone: o.customerPhone, lastOrder: 0, lastAmount: 0 };
+                // If phone is missing, use Name as key (to prevent data loss)
+                const key = o.customerPhone || o.customerName || "Unknown";
+                
+                if(!historyUsers[key]) {
+                    historyUsers[key] = { 
+                        name: o.customerName || "Unknown", 
+                        phone: o.customerPhone || "No Phone", 
+                        lastOrder: 0, 
+                        lastAmount: 0,
+                        id: key 
+                    };
                 }
-                if(o.timestamp && o.timestamp.seconds > historyUsers[o.customerPhone].lastOrder) {
-                    historyUsers[o.customerPhone].lastOrder = o.timestamp.seconds;
-                    historyUsers[o.customerPhone].lastAmount = o.totalAmount;
-                    historyUsers[o.customerPhone].name = o.customerName;
+                
+                // Track latest order time
+                if(o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) {
+                    historyUsers[key].lastOrder = o.timestamp.seconds;
+                    historyUsers[key].lastAmount = o.totalAmount;
+                    historyUsers[key].name = o.customerName; // Update name in case it changed
                 }
             });
 
@@ -369,20 +394,32 @@
             
             list.innerHTML = users.map(u => {
                 if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
-                return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.phone}', '${u.name}')">
+                return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
                     <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
                     <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
                 </div>`;
             }).join('');
         }
         
-        function openUserHistory(phone, name) {
+        function openUserHistory(key, name) {
             const list = document.getElementById('history-list');
-            const userOrders = allOrders.filter(o => o.customerPhone === phone);
+            // Filter using the same Key logic (Phone OR Name)
+            const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key==='Unknown' && !o.customerPhone && !o.customerName));
+            
             list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
             userOrders.map(d => {
                 const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')"><div><p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold mt-1">${d.items.length} Items</p></div><span class="font-bold text-orange-400">₹${d.totalAmount}</span></div>`;
+                const payClass = d.paymentMode==='Udhaar'?'text-red-400': d.paymentMode==='Online'?'text-blue-400':'text-green-400';
+                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
+                    <div>
+                        <p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p>
+                        <p class="text-sm font-bold mt-1">${d.items.length} Items</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-orange-400 block">₹${d.totalAmount}</span>
+                        <span class="text-[10px] font-bold ${payClass}">${d.paymentMode || 'Cash'}</span>
+                    </div>
+                </div>`;
             }).join('');
         }
 
@@ -425,6 +462,11 @@
             document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
             document.getElementById('fm-status-badge').innerText = d.status; document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
             document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
+            
+            // Payment Info in Modal
+            const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
+            document.getElementById('fm-payment-info').innerHTML = `<span class="pay-badge ${payClass}" style="margin-left:0; font-size:12px">${d.paymentMode || 'Cash'}</span>`;
+
             if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } else document.getElementById('fm-recipient-box').classList.add('hidden');
             if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); } else document.getElementById('fm-note').classList.add('hidden');
             const callPh = d.recipient ? d.recipient.phone : d.customerPhone; document.getElementById('fm-btn-call').href = `tel:${callPh}`; document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g,'')}`; document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
