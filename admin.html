@@ -47,17 +47,16 @@
             background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
             pointer-events: none;
         }
+        .status-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
+        .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); animation: pulse 2s infinite; }
+        .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
         
-        /* Status & Payment Pills */
-        .status-pill { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
-        .status-pending { background: rgba(234, 179, 8, 0.15); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.25); animation: pulse 2s infinite; }
-        .status-cooking { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
-        .status-ready { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25); }
-        
-        .pay-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; margin-left: 6px; }
-        .pay-cash { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
-        .pay-online { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-        .pay-udhaar { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        /* Payment Badges */
+        .pay-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px; text-transform: uppercase; }
+        .pay-cash { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .pay-udhaar { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .pay-online { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
 
@@ -174,7 +173,8 @@
         <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
 
         <div id="view-history" class="hidden space-y-3">
-            <div id="history-container" class="space-y-2"></div>
+            <input type="text" id="search-history" onkeyup="renderHistory()" placeholder="Search History..." class="mb-3">
+            <div id="history-list" class="space-y-2"></div>
         </div>
 
         <div id="view-udhaar" class="hidden space-y-3">
@@ -305,7 +305,7 @@
 
         function render() {
             if(!window.ordersSnap) return;
-            let active=0, sales=0, liveHtml='', historyHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
+            let active=0, sales=0, liveHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
             if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0,lastOrder:0}; udhaarMap[p.phone].credit+=p.amount; });
 
             window.ordersSnap.docs.forEach(doc=>{
@@ -315,48 +315,36 @@
                 if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) { udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds; udhaarMap[d.customerPhone].lastAmount = d.totalAmount; udhaarMap[d.customerPhone].name = d.customerName; }
                 if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { sales+=d.totalAmount; todaysOrderCount++; d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); }
                 
-                // --- UNIFIED CARD GENERATOR (Robust Logic from Old Code + New Design) ---
-                const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
-                const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
-                const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-
-                const cardHTML = `<div class="aesthetic-card mb-2 cursor-pointer border-l-4 ${d.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'}" onclick="openFullModal('${id}')">
-                        <div class="flex justify-between items-start mb-2">
+                if(['pending','cooking','ready'].includes(d.status)) {
+                    active++;
+                    const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
+                    const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
+                    liveHtml+=`<div class="live-card cursor-pointer" onclick="openFullModal('${id}')">
+                        <div class="flex justify-between items-start mb-3">
                             <div>
                                 <h3 class="font-bold text-lg text-white">${d.customerName}</h3>
                                 ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block"><i class="fas fa-gift"></i> ${d.recipient.name}</span>` : ''}
-                                <div class="mt-1">
-                                    <span class="status-pill ${d.status==='completed'?'bg-green-600 text-white': d.status==='cancelled'?'bg-red-900 text-red-200': stClass}">${d.status}</span>
-                                    <span class="pay-badge ${payClass}">${d.paymentMode || 'Cash'}</span>
-                                </div>
                             </div>
-                            <div class="text-right">
-                                <h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3>
-                                <p class="text-[10px] text-gray-500 mt-1">${date}</p>
+                            <div>
+                                <span class="status-pill ${stClass}">${d.status}</span>
+                                <span class="pay-badge ${payClass}">${d.paymentMode || 'Cash'}</span>
                             </div>
                         </div>
-                        <div class="text-xs text-gray-400 font-bold border-t border-gray-800 pt-2 mt-2">
-                            ${d.items.length} Items • ${d.items.map(i=>i.name).slice(0,2).join(', ')}${d.items.length>2?'...':''}
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-400 font-bold">${d.items.length} Items</span>
+                            <h3 class="font-bold text-2xl text-orange-400">₹${d.totalAmount}</h3>
                         </div>
                     </div>`;
-
-                if(['pending','cooking','ready'].includes(d.status)) {
-                    active++;
-                    liveHtml += cardHTML;
-                } else {
-                    historyHtml += cardHTML;
                 }
             });
 
-            document.getElementById('view-live').innerHTML = liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
-            document.getElementById('history-container').innerHTML = historyHtml || "<p class='text-center opacity-50 mt-10'>No history found</p>";
-            document.getElementById('pending-count').innerText = active;
+            document.getElementById('view-live').innerHTML=liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
+            document.getElementById('pending-count').innerText=active;
+            const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
             
-            const salesEl = document.getElementById('total-sales'); 
-            salesEl.innerText = salesHidden ? "****" : sales; 
-            salesEl.dataset.realValue = sales;
-            
-            if(document.getElementById('view-udhaar').classList.contains('hidden') === false) renderUdhaar();
+            // Ensure Views Update
+            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+            if(!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
             
             if(active > (window.lastActive||0)) { const a=document.getElementById('order-sound'); if(soundEnabled){a.src="https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; a.play();} }
             window.lastActive=active;
@@ -367,14 +355,72 @@
             localStorage.setItem('admin_active_tab', v);
             ['live','history','udhaar','messages'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x)?.classList.remove('tab-active'); }); 
             document.getElementById('view-'+v).classList.remove('hidden'); document.getElementById('tab-'+v)?.classList.add('tab-active');
-            
-            // Hide Dashboard on Messages view
+            // Hide Dashboard on Messages view to clean up
             document.getElementById('dashboard-section').style.display = v==='messages' ? 'none' : 'grid';
             document.getElementById('tabs-section').style.display = v==='messages' ? 'none' : 'flex';
+            if(v==='history') renderHistory(); if(v==='udhaar') renderUdhaar(); if(v==='messages') renderMessagesList();
+        }
+
+        // --- HISTORY (FIXED) ---
+        function renderHistory() {
+            const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
             
-            if(v==='udhaar') renderUdhaar(); 
-            if(v==='messages') renderMessagesList();
-            if(v==='history') render(); // Force render to ensure history is up to date
+            // NEW LOGIC: Robust Grouping
+            let historyUsers = {};
+            allOrders.forEach(o => {
+                // If phone is missing, use Name as key (to prevent data loss)
+                const key = o.customerPhone || o.customerName || "Unknown";
+                
+                if(!historyUsers[key]) {
+                    historyUsers[key] = { 
+                        name: o.customerName || "Unknown", 
+                        phone: o.customerPhone || "No Phone", 
+                        lastOrder: 0, 
+                        lastAmount: 0,
+                        id: key 
+                    };
+                }
+                
+                // Track latest order time
+                if(o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) {
+                    historyUsers[key].lastOrder = o.timestamp.seconds;
+                    historyUsers[key].lastAmount = o.totalAmount;
+                    historyUsers[key].name = o.customerName; // Update name in case it changed
+                }
+            });
+
+            const users = Object.values(historyUsers).sort((a,b)=>b.lastOrder-a.lastOrder);
+            if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history found.</p>"; return; }
+            
+            list.innerHTML = users.map(u => {
+                if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
+                return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
+                    <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
+                    <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
+                </div>`;
+            }).join('');
+        }
+        
+        function openUserHistory(key, name) {
+            const list = document.getElementById('history-list');
+            // Filter using the same Key logic (Phone OR Name)
+            const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key==='Unknown' && !o.customerPhone && !o.customerName));
+            
+            list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
+            userOrders.map(d => {
+                const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
+                const payClass = d.paymentMode==='Udhaar'?'text-red-400': d.paymentMode==='Online'?'text-blue-400':'text-green-400';
+                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
+                    <div>
+                        <p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p>
+                        <p class="text-sm font-bold mt-1">${d.items.length} Items</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-orange-400 block">₹${d.totalAmount}</span>
+                        <span class="text-[10px] font-bold ${payClass}">${d.paymentMode || 'Cash'}</span>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         // --- UDHAAR & LIMITS ---
