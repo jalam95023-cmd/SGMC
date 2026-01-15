@@ -361,16 +361,20 @@
             if(v==='history') renderHistory(); if(v==='udhaar') renderUdhaar(); if(v==='messages') renderMessagesList();
         }
 
-        // --- HISTORY (FIXED) ---
+        // --- HISTORY (FIXED: Improved Logic) ---
         function renderHistory() {
-            const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
+            const list = document.getElementById('history-list'); 
+            const q = document.getElementById('search-history').value.toLowerCase();
             
-            // NEW LOGIC: Robust Grouping
+            if (!allOrders || allOrders.length === 0) {
+                list.innerHTML = "<p class='text-center opacity-50'>No history available.</p>";
+                return;
+            }
+
+            // Group by User for cleaner list
             let historyUsers = {};
             allOrders.forEach(o => {
-                // If phone is missing, use Name as key (to prevent data loss)
                 const key = o.customerPhone || o.customerName || "Unknown";
-                
                 if(!historyUsers[key]) {
                     historyUsers[key] = { 
                         name: o.customerName || "Unknown", 
@@ -380,20 +384,21 @@
                         id: key 
                     };
                 }
-                
-                // Track latest order time
                 if(o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) {
                     historyUsers[key].lastOrder = o.timestamp.seconds;
                     historyUsers[key].lastAmount = o.totalAmount;
-                    historyUsers[key].name = o.customerName; // Update name in case it changed
+                    historyUsers[key].name = o.customerName || historyUsers[key].name;
                 }
             });
 
             const users = Object.values(historyUsers).sort((a,b)=>b.lastOrder-a.lastOrder);
-            if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history found.</p>"; return; }
             
-            list.innerHTML = users.map(u => {
-                if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
+            // Filter
+            const filtered = users.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
+
+            if(filtered.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No matching users found.</p>"; return; }
+            
+            list.innerHTML = filtered.map(u => {
                 return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
                     <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
                     <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
@@ -403,7 +408,6 @@
         
         function openUserHistory(key, name) {
             const list = document.getElementById('history-list');
-            // Filter using the same Key logic (Phone OR Name)
             const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key==='Unknown' && !o.customerPhone && !o.customerName));
             
             list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
@@ -507,6 +511,7 @@
         function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
         function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
         
+        // --- INVENTORY FIX (Live Updates) ---
         function openMenuControl() { 
             document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? 
             currentMenuData.customItems.map((item, idx) => {
@@ -539,8 +544,20 @@
             } 
         }
 
-        function deleteCustomItem(idx) { if(confirm("Delete?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); } }
-        function saveMenuStatus() { db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ document.getElementById('menu-modal').classList.add('hidden'); showToast("Saved"); }); }
+        function deleteCustomItem(idx) { 
+            if(confirm("Delete this item?")) { 
+                currentMenuData.customItems.splice(idx, 1); 
+                openMenuControl(); 
+            } 
+        }
+        
+        function saveMenuStatus() { 
+            // Save the exact state, including availability
+            db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ 
+                document.getElementById('menu-modal').classList.add('hidden'); 
+                showToast("Saved & Live!"); 
+            }); 
+        }
         
         function tryEndDay(){ document.getElementById('confirm-title').innerText = "Reset Day?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); }; }
         function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if(y&&pendingAction) pendingAction(); pendingAction=null; }
