@@ -347,11 +347,26 @@
             if(v==='history') renderHistory(); if(v==='udhaar') renderUdhaar(); if(v==='messages') renderMessagesList();
         }
 
-        // --- HISTORY ---
+        // --- HISTORY (FIXED) ---
         function renderHistory() {
             const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
-            const users = Object.keys(udhaarMap).map(p=>({phone:p, ...udhaarMap[p]})).sort((a,b)=>b.lastOrder-a.lastOrder);
+            
+            // NEW LOGIC: Build user list from ALL orders, not just udhaarMap
+            let historyUsers = {};
+            allOrders.forEach(o => {
+                if(!historyUsers[o.customerPhone]) {
+                    historyUsers[o.customerPhone] = { name: o.customerName, phone: o.customerPhone, lastOrder: 0, lastAmount: 0 };
+                }
+                if(o.timestamp && o.timestamp.seconds > historyUsers[o.customerPhone].lastOrder) {
+                    historyUsers[o.customerPhone].lastOrder = o.timestamp.seconds;
+                    historyUsers[o.customerPhone].lastAmount = o.totalAmount;
+                    historyUsers[o.customerPhone].name = o.customerName;
+                }
+            });
+
+            const users = Object.values(historyUsers).sort((a,b)=>b.lastOrder-a.lastOrder);
             if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history found.</p>"; return; }
+            
             list.innerHTML = users.map(u => {
                 if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
                 return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.phone}', '${u.name}')">
@@ -360,6 +375,7 @@
                 </div>`;
             }).join('');
         }
+        
         function openUserHistory(phone, name) {
             const list = document.getElementById('history-list');
             const userOrders = allOrders.filter(o => o.customerPhone === phone);
