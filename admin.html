@@ -14,80 +14,36 @@
     <style>
         /* Modern Variables */
         :root { --bg: #050505; --card: #141414; --border: #333; --accent: #F97316; --text: #fff; --text-sub: #9ca3af; --modal-bg: #050505; }
-        
-        /* Aesthetic Light Mode */
-        body.light-mode { 
-            --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; 
-            --text: #1F2937; --text-sub: #6B7280; --modal-bg: #F9FAFB;
-        }
-        
+        body.light-mode { --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; --text: #1F2937; --text-sub: #6B7280; --modal-bg: #F9FAFB; }
         body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
-        
-        .aesthetic-card { 
-            background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative;
-        }
+        .aesthetic-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative; }
         .aesthetic-card:active { transform: scale(0.98); }
-
-        /* LIVE ORDER SPECIFIC AESTHETICS */
-        .live-card {
-            background: rgba(20, 20, 20, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 18px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            margin-bottom: 12px;
-            transition: all 0.3s ease;
-        }
-        .live-card::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
-            pointer-events: none;
-        }
-        .status-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
-        .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); animation: pulse 2s infinite; }
-        .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
-        .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
-        
-        /* Payment Badges */
+        .live-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 18px; position: relative; overflow: hidden; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); margin-bottom: 12px; transition: all 0.3s ease; }
+        .live-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%; background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%); pointer-events: none; }
+        .status-pill { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
+        .status-pending { background: rgba(234, 179, 8, 0.15); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.25); animation: pulse 2s infinite; }
+        .status-cooking { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
+        .status-ready { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25); }
         .pay-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px; text-transform: uppercase; }
         .pay-cash { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
         .pay-udhaar { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
         .pay-online { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-
-        /* Sidebar */
         .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 90; backdrop-filter: blur(4px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
-
-        /* Full Screen Modal */
         .fs-modal { position: fixed; inset: 0; background: var(--modal-bg); z-index: 120; transform: translateY(100%); transition: transform 0.3s; overflow-y: auto; }
         .fs-modal.open { transform: translateY(0); }
-
-        /* Tabs */
         .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; padding-bottom: 12px; }
         .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
-
-        /* Chat */
         .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; }
         .chat-admin { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .chat-user { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-
-        /* Inputs */
         input, textarea { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; }
-        
-        /* Toast */
         #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 150; pointer-events: none; width: 90%; max-width: 300px; }
         .toast { background: rgba(20, 20, 20, 0.95); border: 1px solid #333; padding: 12px 20px; border-radius: 12px; color: white; font-size: 13px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .toast.show { opacity: 1; transform: translateY(0); }
-
-        /* Progress Bar for Udhaar */
         .limit-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .limit-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
     </style>
@@ -173,8 +129,7 @@
         <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
 
         <div id="view-history" class="hidden space-y-3">
-            <input type="text" id="search-history" onkeyup="renderHistory()" placeholder="Search History..." class="mb-3">
-            <div id="history-list" class="space-y-2"></div>
+            <div id="history-container" class="space-y-2"></div>
         </div>
 
         <div id="view-udhaar" class="hidden space-y-3">
@@ -202,9 +157,7 @@
                 <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
                 <h1 class="text-2xl font-bold" id="fm-name">Customer</h1>
                 <p class="text-sm opacity-70" id="fm-phone">Phone</p>
-                
                 <div class="mt-2" id="fm-payment-info"></div>
-
                 <div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p>
                     <p class="text-sm" id="fm-recipient">Name (Phone)</p>
@@ -273,7 +226,7 @@
         </div>
     </div>
 
-    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Inventory</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="menu-list-items" class="overflow-y-auto flex-1 mb-4 space-y-2"></div><div class="bg-gray-800 p-3 rounded-xl mb-2"><div class="flex gap-2 mb-2"><input id="new-item-name" placeholder="Item Name"><input id="new-item-price" type="number" placeholder="₹" class="w-20"></div><button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add Item</button></div><button onclick="saveMenuStatus()" class="w-full bg-green-600 p-3 rounded font-bold text-white">Save Changes</button></div></div>
+    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Inventory</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="menu-list-items" class="overflow-y-auto flex-1 mb-4 space-y-2"></div><div class="bg-gray-800 p-3 rounded-xl mb-2"><div class="flex gap-2 mb-2"><input id="new-item-name" placeholder="Item Name"><input id="new-item-price" type="number" placeholder="₹" class="w-20"></div><button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add Item</button></div><button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-full bg-gray-700 p-3 rounded font-bold text-white">Done</button></div></div>
     <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
     <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-2">Broadcast</h3><textarea id="broadcast-input" rows="3" placeholder="Message..."></textarea><div class="flex gap-2 mt-4"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 p-2 rounded">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-xs text-gray-500">Cancel</button></div></div>
     <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold">Settle Payment</h3><p id="settle-name" class="text-gray-400 text-sm mb-4"></p><h1 class="text-4xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></h1><input id="settle-amount" type="number" class="text-center text-xl font-bold mb-4" placeholder="Amount"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500">Cancel</button></div></div>
@@ -286,7 +239,7 @@
         const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
 
-        let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={customItems:[]}, currentOpenOrder=null;
+        let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={customItems:[], stock:{}}, currentOpenOrder=null;
         let pendingAction=null, salesHidden=false, todaysItemsMap={}, salesHistoryData=[], currentLimitPhone=null, currentSettlePhone=null, currentChatUser=null;
         let allOrders=[], chatUsers=[], todaysOrderCount=0, limitsMap = {};
         const baseItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarette",price:0},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
@@ -295,7 +248,7 @@
             const lastTab = localStorage.getItem('admin_active_tab') || 'live';
             db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists) { const dd=d.data(); window.lastReset=dd.lastReset?dd.lastReset.seconds:0; salesHistoryData=dd.salesHistory||[]; } render(); });
             db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; const b=document.getElementById('shop-toggle-btn'); b.innerText=isShopOpen?"OPEN":"CLOSED"; b.className=isShopOpen?"px-3 py-1 rounded text-xs font-bold bg-green-600 text-white":"px-3 py-1 rounded text-xs font-bold bg-red-600 text-white"; });
-            db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) currentMenuData=d.data(); });
+            db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) { currentMenuData=d.data(); if(!currentMenuData.stock) currentMenuData.stock={}; } });
             db.collection('user_limits').onSnapshot(s => { limitsMap={}; s.docs.forEach(d => limitsMap[d.id] = d.data().limit); if(document.getElementById('tab-udhaar').classList.contains('tab-active')) renderUdhaar(); });
             db.collection('orders').orderBy('timestamp','desc').onSnapshot(s=>{ window.ordersSnap=s; render(); });
             db.collection('payments').orderBy('timestamp','desc').onSnapshot(s=>{ window.paymentsSnap=s; render(); });
@@ -305,7 +258,7 @@
 
         function render() {
             if(!window.ordersSnap) return;
-            let active=0, sales=0, liveHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
+            let active=0, sales=0, liveHtml='', historyHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
             if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0,lastOrder:0}; udhaarMap[p.phone].credit+=p.amount; });
 
             window.ordersSnap.docs.forEach(doc=>{
@@ -315,36 +268,42 @@
                 if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) { udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds; udhaarMap[d.customerPhone].lastAmount = d.totalAmount; udhaarMap[d.customerPhone].name = d.customerName; }
                 if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { sales+=d.totalAmount; todaysOrderCount++; d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); }
                 
-                if(['pending','cooking','ready'].includes(d.status)) {
-                    active++;
-                    const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
-                    const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
-                    liveHtml+=`<div class="live-card cursor-pointer" onclick="openFullModal('${id}')">
-                        <div class="flex justify-between items-start mb-3">
+                const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
+                const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
+                const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
+
+                const cardHTML = `<div class="aesthetic-card mb-2 cursor-pointer border-l-4 ${d.paymentMode==='Udhaar'?'border-red-500':'border-blue-500'}" onclick="openFullModal('${id}')">
+                        <div class="flex justify-between items-start mb-2">
                             <div>
                                 <h3 class="font-bold text-lg text-white">${d.customerName}</h3>
                                 ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block"><i class="fas fa-gift"></i> ${d.recipient.name}</span>` : ''}
+                                <div class="mt-1">
+                                    <span class="status-pill ${d.status==='completed'?'bg-green-600 text-white': d.status==='cancelled'?'bg-red-900 text-red-200': stClass}">${d.status}</span>
+                                    <span class="pay-badge ${payClass}">${d.paymentMode || 'Cash'}</span>
+                                </div>
                             </div>
-                            <div>
-                                <span class="status-pill ${stClass}">${d.status}</span>
-                                <span class="pay-badge ${payClass}">${d.paymentMode || 'Cash'}</span>
+                            <div class="text-right">
+                                <h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3>
+                                <p class="text-[10px] text-gray-500 mt-1">${date}</p>
                             </div>
                         </div>
-                        <div class="flex justify-between items-end">
-                            <span class="text-xs text-gray-400 font-bold">${d.items.length} Items</span>
-                            <h3 class="font-bold text-2xl text-orange-400">₹${d.totalAmount}</h3>
+                        <div class="text-xs text-gray-400 font-bold border-t border-gray-800 pt-2 mt-2">
+                            ${d.items.length} Items • ${d.items.map(i=>i.name).slice(0,2).join(', ')}${d.items.length>2?'...':''}
                         </div>
                     </div>`;
-                }
+
+                if(['pending','cooking','ready'].includes(d.status)) { active++; liveHtml += cardHTML; } else { historyHtml += cardHTML; }
             });
 
-            document.getElementById('view-live').innerHTML=liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
-            document.getElementById('pending-count').innerText=active;
-            const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
+            document.getElementById('view-live').innerHTML = liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
+            document.getElementById('history-container').innerHTML = historyHtml || "<p class='text-center opacity-50 mt-10'>No history found</p>";
+            document.getElementById('pending-count').innerText = active;
             
-            // Ensure Views Update
-            if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
-            if(!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
+            const salesEl = document.getElementById('total-sales'); 
+            salesEl.innerText = salesHidden ? "****" : sales; 
+            salesEl.dataset.realValue = sales;
+            
+            if(document.getElementById('view-udhaar').classList.contains('hidden') === false) renderUdhaar();
             
             if(active > (window.lastActive||0)) { const a=document.getElementById('order-sound'); if(soundEnabled){a.src="https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; a.play();} }
             window.lastActive=active;
@@ -355,72 +314,11 @@
             localStorage.setItem('admin_active_tab', v);
             ['live','history','udhaar','messages'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x)?.classList.remove('tab-active'); }); 
             document.getElementById('view-'+v).classList.remove('hidden'); document.getElementById('tab-'+v)?.classList.add('tab-active');
-            // Hide Dashboard on Messages view to clean up
             document.getElementById('dashboard-section').style.display = v==='messages' ? 'none' : 'grid';
             document.getElementById('tabs-section').style.display = v==='messages' ? 'none' : 'flex';
-            if(v==='history') renderHistory(); if(v==='udhaar') renderUdhaar(); if(v==='messages') renderMessagesList();
-        }
-
-        // --- HISTORY (FIXED) ---
-        function renderHistory() {
-            const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
-            
-            // NEW LOGIC: Robust Grouping
-            let historyUsers = {};
-            allOrders.forEach(o => {
-                // If phone is missing, use Name as key (to prevent data loss)
-                const key = o.customerPhone || o.customerName || "Unknown";
-                
-                if(!historyUsers[key]) {
-                    historyUsers[key] = { 
-                        name: o.customerName || "Unknown", 
-                        phone: o.customerPhone || "No Phone", 
-                        lastOrder: 0, 
-                        lastAmount: 0,
-                        id: key 
-                    };
-                }
-                
-                // Track latest order time
-                if(o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) {
-                    historyUsers[key].lastOrder = o.timestamp.seconds;
-                    historyUsers[key].lastAmount = o.totalAmount;
-                    historyUsers[key].name = o.customerName; // Update name in case it changed
-                }
-            });
-
-            const users = Object.values(historyUsers).sort((a,b)=>b.lastOrder-a.lastOrder);
-            if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history found.</p>"; return; }
-            
-            list.innerHTML = users.map(u => {
-                if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
-                return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
-                    <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
-                    <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
-                </div>`;
-            }).join('');
-        }
-        
-        function openUserHistory(key, name) {
-            const list = document.getElementById('history-list');
-            // Filter using the same Key logic (Phone OR Name)
-            const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key==='Unknown' && !o.customerPhone && !o.customerName));
-            
-            list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
-            userOrders.map(d => {
-                const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-                const payClass = d.paymentMode==='Udhaar'?'text-red-400': d.paymentMode==='Online'?'text-blue-400':'text-green-400';
-                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
-                    <div>
-                        <p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p>
-                        <p class="text-sm font-bold mt-1">${d.items.length} Items</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="font-bold text-orange-400 block">₹${d.totalAmount}</span>
-                        <span class="text-[10px] font-bold ${payClass}">${d.paymentMode || 'Cash'}</span>
-                    </div>
-                </div>`;
-            }).join('');
+            if(v==='udhaar') renderUdhaar(); 
+            if(v==='messages') renderMessagesList();
+            if(v==='history') render();
         }
 
         // --- UDHAAR & LIMITS ---
@@ -432,21 +330,11 @@
                 const lim = limitsMap[p] || 0;
                 const perc = lim > 0 ? Math.min((d/lim)*100, 100) : 0;
                 const barColor = d > lim && lim > 0 ? 'bg-red-500' : 'bg-blue-500';
-                
                 if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) {
                     h+=`<div class="aesthetic-card p-3 mb-2">
                         <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <div class="flex gap-2 items-center">
-                                    <p class="font-bold text-white">${u.name}</p>
-                                    <i class="fas fa-lock text-gray-500 cursor-pointer text-xs hover:text-white" onclick="openLimitModal('${p}','${u.name}')"></i>
-                                </div>
-                                <p class="text-xs opacity-50">${p}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-bold ${d > lim && lim > 0 ? 'text-red-500' : 'text-red-400'}">₹${d} ${lim > 0 ? `<span class="text-gray-500 text-[10px]">/ ${lim}</span>` : ''}</p>
-                                <button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button>
-                            </div>
+                            <div><div class="flex gap-2 items-center"><p class="font-bold text-white">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs hover:text-white" onclick="openLimitModal('${p}','${u.name}')"></i></div><p class="text-xs opacity-50">${p}</p></div>
+                            <div class="text-right"><p class="font-bold ${d > lim && lim > 0 ? 'text-red-500' : 'text-red-400'}">₹${d} ${lim > 0 ? `<span class="text-gray-500 text-[10px]">/ ${lim}</span>` : ''}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div>
                         </div>
                         ${lim > 0 ? `<div class="limit-bar-bg"><div class="limit-bar-fill ${barColor}" style="width: ${perc}%"></div></div>` : ''}
                     </div>`;
@@ -462,11 +350,8 @@
             document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
             document.getElementById('fm-status-badge').innerText = d.status; document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
             document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
-            
-            // Payment Info in Modal
             const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
             document.getElementById('fm-payment-info').innerHTML = `<span class="pay-badge ${payClass}" style="margin-left:0; font-size:12px">${d.paymentMode || 'Cash'}</span>`;
-
             if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } else document.getElementById('fm-recipient-box').classList.add('hidden');
             if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); } else document.getElementById('fm-note').classList.add('hidden');
             const callPh = d.recipient ? d.recipient.phone : d.customerPhone; document.getElementById('fm-btn-call').href = `tel:${callPh}`; document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g,'')}`; document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
@@ -507,24 +392,32 @@
         function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
         function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
         
+        // --- INVENTORY FIX (SYNCED) ---
         function openMenuControl() { 
-            document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? 
-            currentMenuData.customItems.map((item, idx) => {
-                const isAvail = item.available !== false; 
+            let items = [];
+            // Merge Base Items
+            baseItems.forEach(i => items.push({...i, isCustom: false}));
+            // Merge Custom Items
+            if(currentMenuData.customItems) currentMenuData.customItems.forEach((i, idx) => items.push({...i, isCustom: true, idx: idx}));
+            
+            document.getElementById('menu-list-items').innerHTML = items.map((item, idx) => {
+                const isAvail = (currentMenuData.stock && currentMenuData.stock[item.id] !== undefined) ? currentMenuData.stock[item.id] : true;
                 return `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2">
-                    <span class="text-white ${isAvail ? '' : 'opacity-40 line-through'}">${item.name} <span class="text-orange-400">₹${item.price}</span></span>
+                    <span class="text-white ${isAvail?'':'opacity-40 line-through'}">${item.name} <span class="text-orange-400">₹${item.price}</span></span>
                     <div class="flex items-center gap-4">
-                        <i onclick="toggleItemAvailability(${idx})" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
-                        <i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i>
+                        <i onclick="toggleStock('${item.id}')" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
+                        ${item.isCustom ? `<i onclick="deleteCustomItem(${item.idx})" class="fas fa-trash text-red-500 cursor-pointer"></i>` : ''}
                     </div>
                 </div>`;
-            }).join('') : baseItems.map(i=>`<div class="flex justify-between p-3 bg-gray-800 rounded mb-1"><span class="text-gray-400">${i.name}</span><span class="text-orange-400">₹${i.price}</span></div>`).join(''); 
+            }).join(''); 
             document.getElementById('menu-modal').classList.remove('hidden'); 
         }
 
-        function toggleItemAvailability(idx) {
-            if(currentMenuData.customItems[idx].available === undefined) currentMenuData.customItems[idx].available = true;
-            currentMenuData.customItems[idx].available = !currentMenuData.customItems[idx].available;
+        function toggleStock(id) {
+            if(!currentMenuData.stock) currentMenuData.stock = {};
+            const current = currentMenuData.stock[id] !== undefined ? currentMenuData.stock[id] : true;
+            currentMenuData.stock[id] = !current;
+            saveMenuStatus();
             openMenuControl();
         }
 
@@ -532,15 +425,31 @@
             const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value); 
             if(n && p) { 
                 if(!currentMenuData.customItems) currentMenuData.customItems = []; 
-                currentMenuData.customItems.push({id: Date.now(), name: n, price: p, available: true}); 
+                const newId = 'custom_' + Date.now();
+                currentMenuData.customItems.push({id: newId, name: n, price: p}); 
+                currentMenuData.stock[newId] = true;
                 document.getElementById('new-item-name').value=''; 
                 document.getElementById('new-item-price').value=''; 
+                saveMenuStatus();
                 openMenuControl(); 
             } 
         }
 
-        function deleteCustomItem(idx) { if(confirm("Delete?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); } }
-        function saveMenuStatus() { db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ document.getElementById('menu-modal').classList.add('hidden'); showToast("Saved"); }); }
+        function deleteCustomItem(idx) { 
+            if(confirm("Delete?")) { 
+                const id = currentMenuData.customItems[idx].id;
+                delete currentMenuData.stock[id];
+                currentMenuData.customItems.splice(idx, 1); 
+                saveMenuStatus();
+                openMenuControl(); 
+            } 
+        }
+        function saveMenuStatus() { 
+            db.collection('settings').doc('menu_data').set({ 
+                customItems: currentMenuData.customItems,
+                stock: currentMenuData.stock
+            }, {merge:true}).then(()=>{ showToast("Saved"); }); 
+        }
         
         function tryEndDay(){ document.getElementById('confirm-title').innerText = "Reset Day?"; document.getElementById('custom-confirm').classList.remove('hidden'); pendingAction = () => { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); }; }
         function closeConfirm(y){ document.getElementById('custom-confirm').classList.add('hidden'); if(y&&pendingAction) pendingAction(); pendingAction=null; }
