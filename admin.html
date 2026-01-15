@@ -3,80 +3,88 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SGMC Admin</title>
+<title>SGMC Admin Pro</title>
+
+<link rel="manifest" href="admin_manifest.json">
+<meta name="theme-color" content="#0f0f0f">
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <style>
-body{background:#050505;color:white;font-family:Inter}
-.card{background:#141414;border:1px solid #333;border-radius:14px;padding:14px}
-.tab-active{border-bottom:2px solid orange;color:orange;font-weight:bold}
+:root{--bg:#050505;--card:#141414;--border:#333;--accent:#F97316;--text:#fff}
+body{background:var(--bg);color:var(--text);font-family:Inter;padding-bottom:80px}
+.aesthetic-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}
+.tab-btn{color:#9ca3af;border-bottom:2px solid transparent}
+.tab-active{color:var(--accent);border-bottom:2px solid var(--accent);font-weight:bold}
 </style>
 </head>
 
 <body class="p-4 max-w-2xl mx-auto">
 
 <!-- HEADER -->
-<div class="flex justify-between mb-4">
-  <h1 class="text-xl font-bold text-orange-500">SGMC Admin</h1>
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
   <button onclick="toggleSidebar()" class="text-xl"><i class="fas fa-bars"></i></button>
 </div>
 
 <!-- SIDEBAR -->
-<div id="sidebar" class="fixed top-0 right-0 w-64 h-full bg-black border-l border-gray-700 p-4 hidden z-50">
-  <button onclick="toggleSidebar()" class="mb-4"><i class="fas fa-times"></i></button>
+<div id="sidebar" class="fixed top-0 right-0 w-72 h-full bg-black border-l border-gray-700 p-6 hidden z-50">
+  <button onclick="toggleSidebar()" class="mb-6 text-xl"><i class="fas fa-times"></i></button>
 
-  <button onclick="openInventory()" class="w-full text-left mb-3">
-    <i class="fas fa-box mr-2"></i> Inventory
-  </button>
+  <button onclick="switchView('messages');toggleSidebar()" class="block mb-3">Messages</button>
+  <button onclick="openMenuControl()" class="block mb-3">Inventory</button>
+  <button onclick="toggleTheme()" class="block mb-3">Theme</button>
 </div>
 
 <!-- TABS -->
-<div class="flex border-b border-gray-700 mb-3">
-  <button id="tab-live" onclick="switchTab('live')" class="flex-1 p-2 tab-active">LIVE</button>
-  <button id="tab-history" onclick="switchTab('history')" class="flex-1 p-2">HISTORY</button>
-  <button id="tab-udhaar" onclick="switchTab('udhaar')" class="flex-1 p-2">UDHAAR</button>
+<div class="flex mb-4 border-b border-gray-800">
+  <button id="tab-live" onclick="switchView('live')" class="flex-1 py-3 tab-btn tab-active">LIVE</button>
+  <button id="tab-history" onclick="switchView('history')" class="flex-1 py-3 tab-btn">HISTORY</button>
+  <button id="tab-udhaar" onclick="switchView('udhaar')" class="flex-1 py-3 tab-btn">UDHAAR</button>
 </div>
 
-<!-- LIVE -->
-<div id="live"></div>
+<!-- CONTENT -->
+<div id="view-live" class="space-y-3"></div>
 
-<!-- HISTORY -->
-<div id="history" class="hidden">
-  <input id="searchHistory" placeholder="Search..." class="w-full mb-2 p-2 bg-black border border-gray-700 rounded"
-   onkeyup="renderHistory()">
-  <div id="historyList"></div>
+<div id="view-history" class="hidden">
+  <input id="search-history" onkeyup="renderHistory()"
+   class="w-full mb-3 p-2 bg-black border border-gray-700 rounded"
+   placeholder="Search History">
+  <div id="history-list"></div>
 </div>
 
-<!-- UDHAAR -->
-<div id="udhaar" class="hidden">
-  <div id="udhaarList"></div>
+<div id="view-udhaar" class="hidden">
+  <input id="search-udhaar" onkeyup="renderUdhaar()"
+   class="w-full mb-3 p-2 bg-black border border-gray-700 rounded"
+   placeholder="Search Udhaar">
+  <div id="udhaar-list"></div>
+</div>
+
+<!-- INVENTORY MODAL -->
+<div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+  <div class="aesthetic-card w-80">
+    <h3 class="font-bold mb-4">Inventory</h3>
+    <p class="opacity-50 text-sm">Inventory Loaded</p>
+    <button onclick="document.getElementById('menu-modal').classList.add('hidden')"
+      class="w-full mt-4 border border-gray-700 p-2 rounded">Close</button>
+  </div>
 </div>
 
 <!-- LIMIT MODAL -->
-<div id="limitModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
-  <div class="card w-72">
+<div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+  <div class="aesthetic-card w-72">
     <h3 class="font-bold mb-2">Set Limit</h3>
-    <p id="limitUser" class="text-sm text-gray-400 mb-2"></p>
-    <input id="limitInput" type="number" class="w-full p-2 bg-black border border-gray-700 rounded">
+    <p id="limit-name" class="text-sm opacity-50 mb-2"></p>
+    <input id="limit-input" type="number"
+      class="w-full p-2 bg-black border border-gray-700 rounded">
     <button onclick="saveLimit()" class="w-full bg-orange-600 mt-3 p-2 rounded">Save</button>
   </div>
 </div>
 
-<!-- INVENTORY -->
-<div id="inventoryModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
-  <div class="card w-80">
-    <h3 class="font-bold mb-3">Inventory</h3>
-    <div id="inventoryList"></div>
-    <button onclick="closeInventory()" class="w-full mt-3 border border-gray-700 p-2 rounded">Close</button>
-  </div>
-</div>
-
 <script>
-/* 🔥 FIREBASE */
 firebase.initializeApp({
  apiKey:"AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA",
  authDomain:"sgmc-16568.firebaseapp.com",
@@ -84,114 +92,102 @@ firebase.initializeApp({
 });
 const db=firebase.firestore();
 
-/* GLOBAL */
-let allOrders=[];
-let udhaarMap={};
-let currentLimitPhone=null;
+let allOrders=[],udhaarMap={},currentLimitPhone=null;
 
-/* LOAD ORDERS */
+/* ORDERS */
 db.collection("orders").orderBy("timestamp","desc").onSnapshot(s=>{
- allOrders=[];
- udhaarMap={};
+ allOrders=[];udhaarMap={};
  s.forEach(d=>{
   let o=d.data();o.id=d.id;
   allOrders.push(o);
-
-  if(o.paymentMode==="Udhaar" && o.status!=="cancelled"){
-    if(!udhaarMap[o.customerPhone]){
-      udhaarMap[o.customerPhone]={name:o.customerName,debit:0};
-    }
+  if(o.paymentMode==="Udhaar"&&o.status!=="cancelled"){
+    if(!udhaarMap[o.customerPhone])
+      udhaarMap[o.customerPhone]={name:o.customerName,debit:0,credit:0};
     udhaarMap[o.customerPhone].debit+=o.totalAmount;
   }
  });
- renderLive();
- renderHistory();
- renderUdhaar();
+ renderLive();renderHistory();renderUdhaar();
 });
 
 /* LIVE */
 function renderLive(){
- document.getElementById("live").innerHTML=
+ document.getElementById("view-live").innerHTML=
  allOrders.filter(o=>["pending","cooking","ready"].includes(o.status))
  .map(o=>card(o)).join("")||"<p class='opacity-50'>No Live Orders</p>";
 }
 
-/* HISTORY */
+/* 🔧 FIXED HISTORY */
 function renderHistory(){
- let q=document.getElementById("searchHistory").value?.toLowerCase()||"";
- document.getElementById("historyList").innerHTML=
+ const q=document.getElementById("search-history").value.toLowerCase();
+ document.getElementById("history-list").innerHTML=
  allOrders.filter(o=>!["pending","cooking","ready"].includes(o.status))
- .filter(o=>o.customerName.toLowerCase().includes(q)||o.customerPhone.includes(q))
+ .filter(o=>(o.customerName||"").toLowerCase().includes(q)||(o.customerPhone||"").includes(q))
  .map(o=>card(o)).join("")||"<p class='opacity-50'>No History</p>";
 }
 
-/* UDHAAR */
+/* 🔧 FIXED UDHAAR */
 function renderUdhaar(){
- document.getElementById("udhaarList").innerHTML=
- Object.keys(udhaarMap).map(p=>{
-  let u=udhaarMap[p];
-  return `<div class="card mb-2 flex justify-between">
-    <div>
-      <b>${u.name}</b>
-      <p class="text-xs opacity-50">${p}</p>
-    </div>
-    <div class="text-right">
-      <p class="text-red-400 font-bold">₹${u.debit}</p>
-      <button onclick="openLimit('${p}','${u.name}')" class="text-xs text-gray-400">
-        <i class="fas fa-lock"></i>
-      </button>
-    </div>
+ let h="";
+ const q=document.getElementById("search-udhaar").value.toLowerCase();
+ for(let p in udhaarMap){
+  let u=udhaarMap[p],due=u.debit-u.credit;
+  if(due<=0)continue;
+  if(!u.name.toLowerCase().includes(q)&&!p.includes(q))continue;
+  h+=`
+  <div class="aesthetic-card mb-2 flex justify-between">
+   <div>
+    <b>${u.name}</b>
+    <p class="text-xs opacity-50">${p}</p>
+   </div>
+   <div class="text-right">
+    <p class="text-red-400 font-bold">₹${due}</p>
+    <button onclick="openLimitModal('${p}','${u.name}')">
+     <i class="fas fa-lock text-xs"></i>
+    </button>
+   </div>
   </div>`;
- }).join("")||"<p class='opacity-50'>No Udhaar</p>";
+ }
+ document.getElementById("udhaar-list").innerHTML=h||"<p class='opacity-50'>No Udhaar</p>";
 }
 
-/* CARD */
+/* 🔧 FIXED INVENTORY */
+function openMenuControl(){
+ toggleSidebar();
+ setTimeout(()=>document.getElementById("menu-modal").classList.remove("hidden"),200);
+}
+
+function openLimitModal(p,n){
+ currentLimitPhone=p;
+ document.getElementById("limit-name").innerText=n;
+ document.getElementById("limit-modal").classList.remove("hidden");
+}
+function saveLimit(){
+ let v=parseInt(document.getElementById("limit-input").value);
+ if(v)db.collection("user_limits").doc(currentLimitPhone).set({limit:v});
+ document.getElementById("limit-modal").classList.add("hidden");
+}
+
 function card(o){
- return `<div class="card mb-2">
-   <div class="flex justify-between">
-    <b>${o.customerName}</b>
-    <span>₹${o.totalAmount}</span>
-   </div>
-   <p class="text-xs opacity-50">${o.status}</p>
+ return `<div class="aesthetic-card mb-2">
+  <div class="flex justify-between">
+   <b>${o.customerName}</b><span>₹${o.totalAmount}</span>
+  </div>
+  <p class="text-xs opacity-50">${o.status}</p>
  </div>`;
 }
 
-/* LIMIT */
-function openLimit(p,n){
- currentLimitPhone=p;
- document.getElementById("limitUser").innerText=n;
- document.getElementById("limitModal").classList.remove("hidden");
-}
-function saveLimit(){
- let v=parseInt(document.getElementById("limitInput").value);
- if(v){
-  db.collection("user_limits").doc(currentLimitPhone).set({limit:v});
- }
- document.getElementById("limitModal").classList.add("hidden");
-}
-
-/* INVENTORY */
-function openInventory(){
- document.getElementById("inventoryModal").classList.remove("hidden");
- document.getElementById("inventoryList").innerHTML="<p>Inventory Loaded</p>";
-}
-function closeInventory(){
- document.getElementById("inventoryModal").classList.add("hidden");
-}
-
-/* UI */
-function switchTab(t){
+function switchView(v){
  ["live","history","udhaar"].forEach(x=>{
-  document.getElementById(x).classList.add("hidden");
+  document.getElementById("view-"+x).classList.add("hidden");
   document.getElementById("tab-"+x).classList.remove("tab-active");
  });
- document.getElementById(t).classList.remove("hidden");
- document.getElementById("tab-"+t).classList.add("tab-active");
+ document.getElementById("view-"+v).classList.remove("hidden");
+ document.getElementById("tab-"+v).classList.add("tab-active");
 }
 function toggleSidebar(){
  document.getElementById("sidebar").classList.toggle("hidden");
 }
+function toggleTheme(){document.body.classList.toggle("light-mode")}
 </script>
-
 </body>
 </html>
