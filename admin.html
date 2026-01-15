@@ -12,28 +12,39 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Aesthetic Dark Theme */
-        :root { --bg: #050505; --card: #141414; --border: #333; --accent: #F97316; --text: #fff; --text-sub: #9ca3af; }
-        body.light-mode { --bg: #f2f4f7; --card: #ffffff; --border: #e5e7eb; --accent: #EA580C; --text: #111; --text-sub: #6b7280; }
+        /* Modern Variables */
+        :root { 
+            --bg: #050505; 
+            --card: #141414; 
+            --border: #333; 
+            --accent: #F97316; 
+            --text: #fff; 
+            --text-sub: #9ca3af; 
+            --modal-bg: #050505;
+        }
         
-        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: 0.3s; padding-bottom: 80px; }
+        /* Aesthetic Light Mode */
+        body.light-mode { 
+            --bg: #F3F4F6; /* Soft Grey */
+            --card: #FFFFFF; 
+            --border: #E5E7EB; 
+            --accent: #EA580C; 
+            --text: #111827; 
+            --text-sub: #6B7280;
+            --modal-bg: #F3F4F6;
+        }
         
-        /* Modern Cards */
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; }
+        
         .aesthetic-card { 
             background: var(--card); 
             border: 1px solid var(--border); 
             border-radius: 16px; 
             padding: 16px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2); 
-            transition: all 0.2s;
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
         }
-        body.light-mode .aesthetic-card { box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        .aesthetic-card:active { transform: scale(0.98); }
-        
-        /* Gradient Borders for Active Orders */
-        .order-live { border-left: 4px solid var(--accent); background: linear-gradient(90deg, rgba(249,115,22,0.05) 0%, rgba(0,0,0,0) 100%); }
+        .aesthetic-card:active { transform: scale(0.99); }
         
         /* Sidebar */
         .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); }
@@ -41,109 +52,118 @@
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 90; backdrop-filter: blur(4px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
 
-        /* Chat Styles */
-        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; }
-        .chat-admin { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-        .chat-user { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-        
-        /* Tab Active */
-        .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-        
-        /* Inputs */
-        input, textarea { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; rounded: 8px; width: 100%; outline: none; }
-        
-        /* Full Screen Modal Animation */
-        .fs-modal { position: fixed; inset: 0; background: var(--bg); z-index: 120; transform: translateY(100%); transition: transform 0.3s; overflow-y: auto; }
+        /* Full Screen Modal */
+        .fs-modal { position: fixed; inset: 0; background: var(--modal-bg); z-index: 120; transform: translateY(100%); transition: transform 0.3s; overflow-y: auto; }
         .fs-modal.open { transform: translateY(0); }
+
+        /* Tabs */
+        .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; }
+        .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
+
+        /* Chat */
+        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; }
+        .chat-admin { background: var(--accent); color: white; align-self: flex-end; }
+        .chat-user { background: #374151; color: white; align-self: flex-start; }
+
+        /* Inputs */
+        input, textarea { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 10px; rounded: 8px; width: 100%; outline: none; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto" onclick="enableSound()">
 
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 relative z-50">
         <div>
-            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC Admin</h1>
-            <p class="text-[10px] text-green-500 font-bold tracking-widest uppercase">● Online</p>
+            <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
+            <p class="text-[10px] text-green-500 font-bold uppercase tracking-wider">● Online</p>
         </div>
         <div class="flex gap-3">
-            <button onclick="setShopLocation()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-blue-400 flex items-center justify-center shadow-lg"><i class="fas fa-map-marker-alt"></i></button>
-            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-white flex items-center justify-center shadow-lg"><i class="fas fa-bars"></i></button>
+            <button onclick="setShopLocation()" class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-500 flex items-center justify-center shadow-lg active:scale-95 z-50">
+                <i class="fas fa-map-marker-alt"></i>
+            </button>
+            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-white flex items-center justify-center shadow-lg active:scale-95 z-50">
+                <i class="fas fa-bars"></i>
+                <span id="header-msg-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full hidden border border-black"></span>
+            </button>
         </div>
     </div>
 
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar p-6 flex flex-col h-full">
         <div class="flex justify-between items-center mb-8">
-            <h2 class="text-xl font-bold" style="color:var(--accent)">Menu</h2>
+            <h2 class="text-xl font-bold text-orange-500">Menu</h2>
             <button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
         </div>
         
         <div class="space-y-3 flex-1">
-            <div class="aesthetic-card p-4 flex justify-between items-center">
+            <div class="aesthetic-card p-3 flex justify-between items-center bg-opacity-50">
                 <span class="font-bold text-sm">Shop Status</span>
                 <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-1 rounded text-xs font-bold bg-green-600 text-white">OPEN</button>
             </div>
 
-            <button onclick="switchView('messages'); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800 transition">
+            <button onclick="switchView('messages'); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800/50 transition">
                 <span class="font-bold text-sm text-blue-400"><i class="fas fa-comments mr-2"></i> Messages</span>
-                <span id="msg-badge" class="w-2 h-2 rounded-full bg-red-500 hidden"></span>
+                <span id="sidebar-msg-count" class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full hidden">New</span>
             </button>
 
-            <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center gap-2 border border-gray-800 hover:bg-gray-800 transition">
-                <i class="fas fa-boxes text-orange-400"></i> <span class="font-bold text-sm">Inventory</span>
+            <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm">
+                <i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory
             </button>
 
-            <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center gap-2 border border-gray-800 hover:bg-gray-800 transition">
-                <i class="fas fa-bullhorn text-yellow-400"></i> <span class="font-bold text-sm">Broadcast</span>
+            <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm">
+                <i class="fas fa-bullhorn text-yellow-400 mr-2"></i> Broadcast
             </button>
 
-            <button onclick="openPaymentLogs(); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center gap-2 border border-gray-800 hover:bg-gray-800 transition">
-                <i class="fas fa-file-invoice-dollar text-green-400"></i> <span class="font-bold text-sm">Payment Logs</span>
+            <button onclick="openPaymentLogs(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm">
+                <i class="fas fa-history text-green-400 mr-2"></i> Payment Logs
             </button>
 
-            <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800 transition">
-                <span class="font-bold text-sm"><i class="fas fa-adjust text-purple-400 mr-2"></i> Theme</span>
+            <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm">
+                <span><i class="fas fa-adjust text-purple-400 mr-2"></i> Theme</span>
                 <i class="fas fa-toggle-on text-2xl text-purple-500" id="theme-icon"></i>
             </button>
         </div>
     </div>
 
-    <div id="dashboard-stats" class="grid grid-cols-2 gap-4 mb-6">
-        <div class="aesthetic-card flex flex-col justify-between" onclick="openSalesAnalysis()">
+    <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="aesthetic-card flex flex-col justify-between cursor-pointer" onclick="openAnalytics()">
             <div class="flex justify-between items-start">
                 <span class="text-xs uppercase tracking-wider opacity-70">Revenue</span>
-                <i class="fas fa-chart-line text-green-500 text-xs"></i>
+                <i class="fas fa-chart-pie text-green-500"></i>
             </div>
             <h2 class="text-2xl font-bold text-green-500 mt-2">₹<span id="total-sales">0</span></h2>
-            <button onclick="event.stopPropagation(); tryEndDay()" class="mt-2 w-full py-1 text-[10px] bg-red-500/10 text-red-400 rounded border border-red-500/20">RESET DAY</button>
+            <button onclick="event.stopPropagation(); tryEndDay()" class="mt-2 w-full py-1.5 text-[10px] bg-red-500/10 text-red-400 rounded font-bold border border-red-500/20 hover:bg-red-500/20">RESET DAY</button>
         </div>
         <div class="aesthetic-card text-center flex flex-col justify-center">
-            <span class="text-xs uppercase tracking-wider opacity-70">Pending</span>
+            <span class="text-xs uppercase tracking-wider opacity-70">Active</span>
             <h2 class="text-3xl font-bold text-yellow-500 my-1" id="pending-count">0</h2>
             <p class="text-[10px] opacity-50" id="sound-status">Sound 🔇</p>
         </div>
     </div>
 
     <div class="flex mb-4 border-b border-gray-800">
-        <button onclick="switchView('live')" id="tab-live" class="flex-1 py-3 tab-active font-bold text-sm transition">LIVE</button>
-        <button onclick="switchView('history')" id="tab-history" class="flex-1 py-3 text-gray-500 font-bold text-sm transition">HISTORY</button>
-        <button onclick="switchView('udhaar')" id="tab-udhaar" class="flex-1 py-3 text-gray-500 font-bold text-sm transition">UDHAAR</button>
+        <button onclick="switchView('live')" id="tab-live" class="flex-1 py-3 tab-btn tab-active text-sm">LIVE</button>
+        <button onclick="switchView('history')" id="tab-history" class="flex-1 py-3 tab-btn text-sm">HISTORY</button>
+        <button onclick="switchView('udhaar')" id="tab-udhaar" class="flex-1 py-3 tab-btn text-sm">UDHAAR</button>
     </div>
 
     <div id="main-content">
         <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
 
         <div id="view-history" class="hidden space-y-3">
-            <input type="text" id="search-history" onkeyup="filterHistory()" placeholder="Search User History..." class="mb-2">
-            <div id="history-users-list" class="space-y-2"></div>
+            <input type="text" id="search-history" onkeyup="renderHistory()" placeholder="Search History..." class="mb-3">
+            <div id="history-list" class="space-y-2"></div>
         </div>
 
         <div id="view-udhaar" class="hidden space-y-3">
-            <input type="text" id="search-udhaar" onkeyup="filterUdhaar()" placeholder="Search Udhaar..." class="mb-2">
+            <input type="text" id="search-udhaar" onkeyup="renderUdhaar()" placeholder="Search Udhaar..." class="mb-3">
             <div id="udhaar-list" class="space-y-2"></div>
         </div>
 
         <div id="view-messages" class="hidden space-y-3">
-            <h2 class="text-xl font-bold mb-4">Inbox</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Inbox</h2>
+                <button onclick="switchView('live')" class="text-gray-500 text-sm">Close</button>
+            </div>
             <div id="messages-list" class="space-y-2"></div>
         </div>
     </div>
@@ -152,34 +172,33 @@
         <div class="max-w-2xl mx-auto min-h-screen flex flex-col">
             <div class="flex justify-between items-center mb-6">
                 <button onclick="closeFullModal()" class="text-gray-400 flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back</button>
-                <span class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-800" id="fm-status-badge">STATUS</span>
+                <span id="fm-status-badge" class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-800">STATUS</span>
             </div>
             
             <div class="aesthetic-card mb-4 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
-                <h1 class="text-2xl font-bold" id="fm-name">User Name</h1>
+                <div class="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-full blur-xl -mr-6 -mt-6"></div>
+                <h1 class="text-2xl font-bold" id="fm-name">Customer</h1>
                 <p class="text-sm opacity-70" id="fm-phone">Phone</p>
+                
                 <div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p>
                     <p class="text-sm" id="fm-recipient">Name (Phone)</p>
                 </div>
+                
                 <p class="text-xs opacity-50 mt-2" id="fm-time">Time</p>
-            </div>
-
-            <div class="aesthetic-card mb-4 flex items-start gap-3">
-                <i class="fas fa-map-marker-alt text-red-500 mt-1"></i>
-                <p class="text-sm opacity-80" id="fm-address">Address...</p>
+                <p class="text-xs text-yellow-500 italic mt-1 hidden" id="fm-note"></p>
+                <p class="text-sm mt-2 border-t border-gray-800 pt-2 flex items-center gap-2" id="fm-address"><i class="fas fa-map-marker-alt text-red-500"></i> Address</p>
             </div>
 
             <div class="grid grid-cols-3 gap-3 mb-6">
-                <a id="fm-btn-call" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800"><i class="fas fa-phone text-green-500 text-xl mb-1"></i><span class="text-[10px]">Call</span></a>
-                <a id="fm-btn-wa" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800"><i class="fab fa-whatsapp text-green-500 text-xl mb-1"></i><span class="text-[10px]">Chat</span></a>
-                <a id="fm-btn-map" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800"><i class="fas fa-map-marker-alt text-blue-500 text-xl mb-1"></i><span class="text-[10px]">Map</span></a>
+                <a id="fm-btn-call" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-phone text-green-500 text-xl mb-1"></i><span class="text-[10px]">Call</span></a>
+                <a id="fm-btn-wa" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fab fa-whatsapp text-green-500 text-xl mb-1"></i><span class="text-[10px]">Chat</span></a>
+                <a id="fm-btn-map" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-map-marker-alt text-blue-500 text-xl mb-1"></i><span class="text-[10px]">Map</span></a>
             </div>
 
             <div class="aesthetic-card mb-6">
-                <p class="text-xs uppercase font-bold opacity-50 mb-3 tracking-wider">Bill Details</p>
-                <div id="fm-items-list" class="space-y-3 border-b border-gray-800 pb-4 mb-4"></div>
+                <p class="text-xs uppercase font-bold opacity-50 mb-3 tracking-wider">Items (Adjust Qty)</p>
+                <div id="fm-items-list" class="space-y-3 border-b border-gray-700/50 pb-4 mb-4"></div>
                 <div class="flex justify-between items-center">
                     <span class="font-bold text-lg">Total</span>
                     <span class="font-bold text-2xl text-orange-500">₹<span id="fm-total">0</span></span>
@@ -191,49 +210,58 @@
     </div>
 
     <div id="chat-window" class="fs-modal flex flex-col">
-        <div class="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center">
+        <div class="p-4 bg-gray-900 border-b border-gray-800 flex justify-between items-center" style="background:var(--card)">
             <div class="flex items-center gap-3">
                 <button onclick="closeChatWindow()" class="text-gray-400"><i class="fas fa-arrow-left"></i></button>
                 <h3 class="font-bold" id="chat-user-name">User</h3>
             </div>
         </div>
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-black/50"></div>
-        <div class="p-3 bg-gray-900 border-t border-gray-800 flex gap-2">
-            <input type="text" id="chat-input" placeholder="Type reply..." class="bg-gray-800 border-gray-700 rounded-full px-4 text-sm">
+        <div class="p-3 bg-gray-900 border-t border-gray-800 flex gap-2" style="background:var(--card)">
+            <input type="text" id="chat-input" placeholder="Type reply..." class="rounded-full px-4 text-sm">
             <button onclick="sendAdminMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <div id="user-history-page" class="fs-modal p-4">
-        <button onclick="document.getElementById('user-history-page').classList.remove('open')" class="mb-4 text-gray-400"><i class="fas fa-arrow-left"></i> Back</button>
-        <h2 class="text-xl font-bold mb-4" id="uh-title">History</h2>
-        <div id="uh-list" class="space-y-2"></div>
+    <div id="analytics-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4">
+        <div class="aesthetic-card w-full max-w-sm h-[85vh] flex flex-col">
+            <div class="flex justify-between mb-6">
+                <h3 class="font-bold text-xl">Analytics</h3>
+                <button onclick="document.getElementById('analytics-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                    <p class="text-xs text-green-400">Total Sales</p>
+                    <p class="text-xl font-bold text-white mt-1">₹<span id="an-sales">0</span></p>
+                </div>
+                <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                    <p class="text-xs text-blue-400">Orders</p>
+                    <p class="text-xl font-bold text-white mt-1" id="an-count">0</p>
+                </div>
+            </div>
+
+            <p class="text-xs uppercase font-bold opacity-50 mb-3">Top Selling Items</p>
+            <div id="analytics-list" class="overflow-y-auto flex-1 space-y-2"></div>
+        </div>
     </div>
 
     <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="aesthetic-card w-full max-w-sm flex flex-col max-h-[80vh]">
+        <div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col">
             <div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Inventory</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div>
             <div id="menu-list-items" class="overflow-y-auto flex-1 mb-4 space-y-2"></div>
             <div class="bg-gray-800 p-3 rounded-xl mb-2">
-                <p class="text-[10px] font-bold text-orange-500 mb-2">ADD NEW ITEM</p>
                 <div class="flex gap-2 mb-2"><input id="new-item-name" placeholder="Item Name"><input id="new-item-price" type="number" placeholder="₹" class="w-20"></div>
-                <button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add to Inventory</button>
+                <button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add Item</button>
             </div>
             <button onclick="saveMenuStatus()" class="w-full bg-green-600 p-3 rounded font-bold text-white">Save Changes</button>
         </div>
     </div>
 
-    <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4">
-        <div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col">
-            <div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div>
-            <div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div>
-        </div>
-    </div>
-
+    <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
     <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-2">Broadcast</h3><textarea id="broadcast-input" rows="3" placeholder="Message..."></textarea><div class="flex gap-2 mt-4"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 p-2 rounded">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-xs text-gray-500">Cancel</button></div></div>
     <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold">Settle Payment</h3><p id="settle-name" class="text-gray-400 text-sm mb-4"></p><h1 class="text-4xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></h1><input id="settle-amount" type="number" class="text-center text-xl font-bold mb-4" placeholder="Amount"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500">Cancel</button></div></div>
     <div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-4">Set Limit</h3><p id="limit-name" class="mb-2 text-gray-400"></p><input id="limit-input" type="number" placeholder="Amount"><button onclick="saveLimit()" class="w-full bg-purple-600 p-3 rounded font-bold text-white mt-4">Save</button><button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500">Cancel</button></div></div>
-    <div id="sales-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Analytics</h3><button onclick="document.getElementById('sales-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="today-breakdown-list" class="overflow-y-auto flex-1"></div></div></div>
     <div id="custom-confirm" class="hidden fixed inset-0 bg-black/80 z-[140] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-xs"><h3 class="font-bold mb-4" id="confirm-title">Confirm?</h3><div class="flex gap-3"><button onclick="closeConfirm(false)" class="flex-1 bg-gray-800 p-2 rounded">No</button><button onclick="closeConfirm(true)" class="flex-1 bg-orange-600 p-2 rounded text-white">Yes</button></div></div></div>
     
     <div id="toast-container"></div>
@@ -245,56 +273,60 @@
 
         let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={customItems:[]}, currentOpenOrder=null;
         let pendingAction=null, salesHidden=false, todaysItemsMap={}, salesHistoryData=[], currentLimitPhone=null, currentSettlePhone=null, currentChatUser=null;
-        let allOrders=[];
+        let allOrders=[], chatUsers=[];
+        const baseItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarette",price:0},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
 
         function init() {
+            // Restore Tab (Fixes Refresh Issue)
+            const lastTab = localStorage.getItem('admin_active_tab') || 'live';
+            
             db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists) { const dd=d.data(); window.lastReset=dd.lastReset?dd.lastReset.seconds:0; salesHistoryData=dd.salesHistory||[]; } render(); });
-            db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; const b=document.getElementById('shop-toggle-btn'); b.innerText=isShopOpen?"OPEN":"CLOSED"; b.className=isShopOpen?"px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white transition":"px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white transition"; });
+            db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; const b=document.getElementById('shop-toggle-btn'); b.innerText=isShopOpen?"OPEN":"CLOSED"; b.className=isShopOpen?"px-3 py-1 rounded text-xs font-bold bg-green-600 text-white":"px-3 py-1 rounded text-xs font-bold bg-red-600 text-white"; });
             db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) currentMenuData=d.data(); });
             db.collection('orders').orderBy('timestamp','desc').onSnapshot(s=>{ window.ordersSnap=s; render(); });
             db.collection('payments').orderBy('timestamp','desc').onSnapshot(s=>{ window.paymentsSnap=s; render(); });
             
-            // Listen for Messages from ANY chat doc update (Simplified check for notification)
-            db.collection('chats').onSnapshot(snap => { 
-                let hasMsg = !snap.empty; 
-                document.getElementById('msg-badge').classList.toggle('hidden', !hasMsg); 
+            // Chat Listeners
+            db.collection('chats').onSnapshot(s => {
+                chatUsers = s.docs.map(d=>({id:d.id, ...d.data()})); // doc id is phone
+                const hasMsg = !s.empty; // Basic check, better logic would check unread
+                document.getElementById('header-msg-dot').classList.toggle('hidden', !hasMsg);
+                document.getElementById('sidebar-msg-count').classList.toggle('hidden', !hasMsg);
+                if(document.getElementById('view-messages').classList.contains('hidden') === false) renderMessagesList();
             });
 
-            switchView(localStorage.getItem('admin_active_tab') || 'live');
+            switchView(lastTab);
         }
 
-        // --- CORE RENDER ---
         function render() {
             if(!window.ordersSnap) return;
-            let active=0, sales=0, liveHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[];
-            
-            // Process Payments
-            if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0, lastOrder:0}; udhaarMap[p.phone].credit+=p.amount; });
+            let active=0, sales=0, liveHtml=''; udhaarMap={}; todaysItemsMap={}; allOrders=[]; todaysOrderCount=0;
+            if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!udhaarMap[p.phone]) udhaarMap[p.phone]={name:"User",debit:0,credit:0,lastOrder:0}; udhaarMap[p.phone].credit+=p.amount; });
 
-            // Process Orders
             window.ordersSnap.docs.forEach(doc=>{
                 const d=doc.data(); const id=doc.id; d.id=id; allOrders.push(d);
                 if(d.paymentMode==='Udhaar' && d.status!=='cancelled') { 
-                    if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0, lastOrder:0}; 
-                    udhaarMap[d.customerPhone].debit+=d.totalAmount; 
-                    udhaarMap[d.customerPhone].name=d.customerName;
+                    if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0}; 
+                    udhaarMap[d.customerPhone].debit+=d.totalAmount; udhaarMap[d.customerPhone].name=d.customerName;
                 }
-                // Track latest order amount for History display
-                if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0, lastOrder:0};
+                // Track user details for history list
+                if(!udhaarMap[d.customerPhone]) udhaarMap[d.customerPhone]={name:d.customerName,debit:0,credit:0,lastOrder:0};
                 if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) {
                     udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds;
                     udhaarMap[d.customerPhone].lastAmount = d.totalAmount;
-                    udhaarMap[d.customerPhone].name = d.customerName; // Update name to latest
+                    udhaarMap[d.customerPhone].name = d.customerName;
                 }
 
-                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { sales+=d.totalAmount; d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); }
+                if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { 
+                    sales+=d.totalAmount; todaysOrderCount++; 
+                    d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); 
+                }
                 
-                // LIVE LIST
                 if(['pending','cooking','ready'].includes(d.status)) {
                     active++;
                     liveHtml+=`<div class="aesthetic-card order-live mb-3 cursor-pointer" onclick="openFullModal('${id}')">
                         <div class="flex justify-between items-start">
-                            <div><h3 class="font-bold text-lg">${d.customerName}</h3><span class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-white uppercase tracking-wider">${d.status}</span></div>
+                            <div><h3 class="font-bold text-lg" style="color:var(--text)">${d.customerName}</h3><span class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-white uppercase tracking-wider">${d.status}</span></div>
                             <h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3>
                         </div>
                         ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block mt-2"><i class="fas fa-gift"></i> For: ${d.recipient.name}</span>` : ''}
@@ -306,45 +338,62 @@
             document.getElementById('pending-count').innerText=active;
             const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
             
-            renderHistoryUsers();
+            renderHistory();
             renderUdhaar();
-            renderMessagesList(); // Update user list for chat
             
             if(active > (window.lastActive||0)) { const a=document.getElementById('order-sound'); if(soundEnabled){a.src="https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; a.play();} }
             window.lastActive=active;
         }
 
+        // --- VIEWS ---
+        function switchView(v) { 
+            localStorage.setItem('admin_active_tab', v);
+            ['live','history','udhaar','messages'].forEach(x=>{ 
+                const el=document.getElementById('view-'+x); if(el) el.classList.add('hidden'); 
+                const btn=document.getElementById('tab-'+x); if(btn) btn.classList.remove('tab-active'); 
+            }); 
+            const tel=document.getElementById('view-'+v); if(tel) tel.classList.remove('hidden'); 
+            const tbtn=document.getElementById('tab-'+v); if(tbtn) tbtn.classList.add('tab-active');
+            
+            if(v==='messages') renderMessagesList();
+        }
+
         // --- HISTORY (USER WISE) ---
-        function renderHistoryUsers() {
-            const list = document.getElementById('history-users-list');
-            const q = document.getElementById('search-history').value.toLowerCase();
-            // Convert map to array and sort by last order time
-            const users = Object.keys(udhaarMap).map(p => ({phone:p, ...udhaarMap[p]})).sort((a,b) => b.lastOrder - a.lastOrder);
+        function renderHistory() {
+            const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
+            // Group orders by user via udhaarMap logic (which tracks all users now)
+            const users = Object.keys(udhaarMap).map(p=>({phone:p, ...udhaarMap[p]})).sort((a,b)=>b.lastOrder-a.lastOrder);
             
             list.innerHTML = users.map(u => {
                 if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
                 return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openUserHistory('${u.phone}', '${u.name}')">
-                    <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div>
-                    <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount || 0}</p></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div>
+                        <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div>
+                    </div>
+                    <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount||0}</p></div>
                 </div>`;
             }).join('');
         }
 
         function openUserHistory(phone, name) {
-            document.getElementById('uh-title').innerText = name + "'s History";
+            // Reuse full modal logic? No, create a list of orders for this user
+            // We can show this in the 'history-list' div temporarily or a modal. 
+            // Let's use a "Filter" approach: showing orders directly in history view is better for drill down
+            const list = document.getElementById('history-list');
             const userOrders = allOrders.filter(o => o.customerPhone === phone);
-            const html = userOrders.map(d => {
+            
+            list.innerHTML = `<div class="mb-2"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
+            userOrders.map(d => {
                 const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
-                return `<div class="bg-gray-800 p-3 rounded-xl mb-2 flex justify-between items-center border border-gray-700 cursor-pointer" onclick="openFullModal('${d.id}')">
-                    <div><p class="text-xs text-gray-400">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold text-white">${d.items.length} Items</p></div>
+                return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
+                    <div><p class="text-xs text-gray-400">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold mt-1">${d.items.length} Items</p></div>
                     <span class="font-bold text-orange-400">₹${d.totalAmount}</span>
                 </div>`;
             }).join('');
-            document.getElementById('uh-list').innerHTML = html || "<p>No orders found.</p>";
-            document.getElementById('user-history-page').classList.add('open');
         }
 
-        // --- FULL ORDER MODAL (Aesthetic) ---
+        // --- FULL MODAL ---
         function openFullModal(id) {
             const d = allOrders.find(o=>o.id===id); if(!d) return; currentOpenOrder = {id, ...d};
             
@@ -353,10 +402,12 @@
             document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
             document.getElementById('fm-status-badge').innerText = d.status;
             document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
-            document.getElementById('fm-address').innerText = d.customerAddress || "No Address";
+            document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
             
             if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } 
             else document.getElementById('fm-recipient-box').classList.add('hidden');
+            if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); }
+            else document.getElementById('fm-note').classList.add('hidden');
 
             const callPh = d.recipient ? d.recipient.phone : d.customerPhone;
             document.getElementById('fm-btn-call').href = `tel:${callPh}`;
@@ -373,7 +424,7 @@
                     <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button>
                     <button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button>
                 </div>
-                <button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10">DELETE ORDER</button>
+                <button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>
             `;
             document.getElementById('order-full-modal').classList.add('open');
         }
@@ -398,62 +449,26 @@
             const item = currentOpenOrder.items[idx]; const newQty = item.qty + change;
             if(newQty >= 0) { item.qty = newQty; db.collection('orders').doc(currentOpenOrder.id).update({ items: currentOpenOrder.items, totalAmount: currentOpenOrder._liveTotal }); renderFullModalItems(); }
         }
-        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); showToast("Status Updated"); }); }
+        function updateStatus(s) { if(!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status:s}).then(()=>{ closeFullModal(); showToast("Updated"); }); }
         function deleteOrder() { if(confirm("Permanently delete?")) db.collection('orders').doc(currentOpenOrder.id).delete().then(()=>{ closeFullModal(); showToast("Deleted"); }); }
         function closeFullModal() { document.getElementById('order-full-modal').classList.remove('open'); }
 
-        // --- INVENTORY (Reverted to Simple) ---
-        function openMenuControl() {
-            const list = document.getElementById('menu-list-items');
-            // Combine custom items + any existing structure into a simple editable list
-            let html = '';
-            // Display Custom Items
-            if(currentMenuData.customItems) {
-                html = currentMenuData.customItems.map((item, idx) => `
-                <div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700">
-                    <div><p class="font-bold text-sm text-white">${item.name}</p><p class="text-xs text-orange-400">₹${item.price}</p></div>
-                    <button onclick="deleteCustomItem(${idx})" class="text-red-500 hover:text-white"><i class="fas fa-trash"></i></button>
-                </div>`).join('');
-            }
-            list.innerHTML = html || "<p class='text-center opacity-50'>No items in inventory</p>";
-            document.getElementById('menu-modal').classList.remove('hidden');
-        }
-        function addNewItem() {
-            const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value);
-            if(n && p) {
-                if(!currentMenuData.customItems) currentMenuData.customItems = [];
-                currentMenuData.customItems.push({id: Date.now(), name: n, price: p});
-                document.getElementById('new-item-name').value=''; document.getElementById('new-item-price').value='';
-                openMenuControl(); // Refresh list
-            }
-        }
-        function deleteCustomItem(idx) {
-            if(confirm("Delete item?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); }
-        }
-        function saveMenuStatus() {
-            db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{
-                document.getElementById('menu-modal').classList.add('hidden'); showToast("Inventory Updated");
-            });
-        }
-
-        // --- CHAT SYSTEM ---
+        // --- MESSAGES (App to App) ---
         function renderMessagesList() {
             const list = document.getElementById('messages-list');
-            // List users from UdhaarMap who have interacted
-            const users = Object.keys(udhaarMap).map(p => ({phone:p, ...udhaarMap[p]}));
-            list.innerHTML = users.map(u => `
-                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openChat('${u.phone}', '${u.name}')">
-                    <div class="flex items-center gap-3">
+            if(chatUsers.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No messages</p>"; return; }
+            list.innerHTML = chatUsers.map(u => `
+                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openChat('${u.id}')"> <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center"><i class="fas fa-user"></i></div>
-                        <div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div>
+                        <div><p class="font-bold text-sm">User ${u.id.slice(-4)}</p><p class="text-xs opacity-50">${u.id}</p></div>
                     </div>
                     <i class="fas fa-chevron-right opacity-30"></i>
                 </div>
             `).join('');
         }
-        function openChat(phone, name) {
-            currentChatUser = { phone, name };
-            document.getElementById('chat-user-name').innerText = name;
+        function openChat(phone) {
+            currentChatUser = phone;
+            document.getElementById('chat-user-name').innerText = phone;
             document.getElementById('chat-window').classList.add('open');
             db.collection('chats').doc(phone).collection('messages').orderBy('timestamp').onSnapshot(snap => {
                 document.getElementById('chat-messages').innerHTML = snap.docs.map(d => {
@@ -466,29 +481,30 @@
         function sendAdminMessage() {
             const t = document.getElementById('chat-input').value.trim();
             if(t && currentChatUser) {
-                db.collection('chats').doc(currentChatUser.phone).collection('messages').add({
+                db.collection('chats').doc(currentChatUser).collection('messages').add({
                     text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
+                db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge:true}); // trigger notification logic
                 document.getElementById('chat-input').value = "";
             }
         }
-        function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); currentChatUser=null; }
+        function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); }
 
-        // --- PAYMENT LOGS (User Wise) ---
-        function openPaymentLogs() {
-            const list = document.getElementById('logs-list');
-            if(!window.paymentsSnap || window.paymentsSnap.empty) { list.innerHTML="<p class='text-center opacity-50 mt-10'>No logs</p>"; }
-            else {
-                // Group by User logic similar to history can be applied here, or just list linearly
-                list.innerHTML = window.paymentsSnap.docs.map(d=>{
-                    const p = d.data();
-                    return `<div class="p-3 bg-gray-800 rounded border border-gray-700 flex justify-between items-center mb-2">
-                        <div><p class="font-bold text-sm text-white">${udhaarMap[p.phone]?.name || p.phone}</p><p class="text-xs text-gray-400">${p.timestamp?new Date(p.timestamp.toDate()).toLocaleDateString():''}</p></div>
-                        <span class="text-green-400 font-bold">+₹${p.amount}</span>
-                    </div>`;
-                }).join('');
-            }
-            document.getElementById('logs-modal').classList.remove('hidden');
+        // --- ANALYTICS ---
+        function openAnalytics() {
+            document.getElementById('sales-modal').classList.remove('hidden');
+            document.getElementById('an-sales').innerText = document.getElementById('total-sales').dataset.realValue;
+            document.getElementById('an-count').innerText = todaysOrderCount;
+            const l = document.getElementById('analytics-list');
+            l.innerHTML = Object.entries(todaysItemsMap).sort((a,b)=>b[1]-a[1]).map(([n,q]) => {
+                const max = Math.max(...Object.values(todaysItemsMap));
+                const per = (q/max)*100;
+                return `
+                <div class="mb-2">
+                    <div class="flex justify-between text-xs mb-1"><span>${n}</span><span class="font-bold">${q}</span></div>
+                    <div class="h-2 bg-gray-800 rounded-full overflow-hidden"><div class="h-full bg-orange-500" style="width:${per}%"></div></div>
+                </div>`;
+            }).join('');
         }
 
         // --- UTILS ---
@@ -498,19 +514,20 @@
         function toggleShop() { db.collection('settings').doc('status').set({isOpen:!isShopOpen}); }
         function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
         function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage:m},{merge:true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Sent"); }
-        function renderUdhaar() { const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); let h=''; for(let p in udhaarMap){const u=udhaarMap[p],d=u.debit-u.credit; if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) h+=`<div class="aesthetic-card p-3 flex justify-between items-center"><div><div class="flex gap-2 items-center"><p class="font-bold text-white">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs" onclick="openLimit('${p}','${u.name}')"></i></div><p class="text-xs text-gray-400">${p}</p></div><div class="text-right"><p class="text-red-400 font-bold">₹${d}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div></div>`;} l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; }
+        function renderUdhaar() { const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); let h=''; for(let p in udhaarMap){const u=udhaarMap[p],d=u.debit-u.credit; if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) h+=`<div class="aesthetic-card p-3 flex justify-between items-center mb-2"><div><div class="flex gap-2 items-center"><p class="font-bold text-white">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs" onclick="openLimit('${p}','${u.name}')"></i></div><p class="text-xs text-gray-400">${p}</p></div><div class="text-right"><p class="text-red-400 font-bold">₹${d}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div></div>`;} l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; }
         function openLimit(p,n){currentLimitPhone=p;document.getElementById('limit-name').innerText=n;document.getElementById('limit-input').value='';document.getElementById('limit-modal').classList.remove('hidden');}
         function saveLimit(){db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(document.getElementById('limit-input').value)},{merge:true});document.getElementById('limit-modal').classList.add('hidden');showToast("Limit Set");}
         function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
         function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
-        function switchView(v) { ['live','history','udhaar','messages'].forEach(x=>{ const el=document.getElementById('view-'+x); if(el) el.classList.add('hidden'); const btn=document.getElementById('tab-'+x); if(btn) btn.classList.remove('tab-active','text-orange-500'); }); document.getElementById('view-'+v).classList.remove('hidden'); const b=document.getElementById('tab-'+v); if(b) b.classList.add('tab-active','text-orange-500'); }
-        function filterUdhaar(){ renderUdhaar(); }
-        function filterHistory(){ renderHistoryUsers(); }
+        function openMenuControl() { document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? currentMenuData.customItems.map((item, idx) => `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700"><span class="text-white">${item.name} <span class="text-orange-400">₹${item.price}</span></span><i onclick="deleteCustomItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i></div>`).join('') : baseItems.map(i=>`<div class="flex justify-between p-3 bg-gray-800 rounded mb-1"><span class="text-gray-400">${i.name}</span><span class="text-orange-400">₹${i.price}</span></div>`).join(''); document.getElementById('menu-modal').classList.remove('hidden'); }
+        function addNewItem() { const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value); if(n && p) { if(!currentMenuData.customItems) currentMenuData.customItems = []; currentMenuData.customItems.push({id: Date.now(), name: n, price: p}); document.getElementById('new-item-name').value=''; document.getElementById('new-item-price').value=''; openMenuControl(); } }
+        function deleteCustomItem(idx) { if(confirm("Delete item?")) { currentMenuData.customItems.splice(idx, 1); openMenuControl(); } }
+        function saveMenuStatus() { db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems }, {merge:true}).then(()=>{ document.getElementById('menu-modal').classList.add('hidden'); showToast("Saved"); }); }
+        function tryEndDay(){ if(confirm("End Day?")) { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); } }
         function enableSound(){ if(!soundEnabled){ soundEnabled=true; document.getElementById('sound-status').innerText="Sound 🔊"; } }
         function showToast(m){ const c=document.getElementById('toast-container'),e=document.createElement('div'); e.className='toast'; e.innerHTML=`<span>${m}</span>`; c.appendChild(e); setTimeout(()=>e.classList.add('show'),10); setTimeout(()=>{e.classList.remove('show');e.remove()},2000); }
-        function openSalesAnalysis(){document.getElementById('sales-modal').classList.remove('hidden'); document.getElementById('today-breakdown-list').innerHTML=Object.entries(todaysItemsMap).map(([n,q])=>`<div class="flex justify-between p-2 border-b border-gray-800"><span class="text-white text-sm">${n}</span><span class="text-orange-400 font-bold">${q}</span></div>`).join('');}
-        function tryEndDay(){ if(confirm("End Day?")) { const s=parseInt(document.getElementById('total-sales').dataset.realValue||0); const h=[...salesHistoryData,{date:new Date().toLocaleDateString(),total:s}].slice(-30); db.collection('settings').doc('config').set({lastReset:firebase.firestore.FieldValue.serverTimestamp(),salesHistory:h},{merge:true}); showToast("Reset Done"); } }
         function toggleSalesPrivacy(){ salesHidden=!salesHidden; render(); document.getElementById('privacy-icon').className=salesHidden?"fas fa-eye-slash":"fas fa-eye"; }
+        function openPaymentLogs(){ const l = document.getElementById('logs-list'); if(!window.paymentsSnap || window.paymentsSnap.empty) l.innerHTML="<p class='text-center opacity-50 mt-10'>No logs</p>"; else { let grouped = {}; window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!grouped[p.phone]) grouped[p.phone]=[]; grouped[p.phone].push(p); }); l.innerHTML = Object.keys(grouped).map(ph => `<div class="aesthetic-card p-3 mb-2"><p class="font-bold text-sm mb-2 text-blue-400">${udhaarMap[ph]?.name||ph}</p>${grouped[ph].map(x=>`<div class="flex justify-between text-xs text-gray-400 border-b border-gray-800 pb-1 mb-1"><span>${new Date(x.timestamp.toDate()).toLocaleDateString()}</span><span class="text-green-400">+₹${x.amount}</span></div>`).join('')}</div>`).join(''); } document.getElementById('logs-modal').classList.remove('hidden'); }
 
         init();
     </script>
