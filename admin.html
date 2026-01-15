@@ -12,61 +12,38 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Modern Dark Theme Variables */
-        :root { --bg: #050505; --card: #141414; --border: #333; --accent: #F97316; --text: #fff; --text-sub: #9ca3af; }
-        
-        /* Aesthetic Light Mode */
-        body.light-mode { --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; --text: #1F2937; --text-sub: #6B7280; }
-        
+        /* Modern Variables */
+        :root { --bg: #050505; --card: #141414; --border: #333; --accent: #F97316; --text: #fff; --text-sub: #9ca3af; --modal-bg: #050505; }
+        body.light-mode { --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; --text: #1F2937; --text-sub: #6B7280; --modal-bg: #F9FAFB; }
         body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
-        
-        .aesthetic-card { 
-            background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative; margin-bottom: 10px;
-        }
+        .aesthetic-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative; }
         .aesthetic-card:active { transform: scale(0.98); }
-
-        /* Status & Payment Pills */
+        .live-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 18px; position: relative; overflow: hidden; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); margin-bottom: 12px; transition: all 0.3s ease; }
+        .live-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%; background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%); pointer-events: none; }
         .status-pill { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
         .status-pending { background: rgba(234, 179, 8, 0.15); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.25); animation: pulse 2s infinite; }
         .status-cooking { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25); }
         .status-ready { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25); }
-        
-        .pay-pill { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; text-transform: uppercase; margin-left: 6px; }
-        .pay-cash { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
-        .pay-online { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
-        .pay-udhaar { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
-
+        .pay-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px; text-transform: uppercase; }
+        .pay-cash { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
+        .pay-udhaar { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .pay-online { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-
-        /* Sidebar */
         .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 90; backdrop-filter: blur(4px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
-
-        /* Full Screen Modal */
         .fs-modal { position: fixed; inset: 0; background: var(--modal-bg); z-index: 120; transform: translateY(100%); transition: transform 0.3s; overflow-y: auto; }
         .fs-modal.open { transform: translateY(0); }
-
-        /* Tabs */
         .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; padding-bottom: 12px; }
         .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
-
-        /* Chat */
         .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; }
         .chat-admin { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .chat-user { background: #333; color: white; align-self: flex-start; border-bottom-left-radius: 2px; }
-
-        /* Inputs */
         input, textarea { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; }
-        
-        /* Toast */
         #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 150; pointer-events: none; width: 90%; max-width: 300px; }
         .toast { background: rgba(20, 20, 20, 0.95); border: 1px solid #333; padding: 12px 20px; border-radius: 12px; color: white; font-size: 13px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .toast.show { opacity: 1; transform: translateY(0); }
-
-        /* Limit Bar */
         .limit-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
         .limit-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
     </style>
@@ -108,7 +85,7 @@
             </button>
 
             <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
-                <i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory (Tick/Untick)
+                <i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory
             </button>
 
             <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
@@ -152,7 +129,6 @@
         <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
 
         <div id="view-history" class="hidden space-y-3">
-            <input type="text" id="search-history" onkeyup="filterHistory()" placeholder="Search History..." class="mb-3">
             <div id="history-container" class="space-y-2"></div>
         </div>
 
@@ -292,7 +268,6 @@
                 if(d.timestamp && d.timestamp.seconds > udhaarMap[d.customerPhone].lastOrder) { udhaarMap[d.customerPhone].lastOrder = d.timestamp.seconds; udhaarMap[d.customerPhone].lastAmount = d.totalAmount; udhaarMap[d.customerPhone].name = d.customerName; }
                 if(d.status==='completed' && d.timestamp && d.timestamp.seconds > (window.lastReset||0)) { sales+=d.totalAmount; todaysOrderCount++; d.items.forEach(i=>{ if(!todaysItemsMap[i.name]) todaysItemsMap[i.name]=0; todaysItemsMap[i.name]+=i.qty; }); }
                 
-                // --- UNIFIED CARD GENERATOR ---
                 const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
                 const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
                 const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
@@ -321,7 +296,6 @@
             });
 
             document.getElementById('view-live').innerHTML = liveHtml || "<p class='text-center opacity-50 mt-10'>No active orders</p>";
-            // Render history here directly to ensure it works immediately
             document.getElementById('history-container').innerHTML = historyHtml || "<p class='text-center opacity-50 mt-10'>No history found</p>";
             document.getElementById('pending-count').innerText = active;
             
@@ -340,13 +314,11 @@
             localStorage.setItem('admin_active_tab', v);
             ['live','history','udhaar','messages'].forEach(x=>{ document.getElementById('view-'+x).classList.add('hidden'); document.getElementById('tab-'+x)?.classList.remove('tab-active'); }); 
             document.getElementById('view-'+v).classList.remove('hidden'); document.getElementById('tab-'+v)?.classList.add('tab-active');
-            
             document.getElementById('dashboard-section').style.display = v==='messages' ? 'none' : 'grid';
             document.getElementById('tabs-section').style.display = v==='messages' ? 'none' : 'flex';
-            
             if(v==='udhaar') renderUdhaar(); 
             if(v==='messages') renderMessagesList();
-            if(v==='history') render(); // Force render to refresh history
+            if(v==='history') render();
         }
 
         // --- UDHAAR & LIMITS ---
@@ -358,21 +330,11 @@
                 const lim = limitsMap[p] || 0;
                 const perc = lim > 0 ? Math.min((d/lim)*100, 100) : 0;
                 const barColor = d > lim && lim > 0 ? 'bg-red-500' : 'bg-blue-500';
-                
                 if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) {
                     h+=`<div class="aesthetic-card p-3 mb-2">
                         <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <div class="flex gap-2 items-center">
-                                    <p class="font-bold text-white">${u.name}</p>
-                                    <i class="fas fa-lock text-gray-500 cursor-pointer text-xs hover:text-white" onclick="openLimitModal('${p}','${u.name}')"></i>
-                                </div>
-                                <p class="text-xs opacity-50">${p}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-bold ${d > lim && lim > 0 ? 'text-red-500' : 'text-red-400'}">₹${d} ${lim > 0 ? `<span class="text-gray-500 text-[10px]">/ ${lim}</span>` : ''}</p>
-                                <button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button>
-                            </div>
+                            <div><div class="flex gap-2 items-center"><p class="font-bold text-white">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs hover:text-white" onclick="openLimitModal('${p}','${u.name}')"></i></div><p class="text-xs opacity-50">${p}</p></div>
+                            <div class="text-right"><p class="font-bold ${d > lim && lim > 0 ? 'text-red-500' : 'text-red-400'}">₹${d} ${lim > 0 ? `<span class="text-gray-500 text-[10px]">/ ${lim}</span>` : ''}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div>
                         </div>
                         ${lim > 0 ? `<div class="limit-bar-bg"><div class="limit-bar-fill ${barColor}" style="width: ${perc}%"></div></div>` : ''}
                     </div>`;
@@ -388,10 +350,8 @@
             document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
             document.getElementById('fm-status-badge').innerText = d.status; document.getElementById('fm-status-badge').className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status==='completed'?'bg-green-600':d.status==='cancelled'?'bg-red-600':'bg-yellow-600'}`;
             document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
-            
             const payClass = d.paymentMode==='Udhaar'?'pay-udhaar': d.paymentMode==='Online'?'pay-online':'pay-cash';
             document.getElementById('fm-payment-info').innerHTML = `<span class="pay-badge ${payClass}" style="margin-left:0; font-size:12px">${d.paymentMode || 'Cash'}</span>`;
-
             if(d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } else document.getElementById('fm-recipient-box').classList.add('hidden');
             if(d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); } else document.getElementById('fm-note').classList.add('hidden');
             const callPh = d.recipient ? d.recipient.phone : d.customerPhone; document.getElementById('fm-btn-call').href = `tel:${callPh}`; document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g,'')}`; document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
@@ -498,7 +458,6 @@
         function toggleSalesPrivacy(){ salesHidden=!salesHidden; render(); document.getElementById('privacy-icon').className=salesHidden?"fas fa-eye-slash":"fas fa-eye"; }
         function openSalesAnalysis(){document.getElementById('sales-modal').classList.remove('hidden'); document.getElementById('an-sales').innerText=document.getElementById('total-sales').dataset.realValue; document.getElementById('an-count').innerText=todaysOrderCount; document.getElementById('today-breakdown-list').innerHTML=Object.entries(todaysItemsMap).map(([n,q])=>`<div class="flex justify-between p-2 border-b border-gray-800"><span class="text-white text-sm">${n}</span><span class="text-orange-400 font-bold">${q}</span></div>`).join('');}
         function openPaymentLogs(){ const l = document.getElementById('logs-list'); if(!window.paymentsSnap || window.paymentsSnap.empty) l.innerHTML="<p class='text-center opacity-50 mt-10'>No logs</p>"; else { let grouped = {}; window.paymentsSnap.docs.forEach(d=>{ const p=d.data(); if(!grouped[p.phone]) grouped[p.phone]=[]; grouped[p.phone].push(p); }); l.innerHTML = Object.keys(grouped).map(ph => `<div class="aesthetic-card p-3 mb-2"><p class="font-bold text-sm mb-2 text-blue-400">${udhaarMap[ph]?.name||ph}</p>${grouped[ph].map(x=>`<div class="flex justify-between text-xs opacity-70 border-b border-gray-700 pb-1 mb-1"><span>${new Date(x.timestamp.toDate()).toLocaleDateString()}</span><span class="text-green-400 font-bold">+₹${x.amount}</span></div>`).join('')}</div>`).join(''); } document.getElementById('logs-modal').classList.remove('hidden'); }
-        function filterHistory(){ render(); }
 
         init();
     </script>
