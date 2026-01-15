@@ -28,7 +28,31 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative;
         }
         .aesthetic-card:active { transform: scale(0.98); }
-        
+
+        /* LIVE ORDER SPECIFIC AESTHETICS */
+        .live-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+        .live-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+            pointer-events: none;
+        }
+        .status-pill { padding: 4px 12px; border-radius: 30px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); animation: pulse 2s infinite; }
+        .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
+
         /* Sidebar */
         .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); }
         .sidebar.open { transform: translateX(0); }
@@ -55,6 +79,10 @@
         #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 150; pointer-events: none; width: 90%; max-width: 300px; }
         .toast { background: rgba(20, 20, 20, 0.95); border: 1px solid #333; padding: 12px 20px; border-radius: 12px; color: white; font-size: 13px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
         .toast.show { opacity: 1; transform: translateY(0); }
+
+        /* Progress Bar for Udhaar */
+        .limit-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .limit-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto" onclick="enableSound()">
@@ -250,7 +278,7 @@
 
         let isShopOpen=true, soundEnabled=false, udhaarMap={}, currentMenuData={customItems:[]}, currentOpenOrder=null;
         let pendingAction=null, salesHidden=false, todaysItemsMap={}, salesHistoryData=[], currentLimitPhone=null, currentSettlePhone=null, currentChatUser=null;
-        let allOrders=[], chatUsers=[], todaysOrderCount=0;
+        let allOrders=[], chatUsers=[], todaysOrderCount=0, limitsMap = {};
         const baseItems = [{id:1,name:"Normal Chai",price:10},{id:2,name:"Adrak Chai",price:15},{id:3,name:"Cigarette",price:0},{id:4,name:"Matthi",price:5},{id:5,name:"Cream Roll",price:10},{id:6,name:"Biscuit",price:5},{id:7,name:"Namkeen",price:10}];
 
         function init() {
@@ -258,6 +286,7 @@
             db.collection('settings').doc('config').onSnapshot(d=>{ if(d.exists) { const dd=d.data(); window.lastReset=dd.lastReset?dd.lastReset.seconds:0; salesHistoryData=dd.salesHistory||[]; } render(); });
             db.collection('settings').doc('status').onSnapshot(d=>{ isShopOpen=d.exists?d.data().isOpen:true; const b=document.getElementById('shop-toggle-btn'); b.innerText=isShopOpen?"OPEN":"CLOSED"; b.className=isShopOpen?"px-3 py-1 rounded text-xs font-bold bg-green-600 text-white":"px-3 py-1 rounded text-xs font-bold bg-red-600 text-white"; });
             db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists) currentMenuData=d.data(); });
+            db.collection('user_limits').onSnapshot(s => { limitsMap={}; s.docs.forEach(d => limitsMap[d.id] = d.data().limit); if(document.getElementById('tab-udhaar').classList.contains('tab-active')) renderUdhaar(); });
             db.collection('orders').orderBy('timestamp','desc').onSnapshot(s=>{ window.ordersSnap=s; render(); });
             db.collection('payments').orderBy('timestamp','desc').onSnapshot(s=>{ window.paymentsSnap=s; render(); });
             db.collection('chats').onSnapshot(s => { chatUsers = s.docs.map(d=>({id:d.id, ...d.data()})); const hasMsg = !s.empty; document.getElementById('header-msg-dot').classList.toggle('hidden', !hasMsg); document.getElementById('sidebar-msg-count').classList.toggle('hidden', !hasMsg); if(!document.getElementById('view-messages').classList.contains('hidden')) renderMessagesList(); });
@@ -278,9 +307,19 @@
                 
                 if(['pending','cooking','ready'].includes(d.status)) {
                     active++;
-                    liveHtml+=`<div class="aesthetic-card mb-3 cursor-pointer" style="border-left: 4px solid var(--accent)" onclick="openFullModal('${id}')">
-                        <div class="flex justify-between items-start"><div><h3 class="font-bold text-lg">${d.customerName}</h3><span class="text-[10px] px-2 py-0.5 rounded bg-gray-700 text-white uppercase">${d.status}</span></div><h3 class="font-bold text-xl text-orange-400">₹${d.totalAmount}</h3></div>
-                        ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block mt-2">For: ${d.recipient.name}</span>` : ''}
+                    const stClass = d.status==='pending'?'status-pending':d.status==='cooking'?'status-cooking':'status-ready';
+                    liveHtml+=`<div class="live-card cursor-pointer" onclick="openFullModal('${id}')">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-white">${d.customerName}</h3>
+                                ${d.recipient ? `<span class="text-[10px] text-blue-400 font-bold block"><i class="fas fa-gift"></i> ${d.recipient.name}</span>` : ''}
+                            </div>
+                            <span class="status-pill ${stClass}">${d.status}</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs text-gray-400 font-bold">${d.items.length} Items</span>
+                            <h3 class="font-bold text-2xl text-orange-400">₹${d.totalAmount}</h3>
+                        </div>
                     </div>`;
                 }
             });
@@ -289,7 +328,7 @@
             document.getElementById('pending-count').innerText=active;
             const salesEl = document.getElementById('total-sales'); salesEl.innerText = salesHidden ? "****" : sales; salesEl.dataset.realValue = sales;
             
-            // Force re-render of History and Udhaar to ensure they appear
+            // Ensure Views Update
             if(!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
             if(!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
             
@@ -312,7 +351,7 @@
         function renderHistory() {
             const list = document.getElementById('history-list'); const q = document.getElementById('search-history').value.toLowerCase();
             const users = Object.keys(udhaarMap).map(p=>({phone:p, ...udhaarMap[p]})).sort((a,b)=>b.lastOrder-a.lastOrder);
-            if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history.</p>"; return; }
+            if(users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No history found.</p>"; return; }
             list.innerHTML = users.map(u => {
                 if(!u.name.toLowerCase().includes(q) && !u.phone.includes(q)) return '';
                 return `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.phone}', '${u.name}')">
@@ -329,6 +368,38 @@
                 const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
                 return `<div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')"><div><p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status==='cancelled'?'text-red-500':'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold mt-1">${d.items.length} Items</p></div><span class="font-bold text-orange-400">₹${d.totalAmount}</span></div>`;
             }).join('');
+        }
+
+        // --- UDHAAR & LIMITS ---
+        function renderUdhaar() { 
+            const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); 
+            let h=''; 
+            for(let p in udhaarMap){
+                const u=udhaarMap[p], d=u.debit-u.credit; 
+                const lim = limitsMap[p] || 0;
+                const perc = lim > 0 ? Math.min((d/lim)*100, 100) : 0;
+                const barColor = d > lim && lim > 0 ? 'bg-red-500' : 'bg-blue-500';
+                
+                if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) {
+                    h+=`<div class="aesthetic-card p-3 mb-2">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="flex gap-2 items-center">
+                                    <p class="font-bold text-white">${u.name}</p>
+                                    <i class="fas fa-lock text-gray-500 cursor-pointer text-xs hover:text-white" onclick="openLimitModal('${p}','${u.name}')"></i>
+                                </div>
+                                <p class="text-xs opacity-50">${p}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold ${d > lim && lim > 0 ? 'text-red-500' : 'text-red-400'}">₹${d} ${lim > 0 ? `<span class="text-gray-500 text-[10px]">/ ${lim}</span>` : ''}</p>
+                                <button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button>
+                            </div>
+                        </div>
+                        ${lim > 0 ? `<div class="limit-bar-bg"><div class="limit-bar-fill ${barColor}" style="width: ${perc}%"></div></div>` : ''}
+                    </div>`;
+                }
+            } 
+            l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; 
         }
 
         // --- FULL MODAL ---
@@ -373,13 +444,11 @@
         function toggleShop() { db.collection('settings').doc('status').set({isOpen:!isShopOpen}); }
         function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
         function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage:m},{merge:true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Sent"); }
-        function renderUdhaar() { const l=document.getElementById('udhaar-list'), q=document.getElementById('search-udhaar').value.toLowerCase(); let h=''; for(let p in udhaarMap){const u=udhaarMap[p],d=u.debit-u.credit; if(d>0 && (u.name.toLowerCase().includes(q)||p.includes(q))) h+=`<div class="aesthetic-card p-3 flex justify-between items-center mb-2"><div><div class="flex gap-2 items-center"><p class="font-bold text-white" style="color:var(--text)">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs" onclick="openLimitModal('${p}','${u.name}')"></i></div><p class="text-xs opacity-50">${p}</p></div><div class="text-right"><p class="text-red-400 font-bold">₹${d}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div></div>`;} l.innerHTML=h||"<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; }
-        function openLimitModal(p,n){currentLimitPhone=p;document.getElementById('limit-modal-name').innerText=n;document.getElementById('limit-input').value='';document.getElementById('limit-modal').classList.remove('hidden');}
+        function openLimitModal(p,n){currentLimitPhone=p;document.getElementById('limit-name').innerText=n;document.getElementById('limit-input').value='';document.getElementById('limit-modal').classList.remove('hidden');}
         function saveLimit(){db.collection('user_limits').doc(currentLimitPhone).set({limit:parseInt(document.getElementById('limit-input').value)},{merge:true});document.getElementById('limit-modal').classList.add('hidden');showToast("Saved");}
         function openSettle(p,n,d){currentSettlePhone=p;document.getElementById('settle-name').innerText=n;document.getElementById('settle-due').innerText=d;document.getElementById('settle-amount').value='';document.getElementById('settle-modal').classList.remove('hidden');}
         function submitPayment(){const a=parseInt(document.getElementById('settle-amount').value);if(a)db.collection('payments').add({phone:currentSettlePhone,amount:a,timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('settle-modal').classList.add('hidden');showToast("Settled");}
         
-        // --- NEW & UPDATED INVENTORY FUNCTIONS ---
         function openMenuControl() { 
             document.getElementById('menu-list-items').innerHTML = currentMenuData.customItems && currentMenuData.customItems.length ? 
             currentMenuData.customItems.map((item, idx) => {
