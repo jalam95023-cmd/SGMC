@@ -7,140 +7,365 @@
     <link rel="manifest" href="admin_manifest.json">
     <meta name="theme-color" content="#0f0f0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        :root { --bg: #050505; --card: #141414; --border: #333; --accent: #F97316; --text: #fff; --text-sub: #9ca3af; --modal-bg: #050505; }
-        body.light-mode { --bg: #F0F2F5; --card: #FFFFFF; --border: #E5E7EB; --accent: #EA580C; --text: #1F2937; --text-sub: #6B7280; --modal-bg: #F9FAFB; }
-        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; transition: background 0.3s, color 0.3s; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
-        .aesthetic-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); transition: transform 0.2s; position: relative; }
-        .aesthetic-card:active { transform: scale(0.98); }
-        .live-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 18px; position: relative; overflow: hidden; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); margin-bottom: 12px; transition: all 0.3s ease; }
-        .status-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; }
+        /* --- VARIABLES --- */
+        :root { 
+            --bg: #050505; 
+            --card: #141414; 
+            --border: #333; 
+            --accent: #F97316; 
+            --text: #fff; 
+            --text-sub: #9ca3af; 
+            --modal-bg: #050505; 
+        }
+        
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            font-family: 'Inter', sans-serif; 
+            padding-bottom: 80px; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        /* --- CARDS & UI --- */
+        .aesthetic-card { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 16px; 
+            padding: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            position: relative; 
+            margin-bottom: 12px;
+        }
+        
+        .live-card { 
+            background: rgba(20, 20, 20, 0.6); 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 20px; 
+            padding: 18px; 
+            position: relative; 
+            overflow: hidden; 
+            margin-bottom: 12px; 
+        }
+        
+        /* --- BADGES --- */
+        .status-pill { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
         .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.3); animation: pulse 2s infinite; }
         .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
         .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        
         .pay-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px; text-transform: uppercase; }
         .pay-cash { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.2); }
         .pay-udhaar { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
         .pay-online { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); } 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); } }
-        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border); }
+
+        /* --- SIDEBAR --- */
+        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg); z-index: 100; transform: translateX(100%); transition: 0.3s; border-left: 1px solid var(--border); }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 90; backdrop-filter: blur(4px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+        /* --- MODALS --- */
         .fs-modal { position: fixed; inset: 0; background: var(--modal-bg); z-index: 120; transform: translateY(100%); transition: transform 0.3s; overflow-y: auto; }
         .fs-modal.open { transform: translateY(0); }
-        .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; padding-bottom: 12px; }
-        .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
-        input, textarea, select { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; margin-bottom: 8px; }
-        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 150; pointer-events: none; width: 90%; max-width: 300px; }
-        .toast { background: rgba(20, 20, 20, 0.95); border: 1px solid #333; padding: 12px 20px; border-radius: 12px; color: white; font-size: 13px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .limit-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
-        .limit-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
-        .sticky-add-btn { position: sticky; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(to top, var(--modal-bg) 80%, transparent); z-index: 10; }
-        .low-stock { border: 1px solid #ef4444 !important; box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); }
-        .item-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #333; }
         
-        /* CHAT FIX ADMIN */
-        #chat-window .flex-col { display: flex; flex-direction: column; gap: 10px; }
+        /* --- INPUTS & TABS --- */
+        .tab-btn { color: var(--text-sub); border-bottom: 2px solid transparent; transition: 0.3s; padding-bottom: 12px; font-weight: bold; flex: 1; text-align: center; }
+        .tab-active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        
+        input, textarea, select { background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px; rounded: 12px; width: 100%; outline: none; margin-bottom: 8px; }
+        
+        /* --- CHAT --- */
         .chat-bubble { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 13px; word-wrap: break-word; }
         .chat-admin { align-self: flex-end; background: #F97316; color: white; border-bottom-right-radius: 4px; }
         .chat-user { align-self: flex-start; background: #333; border: 1px solid var(--border); color: white; border-bottom-left-radius: 4px; }
+        
+        /* --- EXTRAS --- */
+        #toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 150; pointer-events: none; width: 90%; max-width: 300px; }
+        .toast { background: rgba(20, 20, 20, 0.95); border: 1px solid #333; padding: 12px 20px; border-radius: 12px; color: white; font-size: 13px; opacity: 0; transform: translateY(20px); transition: all 0.3s; display: flex; align-items: center; gap: 10px; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        
+        .sticky-add-btn { position: sticky; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(to top, var(--modal-bg) 80%, transparent); z-index: 10; }
+        .item-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #333; }
+        .limit-bar-bg { width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+        .limit-bar-fill { height: 100%; border-radius: 2px; transition: width 0.3s; }
     </style>
 </head>
 <body class="p-4 max-w-2xl mx-auto" onclick="handleBodyClick()">
+
     <div class="flex justify-between items-center mb-6 relative z-50">
-        <div><h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1><p class="text-[10px] text-green-500 font-bold uppercase tracking-wider">● Online Pro</p></div>
+        <div>
+            <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
+            <p class="text-[10px] text-green-500 font-bold uppercase tracking-wider">● Online Pro</p>
+        </div>
         <div class="flex gap-3">
             <button onclick="setShopLocation()" class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-500 flex items-center justify-center shadow-lg active:scale-95 z-50"><i class="fas fa-map-marker-alt"></i></button>
-            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-white flex items-center justify-center shadow-lg active:scale-95 z-50 relative"><i class="fas fa-bars"></i><span id="header-msg-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full hidden border-2 border-gray-800"></span></button>
+            <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 text-white flex items-center justify-center shadow-lg active:scale-95 z-50 relative">
+                <i class="fas fa-bars"></i>
+                <span id="header-msg-dot" class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full hidden border-2 border-gray-800"></span>
+            </button>
         </div>
     </div>
-    
+
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar p-6 flex flex-col h-full">
-        <div class="flex justify-between items-center mb-8"><h2 class="text-xl font-bold text-orange-500">Menu</h2><button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button></div>
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-xl font-bold text-orange-500">Menu</h2>
+            <button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button>
+        </div>
         <div class="space-y-3 flex-1">
-            <div class="aesthetic-card p-3 flex justify-between items-center bg-opacity-50"><span class="font-bold text-sm">Shop Status</span><button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-1 rounded text-xs font-bold bg-green-600 text-white shadow">OPEN</button></div>
-            <div class="aesthetic-card p-3 flex justify-between items-center bg-opacity-50"><span class="font-bold text-sm">Busy Mode</span><button id="sidebar-busy-btn" onclick="toggleBusyMode()" class="px-3 py-1 rounded text-xs font-bold bg-gray-700 text-gray-400 shadow">OFF</button></div>
-            <button onclick="switchView('messages'); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800/50 transition bg-opacity-50" style="border-color:var(--border)"><span class="font-bold text-sm text-blue-400"><i class="fas fa-comments mr-2"></i> Messages</span><span id="sidebar-msg-count" class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full hidden">New</span></button>
-            <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)"><i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory Control</button>
-            <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)"><i class="fas fa-bullhorn text-yellow-400 mr-2"></i> Broadcast</button>
-            <button onclick="showQRCode(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)"><i class="fas fa-qrcode text-white mr-2"></i> Show QR Code</button>
-            <button onclick="openPaymentLogs(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)"><i class="fas fa-history text-green-400 mr-2"></i> Payment Logs</button>
-            <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)"><span><i class="fas fa-adjust text-purple-400 mr-2"></i> Theme</span><i class="fas fa-toggle-on text-2xl text-purple-500" id="theme-icon"></i></button>
+            <div class="aesthetic-card p-3 flex justify-between items-center bg-opacity-50">
+                <span class="font-bold text-sm">Shop Status</span>
+                <button id="shop-toggle-btn" onclick="toggleShop()" class="px-3 py-1 rounded text-xs font-bold bg-green-600 text-white shadow">OPEN</button>
+            </div>
+            <div class="aesthetic-card p-3 flex justify-between items-center bg-opacity-50">
+                <span class="font-bold text-sm">Busy Mode</span>
+                <button id="sidebar-busy-btn" onclick="toggleBusyMode()" class="px-3 py-1 rounded text-xs font-bold bg-gray-700 text-gray-400 shadow">OFF</button>
+            </div>
+            <button onclick="switchView('messages'); toggleSidebar()" class="w-full text-left p-3 rounded-xl flex items-center justify-between border border-gray-800 hover:bg-gray-800/50 transition bg-opacity-50" style="border-color:var(--border)">
+                <span class="font-bold text-sm text-blue-400"><i class="fas fa-comments mr-2"></i> Messages</span>
+                <span id="sidebar-msg-count" class="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full hidden">New</span>
+            </button>
+            <button onclick="openMenuControl(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
+                <i class="fas fa-boxes text-orange-400 mr-2"></i> Inventory Control
+            </button>
+            <button onclick="openBroadcastModal(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
+                <i class="fas fa-bullhorn text-yellow-400 mr-2"></i> Broadcast
+            </button>
+            <button onclick="showQRCode(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
+                <i class="fas fa-qrcode text-white mr-2"></i> Show QR Code
+            </button>
+            <button onclick="openPaymentLogs(); toggleSidebar()" class="w-full text-left p-3 rounded-xl border border-gray-800 hover:bg-gray-800/50 transition font-bold text-sm" style="border-color:var(--border)">
+                <i class="fas fa-history text-green-400 mr-2"></i> Payment Logs
+            </button>
         </div>
     </div>
 
     <div id="dashboard-section" class="grid grid-cols-2 gap-4 mb-6">
         <div class="aesthetic-card flex flex-col justify-between cursor-pointer relative overflow-hidden" onclick="openSalesAnalysis()">
-            <div class="flex justify-between items-start z-10 relative"><span class="text-xs uppercase tracking-wider opacity-70">Revenue</span><i class="fas fa-chart-pie text-green-500"></i></div>
+            <div class="flex justify-between items-start z-10 relative">
+                <span class="text-xs uppercase tracking-wider opacity-70">Revenue</span>
+                <i class="fas fa-chart-pie text-green-500"></i>
+            </div>
             <h2 class="text-2xl font-bold text-green-500 mt-2 z-10 relative">₹<span id="total-sales">0</span></h2>
             <button onclick="event.stopPropagation(); tryEndDay()" class="mt-2 w-full py-1.5 text-[10px] bg-red-500/10 text-red-400 rounded font-bold border border-red-500/20 hover:bg-red-500/20 z-10 relative">RESET DAY</button>
         </div>
         <div class="aesthetic-card text-center flex flex-col justify-center cursor-pointer active:scale-95 transition" onclick="toggleSoundSetting()">
             <span class="text-xs uppercase tracking-wider opacity-70">Active</span>
             <h2 class="text-3xl font-bold text-yellow-500 my-1" id="pending-count">0</h2>
-            <div class="flex items-center justify-center gap-2"><i id="sound-icon" class="fas fa-volume-mute text-gray-500"></i><p class="text-[10px] opacity-50" id="sound-status">Sound: Off</p></div>
+            <div class="flex items-center justify-center gap-2">
+                <i id="sound-icon" class="fas fa-volume-mute text-gray-500 text-2xl mb-1"></i>
+                <p class="text-[10px] opacity-50" id="sound-status">Sound: Off</p>
+            </div>
         </div>
     </div>
 
     <div id="tabs-section" class="flex mb-4 border-b border-gray-800" style="border-color:var(--border)">
-        <button onclick="switchView('live')" id="tab-live" class="flex-1 py-3 tab-btn tab-active text-sm">LIVE</button>
-        <button onclick="switchView('history')" id="tab-history" class="flex-1 py-3 tab-btn text-sm">HISTORY</button>
-        <button onclick="switchView('udhaar')" id="tab-udhaar" class="flex-1 py-3 tab-btn text-sm">UDHAAR</button>
+        <button onclick="switchView('live')" id="tab-live" class="tab-btn tab-active text-sm">LIVE</button>
+        <button onclick="switchView('history')" id="tab-history" class="tab-btn text-sm">HISTORY</button>
+        <button onclick="switchView('udhaar')" id="tab-udhaar" class="tab-btn text-sm">UDHAAR</button>
     </div>
 
     <div id="main-content">
         <div id="view-live" class="space-y-3 min-h-[50vh]"></div>
-        <div id="view-history" class="hidden space-y-3"><input type="text" id="search-history" onkeyup="renderHistory()" placeholder="Search History..." class="mb-3"><div id="history-list" class="space-y-2"></div></div>
-        <div id="view-udhaar" class="hidden space-y-3"><input type="text" id="search-udhaar" onkeyup="renderUdhaar()" placeholder="Search Udhaar..." class="mb-3"><div id="udhaar-list" class="space-y-2"></div></div>
-        <div id="view-messages" class="hidden space-y-3"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-orange-500">Inbox</h2><button onclick="switchView('live')" class="text-gray-500 text-sm">Close</button></div><div id="messages-list" class="space-y-2"></div></div>
+        
+        <div id="view-history" class="hidden space-y-3">
+            <input type="text" id="search-history" onkeyup="renderHistory()" placeholder="Search History (Name/Phone)..." class="mb-3">
+            <div id="history-list" class="space-y-2"></div>
+        </div>
+        
+        <div id="view-udhaar" class="hidden space-y-3">
+            <input type="text" id="search-udhaar" onkeyup="renderUdhaar()" placeholder="Search Udhaar..." class="mb-3">
+            <div id="udhaar-list" class="space-y-2"></div>
+        </div>
+        
+        <div id="view-messages" class="hidden space-y-3">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-orange-500">Inbox</h2>
+                <button onclick="switchView('live')" class="text-gray-500 text-sm">Close</button>
+            </div>
+            <div id="messages-list" class="space-y-2"></div>
+        </div>
     </div>
 
     <div id="order-full-modal" class="fs-modal p-4">
         <div class="max-w-2xl mx-auto min-h-screen flex flex-col">
-            <div class="flex justify-between items-center mb-6"><button onclick="closeFullModal()" class="text-gray-400 flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back</button><span id="fm-status-badge" class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-800 text-white">STATUS</span></div>
-            <div class="aesthetic-card mb-4 relative overflow-hidden"><div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div><h1 class="text-2xl font-bold" id="fm-name">Customer</h1><p class="text-sm opacity-70" id="fm-phone">Phone</p><div class="mt-2" id="fm-payment-info"></div><div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg"><p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p><p class="text-sm" id="fm-recipient">Name</p></div><p class="text-xs opacity-50 mt-2" id="fm-time">Time</p><p class="text-xs text-yellow-500 italic mt-1 hidden" id="fm-note"></p><p class="text-sm mt-3 border-t border-gray-700 pt-2 flex items-center gap-2" id="fm-address" style="border-color:var(--border)"><i class="fas fa-map-marker-alt text-red-500"></i> Address</p></div>
-            <div class="grid grid-cols-3 gap-3 mb-6"><a id="fm-btn-call" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-phone text-green-500 text-xl mb-1"></i><span class="text-[10px]">Call</span></a><a id="fm-btn-wa" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fab fa-whatsapp text-green-500 text-xl mb-1"></i><span class="text-[10px]">Chat</span></a><a id="fm-btn-map" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-map-marker-alt text-blue-500 text-xl mb-1"></i><span class="text-[10px]">Map</span></a></div>
-            <div class="aesthetic-card mb-6"><p class="text-xs uppercase font-bold opacity-50 mb-3 tracking-wider">Items</p><div id="fm-items-list" class="space-y-3 border-b border-gray-700/50 pb-4 mb-4"></div><div class="flex justify-between items-center"><span class="font-bold text-lg">Total</span><span class="font-bold text-2xl text-orange-500">₹<span id="fm-total">0</span></span></div></div>
+            <div class="flex justify-between items-center mb-6">
+                <button onclick="closeFullModal()" class="text-gray-400 flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back</button>
+                <span id="fm-status-badge" class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-800 text-white">STATUS</span>
+            </div>
+            <div class="aesthetic-card mb-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+                <h1 class="text-2xl font-bold" id="fm-name">Customer</h1>
+                <p class="text-sm opacity-70" id="fm-phone">Phone</p>
+                <div class="mt-2" id="fm-payment-info"></div>
+                <div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                    <p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p>
+                    <p class="text-sm" id="fm-recipient">Name</p>
+                </div>
+                <p class="text-xs opacity-50 mt-2" id="fm-time">Time</p>
+                <p class="text-xs text-yellow-500 italic mt-1 hidden" id="fm-note"></p>
+                <p class="text-sm mt-3 border-t border-gray-700 pt-2 flex items-center gap-2" id="fm-address" style="border-color:var(--border)">
+                    <i class="fas fa-map-marker-alt text-red-500"></i> Address
+                </p>
+            </div>
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <a id="fm-btn-call" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-phone text-green-500 text-xl mb-1"></i><span class="text-[10px]">Call</span></a>
+                <a id="fm-btn-wa" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fab fa-whatsapp text-green-500 text-xl mb-1"></i><span class="text-[10px]">Chat</span></a>
+                <a id="fm-btn-map" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-map-marker-alt text-blue-500 text-xl mb-1"></i><span class="text-[10px]">Map</span></a>
+            </div>
+            <div class="aesthetic-card mb-6">
+                <p class="text-xs uppercase font-bold opacity-50 mb-3 tracking-wider">Items</p>
+                <div id="fm-items-list" class="space-y-3 border-b border-gray-700/50 pb-4 mb-4"></div>
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-lg">Total</span>
+                    <span class="font-bold text-2xl text-orange-500">₹<span id="fm-total">0</span></span>
+                </div>
+            </div>
             <div id="fm-controls" class="space-y-3 pb-10"></div>
         </div>
     </div>
 
     <div id="menu-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="aesthetic-card w-full max-w-sm h-[85vh] flex flex-col relative p-0 overflow-hidden">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#141414] z-20"><h3 class="font-bold text-xl">Inventory</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-800"><i class="fas fa-times"></i></button></div>
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#141414] z-20">
+                <h3 class="font-bold text-xl">Inventory</h3>
+                <button onclick="document.getElementById('menu-modal').classList.add('hidden')" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-800"><i class="fas fa-times"></i></button>
+            </div>
             <div id="menu-list-items" class="overflow-y-auto flex-1 p-4 space-y-3 pb-20"></div>
-            <div class="sticky-add-btn"><button onclick="openAddItemModal()" class="w-full bg-gradient-to-r from-orange-600 to-yellow-500 text-white py-3.5 rounded-xl font-bold shadow-xl flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Add New Item</button></div>
+            <div class="sticky-add-btn">
+                <button onclick="openAddItemModal()" class="w-full bg-gradient-to-r from-orange-600 to-yellow-500 text-white py-3.5 rounded-xl font-bold shadow-xl flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Add New Item</button>
+            </div>
         </div>
     </div>
 
     <div id="add-item-modal" class="hidden fixed inset-0 bg-black/90 z-[140] flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="aesthetic-card w-full max-w-xs p-6"><h3 class="font-bold text-lg mb-4 text-center">Add New Product</h3><input id="new-item-name" placeholder="Item Name (e.g. Masala Chai)" class="mb-3"><div class="flex gap-2 mb-3"><input id="new-item-price" type="number" placeholder="Price (₹)" class="flex-1"><input id="new-item-stock" type="number" placeholder="Stock" class="w-20"></div><div class="flex gap-2 mb-3"><select id="new-item-cat" class="flex-1 p-3 rounded bg-gray-900 border border-gray-700 text-white text-sm"></select><button onclick="addNewCategory()" class="w-12 bg-gray-800 border border-gray-700 rounded text-white font-bold">+</button></div><input id="new-item-img" placeholder="Image Link (Optional)" class="mb-4 text-xs"><div class="flex gap-2"><button onclick="document.getElementById('add-item-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 font-bold">Cancel</button><button onclick="saveNewItem()" class="flex-1 py-3 rounded-xl bg-orange-600 text-white font-bold">Save</button></div></div>
-    </div>
-
-    <div id="chat-window" class="fs-modal flex flex-col"><div class="p-4 border-b border-gray-800 flex justify-between items-center" style="background:var(--card); border-color:var(--border)"><div class="flex items-center gap-3"><button onclick="closeChatWindow()" class="text-gray-400"><i class="fas fa-arrow-left"></i></button><h3 class="font-bold" id="chat-user-name">User</h3></div></div><div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-black/50"></div><div class="p-3 border-t border-gray-800 flex gap-2" style="background:var(--card); border-color:var(--border)"><input type="text" id="chat-input" placeholder="Type reply..." class="rounded-full px-4 text-sm"><button onclick="sendAdminMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></div></div>
-
-    <div id="sales-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="aesthetic-card w-full max-w-sm h-[85vh] flex flex-col">
-            <div class="flex justify-between mb-6"><h3 class="font-bold text-xl">Analytics & Controls</h3><button onclick="document.getElementById('sales-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div>
-            <div class="grid grid-cols-2 gap-3 mb-6"><div class="p-4 rounded-xl bg-green-500/10 border border-green-500/20"><p class="text-xs text-green-400">Total Sales</p><p class="text-xl font-bold mt-1">₹<span id="an-sales">0</span></p></div><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400">Orders</p><p class="text-xl font-bold mt-1" id="an-count">0</p></div></div>
-            <button onclick="exportData()" class="w-full py-2 rounded bg-blue-600/20 text-blue-400 text-xs font-bold border border-blue-600/50 mt-2"><i class="fas fa-download mr-1"></i> Export Daily Report</button>
-            <p class="text-xs uppercase font-bold opacity-50 mb-3 mt-4">Top Selling Items</p><div id="today-breakdown-list" class="overflow-y-auto flex-1 space-y-2"></div>
+        <div class="aesthetic-card w-full max-w-xs p-6 relative">
+            <h3 class="font-bold text-lg mb-4 text-center">Add New Product</h3>
+            <input id="new-item-name" placeholder="Item Name (e.g. Masala Chai)" class="mb-3">
+            <div class="flex gap-2 mb-3">
+                <input id="new-item-price" type="number" placeholder="Price (₹)" class="flex-1">
+                <input id="new-item-stock" type="number" placeholder="Stock" class="w-20">
+            </div>
+            <div class="flex gap-2 mb-3">
+                <select id="new-item-cat" class="flex-1 p-3 rounded bg-gray-900 border border-gray-700 text-white text-sm"></select>
+                <button onclick="openCategoryModal()" class="w-12 bg-gray-800 border border-gray-700 rounded text-white font-bold hover:bg-gray-700">+</button>
+            </div>
+            <input id="new-item-img" placeholder="Image Link (Optional)" class="mb-4 text-xs">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('add-item-modal').classList.add('hidden')" class="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 font-bold">Cancel</button>
+                <button onclick="saveNewItem()" class="flex-1 py-3 rounded-xl bg-orange-600 text-white font-bold">Save</button>
+            </div>
         </div>
     </div>
 
-    <div id="qr-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-xs text-center p-6"><h3 class="font-bold text-lg mb-4 text-white">Scan to Pay</h3><div class="bg-white p-2 rounded-xl inline-block mb-4"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=7065821697@ybl&pn=SGMC&cu=INR" class="w-48 h-48"></div><p class="text-xs text-gray-400 mb-4">UPI: 7065821697@ybl</p><button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="w-full py-3 bg-gray-800 text-white rounded-xl font-bold text-sm">Close</button></div></div>
-    <div id="custom-confirm" class="hidden fixed inset-0 bg-black/80 z-[140] flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-xs text-center p-6"><div class="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center mx-auto mb-4 text-xl"><i class="fas fa-question"></i></div><h3 class="font-bold text-lg mb-2" id="confirm-title">Are you sure?</h3><div class="flex gap-3 mt-6"><button onclick="closeConfirm(false)" class="flex-1 py-2.5 rounded-xl border border-gray-700 font-bold text-xs hover:bg-gray-800">Cancel</button><button onclick="closeConfirm(true)" class="flex-1 py-2.5 rounded-xl bg-orange-600 text-white font-bold text-xs shadow-lg">Confirm</button></div></div></div>
-    <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
-    <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-2">Broadcast</h3><textarea id="broadcast-input" rows="3" placeholder="Message..."></textarea><div class="flex gap-2 mt-4"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 p-2 rounded">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-xs text-gray-500">Cancel</button></div></div>
-    <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold">Settle Payment</h3><p id="settle-name" class="text-gray-400 text-sm mb-4"></p><h1 class="text-4xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></h1><input id="settle-amount" type="number" class="text-center text-xl font-bold mb-4" placeholder="Amount"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500">Cancel</button></div></div>
-    <div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-4">Set Limit</h3><p id="limit-name" class="mb-2 text-gray-400"></p><input id="limit-input" type="number" placeholder="Amount"><button onclick="saveLimit()" class="w-full bg-purple-600 p-3 rounded font-bold text-white mt-4">Save</button><button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500">Cancel</button></div></div>
+    <div id="category-modal" class="hidden fixed inset-0 bg-black/95 z-[150] flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="aesthetic-card w-full max-w-xs p-6 text-center">
+            <h3 class="font-bold text-lg mb-4">New Category</h3>
+            <input id="new-cat-name" placeholder="Category Name" class="mb-4 text-center">
+            <button onclick="saveNewCategory()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold mb-2">Create</button>
+            <button onclick="document.getElementById('category-modal').classList.add('hidden')" class="w-full bg-gray-800 text-gray-400 py-3 rounded-xl font-bold">Cancel</button>
+        </div>
+    </div>
+
+    <div id="chat-window" class="fs-modal flex flex-col">
+        <div class="p-4 border-b border-gray-800 flex justify-between items-center" style="background:var(--card); border-color:var(--border)">
+            <div class="flex items-center gap-3">
+                <button onclick="closeChatWindow()" class="text-gray-400"><i class="fas fa-arrow-left"></i></button>
+                <h3 class="font-bold" id="chat-user-name">User</h3>
+            </div>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-black/50"></div>
+        <div class="p-3 border-t border-gray-800 flex gap-2" style="background:var(--card); border-color:var(--border)">
+            <input type="text" id="chat-input" placeholder="Type reply..." class="rounded-full px-4 text-sm">
+            <button onclick="sendAdminMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <div id="sales-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="aesthetic-card w-full max-w-sm h-[85vh] flex flex-col">
+            <div class="flex justify-between mb-6">
+                <h3 class="font-bold text-xl">Analytics & Controls</h3>
+                <button onclick="document.getElementById('sales-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <div class="p-4 rounded-xl bg-green-500/10 border border-green-500/20"><p class="text-xs text-green-400">Total Sales</p><p class="text-xl font-bold mt-1">₹<span id="an-sales">0</span></p></div>
+                <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400">Orders</p><p class="text-xl font-bold mt-1" id="an-count">0</p></div>
+            </div>
+            <button onclick="exportData()" class="w-full py-2 rounded bg-blue-600/20 text-blue-400 text-xs font-bold border border-blue-600/50 mt-2"><i class="fas fa-download mr-1"></i> Export Daily Report</button>
+            <p class="text-xs uppercase font-bold opacity-50 mb-3 mt-4">Top Selling Items</p>
+            <div id="today-breakdown-list" class="overflow-y-auto flex-1 space-y-2"></div>
+        </div>
+    </div>
+
+    <div id="qr-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="aesthetic-card w-full max-w-xs text-center p-6">
+            <h3 class="font-bold text-lg mb-4 text-white">Scan to Pay</h3>
+            <div class="bg-white p-2 rounded-xl inline-block mb-4"><img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=7065821697@ybl&pn=SGMC&cu=INR" class="w-48 h-48"></div>
+            <p class="text-xs text-gray-400 mb-4">UPI: 7065821697@ybl</p>
+            <button onclick="document.getElementById('qr-modal').classList.add('hidden')" class="w-full py-3 bg-gray-800 text-white rounded-xl font-bold text-sm">Close</button>
+        </div>
+    </div>
+
+    <div id="custom-confirm" class="hidden fixed inset-0 bg-black/80 z-[140] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="aesthetic-card w-full max-w-xs text-center p-6">
+            <div class="w-12 h-12 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center mx-auto mb-4 text-xl"><i class="fas fa-question"></i></div>
+            <h3 class="font-bold text-lg mb-2" id="confirm-title">Are you sure?</h3>
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeConfirm(false)" class="flex-1 py-2.5 rounded-xl border border-gray-700 font-bold text-xs hover:bg-gray-800">Cancel</button>
+                <button onclick="closeConfirm(true)" class="flex-1 py-2.5 rounded-xl bg-orange-600 text-white font-bold text-xs shadow-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[130] flex items-center justify-center p-4">
+        <div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col">
+            <div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div>
+            <div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div>
+        </div>
+    </div>
+
+    <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4">
+        <div class="aesthetic-card w-full max-w-sm">
+            <h3 class="font-bold mb-2">Broadcast</h3>
+            <textarea id="broadcast-input" rows="3" placeholder="Message..."></textarea>
+            <div class="flex gap-2 mt-4">
+                <button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 p-2 rounded">Clear</button>
+                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button>
+            </div>
+            <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-xs text-gray-500">Cancel</button>
+        </div>
+    </div>
+
+    <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4">
+        <div class="aesthetic-card w-full max-w-sm">
+            <h3 class="font-bold">Settle Payment</h3>
+            <p id="settle-name" class="text-gray-400 text-sm mb-4"></p>
+            <h1 class="text-4xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></h1>
+            <input id="settle-amount" type="number" class="text-center text-xl font-bold mb-4" placeholder="Amount">
+            <button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button>
+            <button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500">Cancel</button>
+        </div>
+    </div>
+
+    <div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-[130] flex items-center justify-center p-4">
+        <div class="aesthetic-card w-full max-w-sm">
+            <h3 class="font-bold mb-4">Set Limit</h3>
+            <p id="limit-name" class="mb-2 text-gray-400"></p>
+            <input id="limit-input" type="number" placeholder="Amount">
+            <button onclick="saveLimit()" class="w-full bg-purple-600 p-3 rounded font-bold text-white mt-4">Save</button>
+            <button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500">Cancel</button>
+        </div>
+    </div>
 
     <div id="toast-container"></div>
     <audio id="order-sound"></audio>
@@ -312,16 +537,23 @@
             const catSelect = document.getElementById('new-item-cat');
             catSelect.innerHTML = currentMenuData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
         }
-        function addNewCategory() {
-            const newCat = prompt("Enter new category name:");
+        // --- NEW AESTHETIC CATEGORY MODAL LOGIC ---
+        function openCategoryModal() { document.getElementById('category-modal').classList.remove('hidden'); document.getElementById('new-cat-name').value = ''; }
+        function saveNewCategory() {
+            const newCat = document.getElementById('new-cat-name').value.trim();
             if(newCat) {
                 if(!currentMenuData.categories.includes(newCat)) {
                     currentMenuData.categories.push(newCat);
                     saveMenuStatus();
                     openAddItemModal(); // Refresh dropdown
+                    document.getElementById('category-modal').classList.add('hidden');
+                    showToast("Category Added");
+                } else {
+                    showToast("Category exists");
                 }
             }
         }
+
         function saveNewItem() { 
             const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value), s=parseInt(document.getElementById('new-item-stock').value), c=document.getElementById('new-item-cat').value, img=document.getElementById('new-item-img').value;
             if(n&&p){ if(!currentMenuData.customItems) currentMenuData.customItems=[]; currentMenuData.customItems.push({id:Date.now(), name:n, price:p, category:c, available:true, stock:s||999, image:img}); saveMenuStatus(); document.getElementById('add-item-modal').classList.add('hidden'); } else showToast("Fill details");
