@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* Modern Variables */
+        /* Modern Variables & High-End Aesthetics */
         :root { 
             --bg: #050505; 
             --card: #141414; 
@@ -25,7 +25,6 @@
             --modal-bg: #050505; 
         }
         
-        /* Aesthetic Light Mode */
         body.light-mode { 
             --bg: #F0F2F5; 
             --card: #FFFFFF; 
@@ -280,13 +279,16 @@
             <div class="bg-gray-800 p-3 rounded-xl mb-2">
                 <div class="flex gap-2 mb-2">
                     <input id="new-item-name" placeholder="Item Name (e.g. Adrak Chai)" class="flex-1">
-                    <input id="new-item-price" type="number" placeholder="₹" class="w-20">
+                    <input id="new-item-price" type="number" placeholder="₹ Price" class="w-20">
                 </div>
-                <select id="new-item-cat" class="w-full mb-2 p-2 rounded bg-gray-900 border border-gray-700 text-white text-sm">
-                    <option value="Chai">Category: Chai</option>
-                    <option value="Snacks">Category: Snacks</option>
-                    <option value="Sutta">Category: Sutta</option>
-                </select>
+                <div class="flex gap-2 mb-2">
+                    <input id="new-item-stock" type="number" placeholder="Qty/Stock" class="w-24 bg-gray-900 border border-gray-700">
+                    <select id="new-item-cat" class="flex-1 p-2 rounded bg-gray-900 border border-gray-700 text-white text-sm">
+                        <option value="Chai">Category: Chai</option>
+                        <option value="Snacks">Category: Snacks</option>
+                        <option value="Sutta">Category: Sutta</option>
+                    </select>
+                </div>
                 <button onclick="addNewItem()" class="w-full bg-orange-600 p-2 rounded text-xs font-bold text-white">Add Item</button>
             </div>
             
@@ -738,12 +740,14 @@
             if (currentMenuData.customItems && currentMenuData.customItems.length) {
                 container.innerHTML = currentMenuData.customItems.map((item, idx) => {
                     const isAvail = item.available !== false; 
+                    const stock = item.stock || 0;
                     return `
                     <div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2">
                         <span class="text-white ${isAvail ? '' : 'opacity-40 line-through'}">
                             ${item.name} 
                             <span class="text-xs text-gray-500">(${item.category})</span> 
                             <span class="text-orange-400">₹${item.price}</span>
+                            <span class="text-blue-400 text-xs ml-2 font-bold">[Qty: ${stock}]</span>
                         </span>
                         <div class="flex items-center gap-4">
                             <i onclick="toggleItemAvailability(${idx})" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
@@ -770,6 +774,7 @@
             const n = document.getElementById('new-item-name').value;
             const p = parseInt(document.getElementById('new-item-price').value);
             const c = document.getElementById('new-item-cat').value; 
+            const s = parseInt(document.getElementById('new-item-stock').value) || 0;
             
             if (n && p && c) { 
                 if (!currentMenuData.customItems) currentMenuData.customItems = [];
@@ -778,10 +783,12 @@
                     name: n, 
                     price: p, 
                     category: c, 
-                    available: true
+                    available: true,
+                    stock: s // ADDED STOCK
                 }); 
                 document.getElementById('new-item-name').value = ''; 
                 document.getElementById('new-item-price').value = ''; 
+                document.getElementById('new-item-stock').value = ''; 
                 openMenuControl(); 
             } else {
                 alert("Please fill Name, Price and Category");
