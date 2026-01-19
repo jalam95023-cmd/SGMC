@@ -39,8 +39,8 @@
         @keyframes steamUp { 0% { transform: translateY(0); opacity: 0; } 50% { opacity: 0.5; } 100% { transform: translateY(-20px); opacity: 0; } }
         .cat-chip { padding: 8px 20px; font-size: 14px; border-radius: 99px; }
         
-        /* New Style for Disabled Add Button */
         .btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
+        .item-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #222; }
     </style>
 </head>
 <body>
@@ -62,8 +62,9 @@
         <div class="space-y-3 flex-1">
             <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex justify-between items-center glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-adjust text-purple-400 mr-2"></i> Appearance</span><i class="fas fa-toggle-on text-2xl text-purple-500" id="theme-icon"></i></button>
             <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</span></button>
+            <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</span></button>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v4.5 Final</div>
+        <div class="text-center text-xs text-gray-500 mt-4">v5.0 Pro</div>
     </div>
 
     <div class="h-20"></div>
@@ -134,7 +135,18 @@
         </div>
     </div>
 
-    <div id="chat-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] flex flex-col hidden" style="background: var(--bg-color);"><div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center" style="background:var(--card-bg); border-color:var(--border-color)"><h3 class="font-bold" style="color:var(--text-color)">Chat with Admin</h3><button onclick="closeChat()" class="text-gray-400"><i class="fas fa-times text-xl"></i></button></div><div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-opacity-50"></div><div class="p-3 border-t border-gray-700 flex gap-2" style="background:var(--card-bg); border-color:var(--border-color)"><input type="text" id="chat-input" class="flex-1 rounded-full px-4 py-2 text-sm outline-none border" placeholder="Type a message..." style="background:var(--input-bg); color:var(--text-color); border-color:var(--border-color)"><button onclick="sendMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></div></div>
+    <div id="chat-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] flex flex-col hidden" style="background: var(--bg-color);">
+        <div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center" style="background:var(--card-bg); border-color:var(--border-color)">
+            <h3 class="font-bold" style="color:var(--text-color)">Chat Support</h3>
+            <div class="flex gap-3">
+                <a href="tel:7065821697" class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center active:scale-95"><i class="fas fa-phone-alt text-xs"></i></a>
+                <button onclick="closeChat()" class="text-gray-400"><i class="fas fa-times text-xl"></i></button>
+            </div>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-opacity-50"></div>
+        <div class="p-3 border-t border-gray-700 flex gap-2" style="background:var(--card-bg); border-color:var(--border-color)"><input type="text" id="chat-input" class="flex-1 rounded-full px-4 py-2 text-sm outline-none border" placeholder="Type a message..." style="background:var(--input-bg); color:var(--text-color); border-color:var(--border-color)"><button onclick="sendMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></div>
+    </div>
+    
     <div id="login-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 z-[110] hidden"><div class="bg-[#151515] w-full max-w-xs p-8 rounded-3xl border border-gray-800 text-center"><h2 class="text-2xl font-bold text-white mb-4">Profile</h2><input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-2" placeholder="Name"><input type="tel" id="user-phone" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-4" placeholder="Phone"><button onclick="saveProfile()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Save</button></div></div>
     <div id="alert-popup" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[150] hidden"><div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-red-900/50 w-full max-w-xs"><h3 class="font-bold text-white mb-1">Alert</h3><p class="text-gray-400 text-xs mb-4" id="alert-msg"></p><button onclick="document.getElementById('alert-popup').classList.add('hidden')" class="w-full bg-gray-800 text-white py-2 rounded-lg font-bold text-sm">Okay</button></div></div>
     <div id="cooking-screen"><div class="text-center"><i class="fas fa-mug-hot text-6xl text-orange-500 mb-6 block steam"></i><h2 class="text-2xl font-bold mb-2 text-white">Order Placed!</h2><p class="text-gray-400 text-sm">Preparing...</p></div></div>
@@ -153,37 +165,15 @@
         const MAX_DISTANCE_KM=3.0;
         let displayMenuItems=[], currentCategory='All', searchQuery='', cigaretteOptions=[{id:'cig_marlboro',name:'Marlboro Advance',price:20},{id:'cig_goldflake',name:'Gold Flake Ind.',price:20},{id:'cig_chhoti_gold',name:'Chhoti Gold',price:12},{id:'cig_chhoti_adv',name:'Chhoti Advance',price:12}];
 
-        // INIT WITH SCROLL RESTORE & TAB RESTORE
         function init() { 
-            loadProfile(); 
-            loadMenuData(); 
-            listenToShopStatus(); 
-            listenToBroadcast(); 
-            loadCartFromStorage(); 
-            
-            // Restore Tab
-            const savedTab = localStorage.getItem('activeTab') || 'menu';
-            switchTab(savedTab);
-            
-            // Restore Scroll Position for Menu
-            setTimeout(() => {
-                const savedScroll = localStorage.getItem('menuScrollPos');
-                if(savedScroll && savedTab === 'menu') {
-                    window.scrollTo(0, parseInt(savedScroll));
-                }
-            }, 500);
-
-            // Save Scroll Position on Scroll
-            window.addEventListener('scroll', () => {
-                if(!document.getElementById('view-menu').classList.contains('hidden')){
-                    localStorage.setItem('menuScrollPos', window.scrollY);
-                }
-            });
-
+            loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); 
+            // RESTORE TAB & SCROLL
+            const savedTab = localStorage.getItem('activeTab') || 'menu'; switchTab(savedTab);
+            setTimeout(() => { const s = localStorage.getItem('menuScrollPos'); if(s && savedTab === 'menu') window.scrollTo(0, parseInt(s)); }, 500);
+            window.addEventListener('scroll', () => { if(!document.getElementById('view-menu').classList.contains('hidden')){ localStorage.setItem('menuScrollPos', window.scrollY); } });
             fetchShopLocation(); 
         }
 
-        // --- CORE LOGIC ---
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; } else setTimeout(()=>document.getElementById('login-modal').classList.remove('hidden'),1000); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.add('hidden'); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.remove('hidden'); toggleSidebar(); }
@@ -216,12 +206,9 @@
                 finalCoords = otherOrderCoords;
             }
             
-            // NaN Fix in Total Calculation
-            let t = 0;
-            for(let k in cart){
-                t += Number(cart[k].qty) * Number(cart[k].price);
-            }
-            const total = t; // Use calculated total, not innerText to be safe
+            // NaN Fix
+            let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); }
+            const total = t;
 
             userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
             const orderData = { items: Object.values(cart), totalAmount: total, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: document.getElementById('note-box').value, customerCoordinates: finalCoords, recipient: recipient, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
@@ -229,57 +216,34 @@
             placeOrderDB(orderData);
         }
 
-        function cancelUPI() {
-            document.getElementById('upi-confirm-modal').classList.add('hidden');
-            document.getElementById('checkout-modal').classList.remove('hidden');
-        }
+        function cancelUPI() { document.getElementById('upi-confirm-modal').classList.add('hidden'); document.getElementById('checkout-modal').classList.remove('hidden'); }
 
         function placeOrderDB(data) {
             document.getElementById('place-order-btn').innerText = "Processing...";
-            
-            // INVENTORY DEDUCTION LOGIC (Atomic Transaction)
             db.runTransaction(async (transaction) => {
-                // 1. Get Menu Data to check stock
                 const menuRef = db.collection('settings').doc('menu_data');
                 const menuDoc = await transaction.get(menuRef);
-                
                 if(menuDoc.exists) {
                     let customItems = menuDoc.data().customItems || [];
                     let inventoryUpdated = false;
-
-                    // 2. Iterate cart items
                     data.items.forEach(cartItem => {
                         const idx = customItems.findIndex(i => i.id == cartItem.id);
-                        if(idx !== -1) {
-                            // Only decrement if stock property exists and is a number
-                            if(typeof customItems[idx].stock === 'number') {
-                                customItems[idx].stock = Math.max(0, customItems[idx].stock - cartItem.qty);
-                                inventoryUpdated = true;
-                            }
+                        if(idx !== -1 && typeof customItems[idx].stock === 'number') {
+                            customItems[idx].stock = Math.max(0, customItems[idx].stock - cartItem.qty);
+                            inventoryUpdated = true;
                         }
                     });
-
-                    // 3. Update Menu if changed
-                    if(inventoryUpdated) {
-                        transaction.update(menuRef, { customItems: customItems });
-                    }
+                    if(inventoryUpdated) transaction.update(menuRef, { customItems: customItems });
                 }
-                
-                // 4. Create Order
                 const newOrderRef = db.collection('orders').doc();
                 transaction.set(newOrderRef, data);
             }).then(() => {
-                // Success
                 cart = {}; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); 
                 document.getElementById('upi-confirm-modal').classList.add('hidden');
                 document.getElementById('place-order-btn').innerHTML = `<span>Place Order</span>`;
                 const s = document.getElementById('cooking-screen'); s.classList.add('active'); 
                 setTimeout(() => { s.classList.remove('active'); switchTab('orders'); }, 3000);
-            }).catch((err) => {
-                console.error(err);
-                showAlert("Order Failed: " + err.message);
-                document.getElementById('place-order-btn').innerHTML = `<span>Place Order</span>`;
-            });
+            }).catch((err) => { showAlert("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `<span>Place Order</span>`; });
         }
 
         function finalizeOrder() { placeOrderDB(window.tempOrderData); }
@@ -340,13 +304,8 @@
             db.collection('settings').doc('menu_data').onSnapshot(d=>{
                 if(d.exists){
                     let D=d.data(), C=D.customItems||[];
-                    // NaN Fix: ParseInt here to ensure price is number
                     let M=C.map(i => ({ 
-                        ...i, 
-                        category: i.category || 'Chai', 
-                        price: Number(i.price) || 0, // Fix 1: Number cast
-                        stock: (typeof i.stock === 'number') ? i.stock : 9999, // Stock support
-                        inStock: i.available !== false 
+                        ...i, category: i.category || 'Chai', price: Number(i.price) || 0, stock: (typeof i.stock === 'number') ? i.stock : 9999, inStock: i.available !== false, image: i.image || null
                     }));
                     displayMenuItems=M;
                     renderMenu();
@@ -362,18 +321,19 @@
             const f=displayMenuItems.filter(i=>(currentCategory==='All'||i.category===currentCategory)&&i.name.toLowerCase().includes(searchQuery)&&i.inStock);
             if(!f.length){c.innerHTML='<p class="text-center text-gray-500 mt-10">No items available.</p>';return}
             c.innerHTML=f.map(i=>{
-                const hasRealStock = i.stock < 1000;
-                const isOOS = i.stock <= 0;
+                const lowStock = i.stock <= 3; const isOOS = i.stock <= 0;
+                // IMAGE LOGIC & STOCK BADGE
                 return `
                 <div class="glass-card p-4 flex justify-between items-center mb-3">
-                    <div class="flex gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center shadow-inner relative">
-                            <i class="fas ${i.category==='Sutta'?'fa-smoking':'fa-utensils'} text-gray-500"></i>
-                            ${hasRealStock ? `<span class="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] px-1 rounded-full">${i.stock}</span>` : ''}
-                        </div>
+                    <div class="flex gap-3 items-center">
+                        ${i.image ? `<img src="${i.image}" class="item-thumb" onerror="this.style.display='none'">` : 
+                        `<div class="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center shadow-inner relative"><i class="fas ${i.category==='Sutta'?'fa-smoking':'fa-utensils'} text-gray-500"></i></div>`}
                         <div>
                             <h3 class="font-bold text-sm" style="color:var(--text-color)">${i.name}</h3>
-                            <p class="text-orange-400 text-xs">₹${i.price}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-orange-400 text-xs font-bold">₹${i.price}</p>
+                                ${lowStock && !isOOS ? `<span class="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded animate-pulse">Only ${i.stock} left!</span>` : ''}
+                            </div>
                         </div>
                     </div>
                     <div class="flex gap-2 bg-black/40 rounded-lg p-1 ${isOOS ? 'opacity-50' : ''}">
@@ -393,46 +353,30 @@
             if(!isShopOpen)return alert("Shop Closed");
             const i=displayMenuItems.find(x=>x.id==id);
             if(!i)return;
-
-            // INVENTORY CHECK LOGIC
+            // INVENTORY CHECK
             if(c > 0 && i.stock > 0) {
                  const currentQtyInCart = cart[id] ? cart[id].qty : 0;
-                 if(currentQtyInCart >= i.stock) {
-                     alert(`Only ${i.stock} left in stock!`);
-                     return;
-                 }
+                 if(currentQtyInCart >= i.stock) return alert(`Only ${i.stock} left in stock!`);
             }
-
-            if(!cart[id]){
-                cart[id]={id,name:i.name,price:i.price,qty:0};
-            }
+            if(!cart[id]) cart[id]={id,name:i.name,price:i.price,qty:0};
             cart[id].qty+=c;
             if(cart[id].qty<=0)delete cart[id];
-            
             if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0;
             updateCartUI();
         }
 
         function updateCartUI(){
             const b=document.getElementById('cart-bar');
-            // Allow cart to show in menu and udhaar tabs if needed, but per request keeping sticky
-            // Fixed: removed strict tab check so cart allows checkout from anywhere if valid
-            
-            let c=0,t=0;
-            for(let k in cart){
-                c+=cart[k].qty;
-                // NaN Fix: Ensure safe math
-                t+= Number(cart[k].qty) * Number(cart[k].price);
-            }
-            if(c>0){
-                b.classList.remove('hidden');
-                b.classList.add('flex');
-                document.getElementById('cart-count').innerText=c;
-                document.getElementById('cart-total').innerText=t;
-            }else {
-                b.classList.add('hidden');
-            }
+            let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); }
+            if(c>0){ b.classList.remove('hidden'); b.classList.add('flex'); document.getElementById('cart-count').innerText=c; document.getElementById('cart-total').innerText=t; }
+            else { b.classList.add('hidden'); }
             saveCartToStorage();
+        }
+
+        function shareApp(){
+            const url = window.location.href;
+            if(navigator.share){ navigator.share({title: 'SGMC Chai', text: 'Order Chai & Snacks Online!', url: url}); }
+            else { copyToClipboard(url); alert("Link copied to clipboard!"); }
         }
 
         function removeItem(id){delete cart[id];updateCartUI();if(Object.keys(cart).length===0)closeCheckout();else openCheckout()}
@@ -444,7 +388,7 @@
         function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
         
         function switchTab(t){
-            localStorage.setItem('activeTab',t); // Persist Active Tab
+            localStorage.setItem('activeTab',t); 
             ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')});
             document.getElementById('view-'+t).classList.remove('hidden');
             document.getElementById('nav-'+t).classList.add('active');
