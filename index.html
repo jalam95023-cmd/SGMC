@@ -10,41 +10,61 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
-        .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; }
+        body.light-mode { --bg-color: #f0f2f5; --text-color: #1f2937; --text-sub: #4b5563; --card-bg: #ffffff; --border-color: #e5e7eb; --input-bg: #f9fafb; }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; transition: background 0.3s, color 0.3s; }
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
+        .glass-card:active { transform: scale(0.98); }
         input, textarea, select { background-color: var(--input-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
-        
-        /* SIDEBAR & NAV */
-        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg-color); z-index: 100; transform: translateX(100%); transition: 0.3s; border-left: 1px solid var(--border-color); }
+        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg-color); z-index: 100; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.2); }
         .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 90; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 90; backdrop-filter: blur(3px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px; padding-bottom: 24px; z-index: 50; }
         .nav-item { color: var(--text-sub); text-align: center; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .nav-item.active { color: #F97316; }
-
-        /* WHEEL AESTHETICS */
+        
+        /* CHAT */
+        #chat-modal { transition: transform 0.3s ease-in-out; transform: translateY(100%); }
+        #chat-modal.open { transform: translateY(0); }
+        #chat-messages { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; }
+        .chat-bubble { max-width: 75%; padding: 10px 14px; border-radius: 16px; font-size: 13px; word-wrap: break-word; }
+        .chat-user { background: #F97316; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-admin { background: #333; border: 1px solid var(--border-color); color: white; align-self: flex-start; border-bottom-left-radius: 4px; }
+        
+        /* TICKER */
+        .ticker-wrap { width: 100%; background: linear-gradient(90deg, #F97316, #ec4899); color: white; font-size: 11px; overflow: hidden; height: 24px; line-height: 24px; }
+        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; }
+        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        
+        /* COOKING SCREEN */
+        #cooking-screen { position: fixed; inset: 0; background: var(--bg-color); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
+        #cooking-screen.active { transform: translateY(0); }
+        
+        /* --- NEW AESTHETIC WHEEL --- */
         #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 150; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.5s; }
         #wheel-modal.open { opacity: 1; pointer-events: auto; }
-        .wheel-outer { width: 320px; height: 320px; border-radius: 50%; border: 8px solid #F97316; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.3); }
-        .wheel-inner { width: 100%; height: 100%; transition: transform 4s cubic-bezier(0.1, 0.9, 0.2, 1); background: conic-gradient(#333 0deg 60deg, #F97316 60deg 120deg, #333 120deg 180deg, #F97316 180deg 240deg, #333 240deg 300deg, #F97316 300deg 360deg); border-radius: 50%; }
-        .wheel-stopper { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid white; z-index: 20; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
         
-        /* WHEEL RESULT POPUP */
-        #win-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.5); background: #1a1a1a; padding: 20px; border-radius: 20px; border: 2px solid #F97316; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s; width: 80%; z-index: 160; }
-        #win-modal.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+        .wheel-outer { width: 300px; height: 300px; border-radius: 50%; border: 8px solid #333; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.2); }
+        .wheel-inner { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#F97316 0deg 60deg, #222 60deg 120deg, #F97316 120deg 180deg, #222 180deg 240deg, #F97316 240deg 300deg, #222 300deg 360deg); transition: transform 4s cubic-bezier(0.1, 0.9, 0.2, 1); }
+        .wheel-stopper { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid white; z-index: 20; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+        
+        /* WIN CARD */
+        #win-card { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 160; width: 80%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+        #win-card.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
-        /* GREEN STRIP */
+        /* GREEN STRIP FIX */
         #status-strip { position: fixed; bottom: 80px; left: 10px; right: 10px; background: #064e3b; border: 1px solid #10b981; color: white; padding: 12px; border-radius: 12px; z-index: 45; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.5); animation: slideUp 0.5s; cursor: pointer; }
-        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
-
-        /* COUPON CARD */
-        .coupon-card { background: linear-gradient(45deg, #111, #222); border: 1px dashed #555; padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .coupon-card.active { border-color: #F97316; background: rgba(249, 115, 22, 0.1); }
-
+        
+        /* COUPON CHIPS */
+        .coupon-chip { background: #222; border: 1px dashed #555; color: #ccc; padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; cursor: pointer; transition: 0.2s; }
+        .coupon-chip:hover { border-color: #F97316; background: rgba(249, 115, 22, 0.1); }
+        
+        .cat-chip { padding: 8px 20px; font-size: 14px; border-radius: 99px; }
+        .btn-disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(100%); }
         .item-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #222; }
     </style>
 </head>
@@ -63,6 +83,7 @@
             <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</span></button>
             <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</span></button>
         </div>
+        <div class="text-center text-xs text-gray-500 mt-4">v5.3 Pro</div>
     </div>
 
     <div class="h-20"></div>
@@ -70,12 +91,9 @@
     <div id="status-strip" class="hidden" onclick="switchTab('orders')">
         <div class="flex items-center gap-3">
             <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-            <div>
-                <p class="text-[10px] uppercase font-bold text-green-300 tracking-wider">Active Order</p>
-                <p class="text-sm font-bold text-white" id="strip-text">Preparing...</p>
-            </div>
+            <div><p class="text-[10px] uppercase font-bold text-green-300">Active Order</p><p class="text-sm font-bold text-white" id="strip-text">Preparing...</p></div>
         </div>
-        <button onclick="event.stopPropagation(); document.getElementById('status-strip').classList.add('hidden')" class="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center text-xs hover:bg-black/40"><i class="fas fa-times"></i></button>
+        <button onclick="event.stopPropagation(); document.getElementById('status-strip').classList.add('hidden')" class="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center text-white hover:bg-black/40"><i class="fas fa-times"></i></button>
     </div>
 
     <div id="view-menu" class="pb-10">
@@ -116,42 +134,31 @@
     <div id="checkout-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 hidden">
         <div class="bg-[#151515] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t sm:border border-gray-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up" style="background: var(--card-bg); border-color: var(--border-color);">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold" style="color:var(--text-color)">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center border border-gray-700"><i class="fas fa-times"></i></button></div>
-            
             <div id="checkout-items" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1"></div>
             
             <div class="space-y-4">
                 <div class="flex bg-gray-800/50 p-1 rounded-xl border border-gray-700"><button onclick="toggleOrderType('self')" id="tab-self" class="flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 transition">Self Order</button><button onclick="toggleOrderType('others')" id="tab-others" class="flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition">Order for Others</button></div>
-                
                 <div class="glass-card p-4 border border-gray-700/50">
                     <div id="form-self" class="space-y-3">
-                        <div class="flex items-center justify-between"><p class="text-[10px] uppercase font-bold text-orange-500 tracking-wider">Your Location</p><button onclick="detectLocation('self')" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-crosshairs"></i> Detect</button></div>
-                        <div class="flex items-center gap-2 bg-gray-900/50 p-2 rounded border border-gray-700/50"><i class="fas fa-map-marker-alt text-red-500"></i><p class="text-xs truncate text-gray-300 flex-1" id="gps-address-text">Click detect...</p></div>
-                        <div class="grid grid-cols-2 gap-2"><input type="text" id="self-flat" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Flat No *"><input type="text" id="self-landmark" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Landmark"></div>
+                        <div class="flex items-center justify-between"><p class="text-[10px] uppercase font-bold text-orange-500 tracking-wider">Your Location (GPS)</p><button onclick="detectLocation('self')" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-crosshairs"></i> Detect</button></div>
+                        <div class="flex items-center gap-2 bg-gray-900/50 p-2 rounded border border-gray-700/50"><i class="fas fa-map-marker-alt text-red-500"></i><p class="text-xs truncate text-gray-300 flex-1" id="gps-address-text">Click detect to locate...</p></div>
+                        <div class="grid grid-cols-2 gap-2"><input type="text" id="self-flat" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Flat / Room No *"><input type="text" id="self-landmark" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Landmark (Optional)"></div>
                     </div>
                     <div id="form-others" class="space-y-3 hidden">
                         <div class="flex gap-2"><input type="text" id="rec-name" placeholder="Name" class="flex-1 rounded-lg p-3 text-xs border outline-none"><input type="tel" id="rec-phone" placeholder="Phone" class="w-24 rounded-lg p-3 text-xs border outline-none"></div>
-                        <div><label class="text-[10px] uppercase font-bold text-orange-500 tracking-wider mb-1 block">Delivery Area</label><div class="flex gap-2"><input type="text" id="search-area" placeholder="Area Name" class="flex-1 rounded-lg p-3 text-xs border outline-none"><button onclick="verifyArea()" class="bg-gray-800 px-3 rounded-lg border border-gray-600 text-xs text-white" id="btn-verify">Check</button></div><p class="text-[10px] text-gray-500 mt-1" id="area-status">Verify area first.</p></div>
-                        <input type="text" id="others-flat" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Full Address">
+                        <div><label class="text-[10px] uppercase font-bold text-orange-500 tracking-wider mb-1 block">Search Delivery Area (3KM)</label><div class="flex gap-2"><input type="text" id="search-area" placeholder="e.g. Rohini Sector 16" class="flex-1 rounded-lg p-3 text-xs border outline-none"><button onclick="verifyArea()" class="bg-gray-800 px-3 rounded-lg border border-gray-600 text-xs text-white hover:bg-gray-700" id="btn-verify">Check</button></div><p class="text-[10px] text-gray-500 mt-1" id="area-status">Must check to order.</p></div>
+                        <input type="text" id="others-flat" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Complete Address (House No, Floor)">
                     </div>
                 </div>
 
                 <div>
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Available Coupons</label>
-                        <span id="coupon-count" class="text-[10px] bg-orange-600 text-white px-2 rounded-full hidden">0 Available</span>
-                    </div>
-                    <div id="active-coupons-list" class="max-h-32 overflow-y-auto mb-2">
-                        </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="coupon-code" placeholder="Or Enter Code" class="flex-1 rounded-lg p-3 text-xs border outline-none uppercase">
-                        <button onclick="manualApplyCoupon()" class="bg-gray-800 px-4 rounded-lg border border-gray-600 text-xs font-bold text-white">Apply</button>
-                    </div>
-                    <p id="coupon-msg" class="text-xs hidden mt-1"></p>
+                    <label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Apply Coupon</label>
+                    <div id="coupon-list-container" class="mb-2 max-h-32 overflow-y-auto"></div>
+                    <p id="coupon-msg" class="text-xs hidden mb-2"></p>
                 </div>
 
-                <div><button onclick="document.getElementById('note-box').classList.toggle('hidden')" class="text-xs text-blue-400 font-bold flex items-center gap-1">+ Note</button><textarea id="note-box" rows="2" class="w-full rounded-xl p-3 text-sm mt-2 border outline-none hidden" placeholder="Instructions..."></textarea></div>
+                <div><button onclick="document.getElementById('note-box').classList.toggle('hidden')" class="text-xs text-blue-400 font-bold flex items-center gap-1">+ Add Cooking Instructions</button><textarea id="note-box" rows="2" class="w-full rounded-xl p-3 text-sm mt-2 border outline-none hidden" placeholder="Cheeni kam, kadak chai..."></textarea></div>
                 <div><label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Payment</label><div class="grid grid-cols-3 gap-3"><button onclick="setPayment('Cash')" id="pay-cash" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Cash</button><button onclick="setPayment('UPI')" id="pay-upi" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">UPI</button><button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Udhaar</button></div></div>
-                
                 <div class="flex justify-between items-center pt-2 border-t border-gray-700/50"><span class="text-xs text-gray-500">Total: <span class="text-white font-bold text-lg ml-1">₹<span id="checkout-total">0</span></span></span><button onclick="handlePlaceOrderClick()" class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg flex items-center gap-2" id="place-order-btn"><span>Place Order</span></button></div>
             </div>
         </div>
@@ -163,24 +170,29 @@
             <div class="wheel-stopper"></div>
             <div id="wheel" class="wheel-inner"></div>
         </div>
-        <button onclick="spinTheWheel()" id="spin-btn" class="mt-10 bg-white text-black px-12 py-3 rounded-full font-bold shadow-[0_0_20px_white] text-lg animate-bounce">SPIN NOW</button>
+        <button onclick="spinTheWheel()" id="spin-btn" class="mt-8 bg-white text-black px-10 py-3 rounded-full font-bold shadow-[0_0_20px_white] text-lg animate-bounce">SPIN NOW</button>
         
-        <div id="win-modal">
-            <i class="fas fa-trophy text-4xl text-yellow-400 mb-2"></i>
-            <h3 class="text-xl font-bold text-white mb-1">Congratulations!</h3>
+        <div id="win-card">
+            <i class="fas fa-trophy text-4xl text-yellow-400 mb-3"></i>
+            <h3 class="text-xl font-bold text-white mb-2">Congratulations!</h3>
             <p class="text-gray-400 text-sm mb-4" id="win-text">You won something!</p>
             <button onclick="closeWheel()" class="bg-orange-600 text-white w-full py-3 rounded-xl font-bold">Claim Reward</button>
         </div>
     </div>
 
-    <div id="chat-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] flex flex-col hidden"><div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center"><h3 class="font-bold text-white">Chat Support</h3><button onclick="closeChat()" class="text-gray-400"><i class="fas fa-times text-xl"></i></button></div><div id="chat-messages" class="flex-1 overflow-y-auto p-4"></div><div class="p-3 border-t border-gray-700 flex gap-2"><input type="text" id="chat-input" class="flex-1 rounded-full px-4 py-2 text-sm outline-none border" placeholder="Type a message..."><button onclick="sendMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white"><i class="fas fa-paper-plane"></i></button></div></div>
+    <div id="chat-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] flex flex-col hidden" style="background: var(--bg-color);">
+        <div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center" style="background:var(--card-bg); border-color:var(--border-color)"><h3 class="font-bold" style="color:var(--text-color)">Chat Support</h3><div class="flex gap-3"><a href="tel:7065821697" class="w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center active:scale-95"><i class="fas fa-phone-alt text-xs"></i></a><button onclick="closeChat()" class="text-gray-400"><i class="fas fa-times text-xl"></i></button></div></div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 bg-opacity-50"></div>
+        <div class="p-3 border-t border-gray-700 flex gap-2" style="background:var(--card-bg); border-color:var(--border-color)"><input type="text" id="chat-input" class="flex-1 rounded-full px-4 py-2 text-sm outline-none border" placeholder="Type a message..." style="background:var(--input-bg); color:var(--text-color); border-color:var(--border-color)"><button onclick="sendMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></div>
+    </div>
+    
     <div id="login-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-6 z-[110] hidden"><div class="bg-[#151515] w-full max-w-xs p-8 rounded-3xl border border-gray-800 text-center"><h2 class="text-2xl font-bold text-white mb-4">Profile</h2><input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-2" placeholder="Name"><input type="tel" id="user-phone" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-4" placeholder="Phone"><button onclick="saveProfile()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Save</button></div></div>
     <div id="alert-popup" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[150] hidden"><div class="bg-[#1f1f1f] p-6 rounded-2xl text-center border border-red-900/50 w-full max-w-xs"><h3 class="font-bold text-white mb-1">Alert</h3><p class="text-gray-400 text-xs mb-4" id="alert-msg"></p><button onclick="document.getElementById('alert-popup').classList.add('hidden')" class="w-full bg-gray-800 text-white py-2 rounded-lg font-bold text-sm">Okay</button></div></div>
     <div id="cooking-screen"><div class="text-center"><i class="fas fa-mug-hot text-6xl text-orange-500 mb-6 block steam"></i><h2 class="text-2xl font-bold mb-2 text-white">Order Placed!</h2><p class="text-gray-400 text-sm">Preparing...</p></div></div>
     <div id="order-detail-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[60] hidden"><div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-2xl border border-gray-700 relative" style="background:var(--card-bg)"><button onclick="document.getElementById('order-detail-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times"></i></button><h2 class="text-lg font-bold mb-1" style="color:var(--text-color)">Details</h2><p id="od-date" class="text-xs text-gray-500 mb-4"></p><div id="od-items" class="bg-gray-900/50 rounded p-2 max-h-40 overflow-y-auto"></div><div id="od-note-container" class="hidden mt-2 p-2 bg-yellow-900/20 rounded text-xs text-yellow-500"></div><div class="mt-2 pt-2 border-t border-gray-700 font-bold flex justify-between" style="color:var(--text-color)"><span>Total</span><span id="od-total" class="text-orange-500"></span></div></div></div>
     <div id="cig-modal" class="fixed inset-0 bg-black/80 flex items-end justify-center z-[60] hidden"><div class="bg-[#151515] w-full max-w-sm p-6 rounded-t-2xl"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Select Brand</h3><button onclick="closeCigModal()" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="cig-options-list" class="space-y-3 mb-4"></div><button onclick="confirmCigSelection()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Add</button></div></div>
     <div id="upi-confirm-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center p-6 z-[60] hidden"><div class="bg-[#1f1f1f] p-6 rounded-2xl text-center w-full max-w-sm"><h2 class="text-lg font-bold text-white mb-4">Pay UPI</h2><p class="text-2xl font-bold text-orange-500 mb-4">₹<span id="upi-modal-amount">0</span></p><button onclick="attemptDeepLink()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Open App</button><button onclick="finalizeOrder('UPI')" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold mb-2">Done</button><button onclick="cancelUPI()" class="w-full bg-gray-800 text-gray-400 py-2 rounded-xl font-bold text-xs border border-gray-700">Cancel & Back</button></div></div>
-
+    
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
@@ -189,10 +201,10 @@
         const MAX_DISTANCE_KM=3.0;
         let displayMenuItems=[], currentCategory='All', searchQuery='', cigaretteOptions=[{id:'cig_marlboro',name:'Marlboro Advance',price:20},{id:'cig_goldflake',name:'Gold Flake Ind.',price:20},{id:'cig_chhoti_gold',name:'Chhoti Gold',price:12},{id:'cig_chhoti_adv',name:'Chhoti Advance',price:12}];
         let appliedCoupon = null;
-        let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"]; // Defaults
+        let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"]; // Fallback
 
         function init() { 
-            loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); fetchRewards();
+            loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); fetchRewardsData();
             const savedTab = localStorage.getItem('activeTab') || 'menu'; switchTab(savedTab);
             setTimeout(() => { const s = localStorage.getItem('menuScrollPos'); if(s && savedTab === 'menu') window.scrollTo(0, parseInt(s)); }, 500);
             window.addEventListener('scroll', () => { if(!document.getElementById('view-menu').classList.contains('hidden')){ localStorage.setItem('menuScrollPos', window.scrollY); } });
@@ -200,7 +212,105 @@
             checkActiveOrder();
         }
 
-        // --- CORE FUNCTIONS ---
+        // --- NEW FEATURES LOGIC ---
+        function checkActiveOrder() {
+            const oid = localStorage.getItem('activeOrderId');
+            if(oid) {
+                document.getElementById('strip-text').innerText = `Order ${oid} Placed`;
+                document.getElementById('status-strip').classList.remove('hidden');
+            }
+        }
+
+        function fetchRewardsData() {
+            db.collection('settings').doc('rewards_config').onSnapshot(d => { if(d.exists && d.data().wheelItems) wheelItems = d.data().wheelItems; });
+        }
+
+        function openWheel() {
+            document.getElementById('wheel-modal').classList.add('open');
+            document.getElementById('wheel').style.transform = 'rotate(0deg)';
+            document.getElementById('spin-btn').style.display = 'block';
+            document.getElementById('win-card').classList.remove('show');
+        }
+
+        function spinTheWheel() {
+            document.getElementById('spin-btn').style.display = 'none';
+            const wheel = document.getElementById('wheel');
+            const deg = Math.floor(3000 + Math.random() * 3000); 
+            wheel.style.transform = `rotate(${deg}deg)`;
+            
+            setTimeout(() => {
+                const winItem = wheelItems[Math.floor(Math.random() * wheelItems.length)];
+                document.getElementById('win-text').innerText = `You won: ${winItem}`;
+                document.getElementById('win-card').classList.add('show');
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }, 4000);
+        }
+        function closeWheel() { document.getElementById('wheel-modal').classList.remove('open'); switchTab('orders'); }
+
+        async function openCheckout(){
+            // Render Items
+            const c=document.getElementById('checkout-items');let h='',t=0;
+            for(let k in cart){
+                h+=`<div class="flex justify-between text-sm mb-2 items-center" style="color:var(--text-color)">
+                    <span>${cart[k].name} x${cart[k].qty}</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="updateCart('${k}',-1)" class="w-6 h-6 bg-gray-700 rounded text-white">-</button>
+                        <span>₹${Number(cart[k].qty)*Number(cart[k].price)}</span>
+                        <button onclick="updateCart('${k}',1)" class="w-6 h-6 bg-orange-600 rounded text-white">+</button>
+                    </div>
+                </div>`;
+                t+=Number(cart[k].qty)*Number(cart[k].price);
+            }
+            c.innerHTML=h;
+            
+            // Render Coupons
+            const coupCont = document.getElementById('coupon-list-container');
+            coupCont.innerHTML = '<p class="text-[10px] text-gray-500">Loading offers...</p>';
+            db.collection('coupons').get().then(snap => {
+                if(snap.empty) { coupCont.innerHTML = '<p class="text-[10px] text-gray-500">No coupons available.</p>'; return; }
+                coupCont.innerHTML = snap.docs.map(doc => {
+                    const d = doc.data();
+                    return `<div class="coupon-chip" onclick="applyLiveCoupon('${d.code}', ${d.discount}, ${d.newCustomerOnly})">
+                        <span class="font-bold text-orange-500 text-xs">${d.code}</span>
+                        <span class="text-green-400 text-xs font-bold">Save ₹${d.discount}</span>
+                    </div>`;
+                }).join('');
+            });
+
+            updateCheckoutTotal();
+            document.getElementById('checkout-modal').classList.remove('hidden');
+            setPayment('Cash');
+            document.getElementById('tab-others').classList.remove('bg-orange-600','text-white');
+            document.getElementById('form-others').classList.add('hidden');
+            toggleOrderType('self');
+        }
+
+        async function applyLiveCoupon(code, discount, newOnly) {
+            const msg = document.getElementById('coupon-msg');
+            msg.classList.remove('hidden'); msg.innerText = "Checking...";
+            
+            if(newOnly) {
+                const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get();
+                if(!history.empty) {
+                    msg.innerText = "Only for New Customers!";
+                    msg.className = "text-xs text-red-500 mb-2 block";
+                    return;
+                }
+            }
+            appliedCoupon = { code, discount };
+            msg.innerText = `Coupon ${code} Applied!`;
+            msg.className = "text-xs text-green-500 mb-2 block";
+            updateCheckoutTotal();
+        }
+
+        function updateCheckoutTotal() {
+            let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); }
+            if(appliedCoupon) t -= appliedCoupon.discount;
+            if(t < 0) t = 0;
+            document.getElementById('checkout-total').innerText = t;
+        }
+
+        // --- CORE FUNCTIONS (Restored from index 14) ---
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; } else setTimeout(()=>document.getElementById('login-modal').classList.remove('hidden'),1000); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.add('hidden'); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.remove('hidden'); toggleSidebar(); }
@@ -235,25 +345,6 @@
             if(appliedCoupon) finalAmount -= appliedCoupon.discount;
             if(finalAmount < 0) finalAmount = 0;
 
-            if(selectedPayment === 'Udhaar') {
-                document.getElementById('place-order-btn').innerText = "Checking Limit...";
-                const limitDoc = await db.collection('user_limits').doc(userProfile.phone).get();
-                if(limitDoc.exists) {
-                    const limit = limitDoc.data().limit || 0;
-                    if(limit > 0) {
-                        const ordersSnap = await db.collection('orders').where('customerPhone','==',userProfile.phone).where('paymentMode','==','Udhaar').get();
-                        let totalDebit = 0; ordersSnap.forEach(d => { if(d.data().status !== 'cancelled') totalDebit += d.data().totalAmount; });
-                        const paySnap = await db.collection('payments').where('phone','==',userProfile.phone).get();
-                        let totalCredit = 0; paySnap.forEach(d => totalCredit += d.data().amount);
-                        const currentDue = totalDebit - totalCredit;
-                        if((currentDue + finalAmount) > limit) {
-                            document.getElementById('place-order-btn').innerHTML = `<span>Place Order</span>`;
-                            return showAlert(`Limit Exceeded! Limit: ₹${limit}, Due: ₹${currentDue}.`);
-                        }
-                    }
-                }
-            }
-
             userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile));
             const shortId = "#" + Date.now().toString().slice(-4);
             const orderData = { items: Object.values(cart), totalAmount: finalAmount, originalTotal: t, coupon: appliedCoupon, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: document.getElementById('note-box').value, customerCoordinates: finalCoords, recipient: recipient, shortId: shortId, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
@@ -261,6 +352,7 @@
             placeOrderDB(orderData);
         }
 
+        function cancelUPI() { document.getElementById('upi-confirm-modal').classList.add('hidden'); document.getElementById('checkout-modal').classList.remove('hidden'); }
         function placeOrderDB(data) {
             document.getElementById('place-order-btn').innerText = "Processing...";
             db.runTransaction(async (transaction) => {
@@ -284,109 +376,59 @@
                 cart = {}; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); 
                 document.getElementById('upi-confirm-modal').classList.add('hidden');
                 document.getElementById('place-order-btn').innerHTML = `<span>Place Order</span>`;
+                
+                // Show Cooking & Wheel
                 const s = document.getElementById('cooking-screen'); s.classList.add('active'); 
-                setTimeout(() => { s.classList.remove('active'); openWheel(); }, 2500); 
+                setTimeout(() => { s.classList.remove('active'); openWheel(); }, 2500);
+                
                 localStorage.setItem('activeOrderId', data.shortId); checkActiveOrder();
             }).catch((err) => { showAlert("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `<span>Place Order</span>`; });
         }
         function finalizeOrder() { placeOrderDB(window.tempOrderData); }
 
-        // --- NEW FEATURES ---
-        function checkActiveOrder() {
-            const oid = localStorage.getItem('activeOrderId');
-            if(oid) { document.getElementById('strip-text').innerText = `Order ${oid} Placed`; document.getElementById('status-strip').classList.remove('hidden'); }
-        }
-
-        function fetchRewards() {
-            db.collection('settings').doc('rewards_config').onSnapshot(d => { if(d.exists && d.data().wheelItems) wheelItems = d.data().wheelItems; });
-        }
-
-        function openWheel() {
-            document.getElementById('wheel-modal').classList.add('open');
-            // Reset state
-            document.getElementById('wheel').style.transform = 'rotate(0deg)';
-            document.getElementById('spin-btn').style.display = 'block';
-            document.getElementById('win-modal').classList.remove('show');
-        }
-
-        function spinTheWheel() {
-            const wheel = document.getElementById('wheel');
-            const deg = Math.floor(3000 + Math.random() * 3000); // Random spin > 3000deg
-            wheel.style.transform = `rotate(${deg}deg)`;
-            document.getElementById('spin-btn').style.display = 'none';
-            
-            // Calculate win (Visual only for now)
-            setTimeout(() => {
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                const randomWin = wheelItems[Math.floor(Math.random() * wheelItems.length)];
-                document.getElementById('win-text').innerText = `You won: ${randomWin}`;
-                document.getElementById('win-modal').classList.add('show');
-                // Save reward locally for next time
-                if(randomWin.includes("OFF") || randomWin.includes("Free")) {
-                    localStorage.setItem('saved_reward', randomWin);
-                }
-            }, 4000);
-        }
-        function closeWheel() { document.getElementById('wheel-modal').classList.remove('open'); switchTab('orders'); }
-
-        async function openCheckout(){
-            // Render Cart
-            const c=document.getElementById('checkout-items'); let h='', t=0;
-            for(let k in cart){
-                h+=`<div class="flex justify-between items-center bg-gray-800 p-2 rounded mb-2" style="color:var(--text-color)">
-                    <div class="flex-1"><span class="text-sm font-bold">${cart[k].name}</span><span class="text-xs block text-gray-500">₹${cart[k].price}</span></div>
-                    <div class="flex items-center gap-2"><button onclick="updateCartQty('${k}', -1)" class="w-6 h-6 bg-gray-700 rounded text-white">-</button><span class="text-sm font-bold">${cart[k].qty}</span><button onclick="updateCartQty('${k}', 1)" class="w-6 h-6 bg-orange-600 rounded text-white">+</button></div><span class="text-sm font-bold ml-2">₹${Number(cart[k].qty)*Number(cart[k].price)}</span></div>`;
-                t+=Number(cart[k].qty)*Number(cart[k].price);
-            }
-            c.innerHTML=h; updateCheckoutTotal();
-            
-            // Render Coupons
-            const coupList = document.getElementById('active-coupons-list');
-            coupList.innerHTML = '<p class="text-xs text-gray-500">Loading offers...</p>';
-            db.collection('coupons').get().then(snap => {
-                if(snap.empty) { coupList.innerHTML='<p class="text-xs text-gray-500">No active coupons.</p>'; return; }
-                document.getElementById('coupon-count').innerText = `${snap.size} Available`;
-                document.getElementById('coupon-count').classList.remove('hidden');
-                coupList.innerHTML = snap.docs.map(doc => {
-                    const c = doc.data();
-                    return `<div class="coupon-card cursor-pointer" onclick="tryApplyCoupon('${c.code}', ${c.discount}, ${c.newCustomerOnly})"><div><p class="font-bold text-orange-500 text-sm">${c.code}</p><p class="text-[10px] text-gray-400">${c.newCustomerOnly ? 'New Customers Only' : 'All Users'}</p></div><div class="text-green-400 font-bold text-sm">₹${c.discount} OFF</div></div>`;
+        function fetchMyHistory() {
+            if(!userProfile.phone) return;
+            const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500"></i> Loading...</div>';
+            db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => {
+                if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders yet.</p>'; return; }
+                const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0));
+                cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data());
+                l.innerHTML = docs.map(doc => {
+                    const d = doc.data(); const canCancel = d.status === 'pending';
+                    const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
+                    return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div>${canCancel ? `<button onclick="event.stopPropagation(); cancelOrder('${doc.id}')" class="mt-2 text-red-500 text-xs border border-red-500 px-3 py-1 rounded hover:bg-red-900/20">Cancel Order</button>` : ''}</div>`;
                 }).join('');
             });
+        }
+        function cancelOrder(id) { if(confirm("Cancel Order?")) db.collection('orders').doc(id).update({status:'cancelled'}).then(()=>fetchMyHistory()); }
 
-            document.getElementById('checkout-modal').classList.remove('hidden');
-            setPayment('Cash'); document.getElementById('tab-others').classList.remove('bg-orange-600','text-white'); document.getElementById('form-others').classList.add('hidden'); toggleOrderType('self');
+        function fetchMyUdhaar() {
+            if(!userProfile.phone) return;
+            const l=document.getElementById('udhaar-history'); l.innerHTML='<div class="text-center mt-4"><i class="fas fa-circle-notch fa-spin text-blue-500"></i></div>';
+            db.collection('orders').where('customerPhone','==',userProfile.phone).where('paymentMode','==','Udhaar').get().then(s => {
+                let d=0, h=[]; s.forEach(doc => { const x=doc.data(); if(x.status!=='cancelled'){ d+=x.totalAmount; h.push({type:'buy',...x, id:doc.id}); cachedOrders[doc.id]=x; } });
+                db.collection('payments').where('phone','==',userProfile.phone).get().then(p => {
+                    let c=0; p.forEach(doc => { const x=doc.data(); c+=x.amount; h.push({type:'pay',...x}); });
+                    document.getElementById('my-udhaar-amount').innerText = d-c;
+                    if((d-c)>0) document.getElementById('upi-pay-btn').classList.remove('hidden');
+                    h.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+                    l.innerHTML = h.map(x => {
+                        const dt = x.timestamp ? new Date(x.timestamp.toDate()).toLocaleDateString() : '';
+                        if(x.type === 'buy') return `<div class="flex justify-between p-3 glass-card mb-2 cursor-pointer" onclick="openOrderDetail('${x.id}')"><div><p class="text-xs text-gray-500">${dt}</p><p class="text-sm font-bold" style="color:var(--text-color)">Purchase</p></div><span class="text-red-400 font-bold">-₹${x.totalAmount}</span></div>`;
+                        else return `<div class="flex justify-between p-3 glass-card mb-2"><div><p class="text-xs text-gray-500">${dt}</p><p class="text-sm font-bold" style="color:var(--text-color)">Paid</p></div><span class="text-green-500 font-bold">+₹${x.amount}</span></div>`;
+                    }).join('');
+                });
+            });
         }
 
-        async function tryApplyCoupon(code, discount, newOnly) {
-            const msg = document.getElementById('coupon-msg');
-            msg.classList.remove('hidden'); msg.innerText = "Verifying...";
-            
-            if(newOnly) {
-                const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get();
-                if(!history.empty) {
-                    msg.innerText = "Offer valid for New Customers only!";
-                    msg.className = "text-xs text-red-500 mt-1 block";
-                    return;
-                }
-            }
-            appliedCoupon = { code, discount };
-            msg.innerText = `Coupon '${code}' Applied!`;
-            msg.className = "text-xs text-green-500 mt-1 block";
-            updateCheckoutTotal();
-        }
-        function manualApplyCoupon(){ const c = document.getElementById('coupon-code').value.toUpperCase(); if(!c) return; db.collection('coupons').doc(c).get().then(d=>{ if(d.exists) tryApplyCoupon(c, d.data().discount, d.data().newCustomerOnly); else alert("Invalid Code"); }); }
-
-        function updateCheckoutTotal() {
-            let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); }
-            if(appliedCoupon) t -= appliedCoupon.discount; if(t < 0) t = 0;
-            document.getElementById('checkout-total').innerText = t;
-        }
-        function updateCartQty(id, delta) { if(!cart[id]) return; cart[id].qty += delta; if(cart[id].qty <= 0) delete cart[id]; saveCartToStorage(); updateCartUI(); openCheckout(); }
-        function closeCheckout(){document.getElementById('checkout-modal').classList.add('hidden'); appliedCoupon=null; document.getElementById('coupon-msg').classList.add('hidden');}
+        function detectLocation(mode) { if(mode==='self'){const t=document.getElementById('gps-address-text'); t.innerText="Detecting..."; if(!navigator.geolocation) return alert("No Geo"); navigator.geolocation.getCurrentPosition(async p=>{ userLocation={lat:p.coords.latitude,lng:p.coords.longitude}; t.innerText="Lat: "+p.coords.latitude.toFixed(4); try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`);const d=await r.json();if(d&&d.display_name)t.innerText=d.display_name.split(',').slice(0,3).join(',');}catch(e){} },()=>{alert("Denied");t.innerText="Retry";},{enableHighAccuracy:true}); } }
+        async function verifyArea() { const t=document.getElementById('search-area').value; const b=document.getElementById('btn-verify'); const s=document.getElementById('area-status'); if(t.length<3)return alert("Enter Area"); b.innerText="..."; try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&limit=1`);const d=await r.json(); b.innerText="Check"; if(d.length>0){const la=parseFloat(d[0].lat),lo=parseFloat(d[0].lon); otherOrderCoords={lat:la,lng:lo}; if(shopLocation){const dist=haversine(shopLocation.lat,shopLocation.lng,la,lo); if(dist<=MAX_DISTANCE_KM){s.innerText=`✅ OK (${dist.toFixed(1)}km)`;s.className="text-[10px] text-green-500 mt-1 block";}else{s.innerText=`❌ Too Far (${dist.toFixed(1)}km)`;s.className="text-[10px] text-red-500 mt-1 block";otherOrderCoords=null;}}}else{s.innerText="Not Found";}}catch(e){b.innerText="Check";alert("Error");} }
+        function haversine(a,b,c,d){const R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;const z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
         
-        // --- EXISTING UTILS (Keep as is) ---
-        function cancelUPI() { document.getElementById('upi-confirm-modal').classList.add('hidden'); document.getElementById('checkout-modal').classList.remove('hidden'); }
-        function attemptDeepLink(){const t=document.getElementById('checkout-total').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${t}&cu=INR`}
+        function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');}
+        function toggleTheme(){document.body.classList.toggle('light-mode');const l=document.body.classList.contains('light-mode');document.getElementById('theme-icon').className=l?"fas fa-toggle-off text-gray-400":"fas fa-toggle-on text-purple-500";}
+        
+        function closeCheckout(){document.getElementById('checkout-modal').classList.add('hidden'); appliedCoupon=null; document.getElementById('coupon-msg').classList.add('hidden');}
         function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>{ b.classList.remove('bg-orange-600','text-white'); b.classList.add('bg-gray-800','text-gray-300'); }); document.getElementById('pay-'+m.toLowerCase()).classList.add('bg-orange-600','text-white'); }
         function toggleOrderType(t){const s=t==='self';document.getElementById('tab-self').className=s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 transition":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition";document.getElementById('tab-others').className=!s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 transition":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition";document.getElementById('form-self').classList.toggle('hidden',!s);document.getElementById('form-others').classList.toggle('hidden',s);}
         function fetchShopLocation(){db.collection('settings').doc('config').get().then(d=>{if(d.exists&&d.data().location)shopLocation=d.data().location;});}
@@ -410,6 +452,10 @@
         function confirmCigSelection(){for(let k in tempCigQuantities)if(tempCigQuantities[k]>0){const o=cigaretteOptions.find(x=>x.id==k);if(!cart[k])cart[k]={id:k,name:o.name,price:o.price,qty:0};cart[k].qty+=tempCigQuantities[k];}document.getElementById('cig-modal').classList.add('hidden');updateCartUI();}
         function closeCigModal(){document.getElementById('cig-modal').classList.add('hidden');}
         function switchTab(t){ localStorage.setItem('activeTab',t); ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')}); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('nav-'+t).classList.add('active'); updateCartUI(); if(t==='orders')fetchMyHistory(); if(t==='udhaar')fetchMyUdhaar(); }
+        function attemptDeepLink(){const t=document.getElementById('checkout-total').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${t}&cu=INR`}
+        function payUdhaarViaUPI(){const a=document.getElementById('my-udhaar-amount').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${a}&cu=INR`}
+        function copyToClipboard(t){navigator.clipboard.writeText(t).then(()=>alert("Copied"))}
+        function openOrderDetail(id){const d=cachedOrders[id];if(!d)return;document.getElementById('od-date').innerText=d.timestamp?new Date(d.timestamp.toDate()).toLocaleString():'';document.getElementById('od-total').innerText='₹'+d.totalAmount;document.getElementById('od-items').innerHTML=d.items.map(i=>`<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)"><span>${i.name} x${i.qty}</span><span>₹${i.qty*i.price}</span></div>`).join('');document.getElementById('order-detail-modal').classList.remove('hidden')}
 
         init();
     </script>
