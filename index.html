@@ -32,150 +32,159 @@
         .nav-item { color: var(--text-sub); text-align: center; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .nav-item.active { color: #F97316; }
         
-        /* TICKER */
-        .ticker-wrap { width: 100%; background: linear-gradient(90deg, #F97316, #ec4899); color: white; font-size: 11px; overflow: hidden; height: 24px; line-height: 24px; }
-        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; }
-        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
-        
-        /* COOKING SCREEN & WHEEL */
+        /* COOKING & WHEEL */
         #cooking-screen { position: fixed; inset: 0; background: var(--bg-color); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
         #cooking-screen.active { transform: translateY(0); }
         
         #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 150; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.5s; }
         #wheel-modal.open { opacity: 1; pointer-events: auto; }
-        .wheel-container { width: 300px; height: 300px; border-radius: 50%; border: 5px solid #F97316; position: relative; overflow: hidden; transition: transform 4s cubic-bezier(0.1, 0.9, 0.2, 1); background: conic-gradient(#333 0deg 60deg, #444 60deg 120deg, #333 120deg 180deg, #444 180deg 240deg, #333 240deg 300deg, #444 300deg 360deg); }
-        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #F97316; z-index: 20; }
+        .wheel-outer { width: 300px; height: 300px; border-radius: 50%; border: 8px solid #333; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.2); }
+        .wheel-inner { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#F97316 0deg 60deg, #222 60deg 120deg, #F97316 120deg 180deg, #222 180deg 240deg, #F97316 240deg 300deg, #222 300deg 360deg); transition: transform 4s cubic-bezier(0.1, 0.9, 0.2, 1); }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 35px solid white; z-index: 20; }
         
-        /* WIN CARD (New Aesthetic Popup) */
+        /* WIN CARD */
         #win-card { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 160; width: 80%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
         #win-card.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
-        /* GREEN STRIP */
-        #status-strip { position: fixed; bottom: 80px; left: 10px; right: 10px; background: #065f46; border: 1px solid #10b981; color: white; padding: 10px; border-radius: 12px; z-index: 90; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.3); animation: slideUp 0.5s; cursor: pointer; }
-        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
+        /* DELIVERY OFF MODAL */
+        #delivery-off-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+        #delivery-off-modal.open { opacity: 1; pointer-events: auto; }
 
-        /* COUPON CHIP */
-        .coupon-chip { background: #222; border: 1px dashed #555; color: #ccc; padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; cursor: pointer; transition: 0.2s; }
-        .coupon-chip:hover { border-color: #F97316; background: rgba(249, 115, 22, 0.1); }
-
-        .cat-chip { padding: 8px 20px; font-size: 14px; border-radius: 99px; }
+        /* EXTRAS */
+        .cat-chip { padding: 12px 24px; font-size: 15px; border-radius: 12px; font-weight: bold; transition: 0.3s; border: 1px solid transparent; flex-shrink: 0; }
+        .cat-active { background: white; color: black; box-shadow: 0 4px 15px rgba(255,255,255,0.2); transform: scale(1.05); }
+        .cat-inactive { background: #1f1f1f; color: #9ca3af; border-color: #333; }
         .item-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #222; }
+        .coupon-chip { background: #1a1a1a; border: 1px dashed #444; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; cursor: pointer; }
+        .coupon-chip:active { background: #222; border-color: #F97316; }
         
-        /* CART BAR FIX */
-        #cart-bar { z-index: 100 !important; }
+        #cart-bar { position: fixed; bottom: 80px; left: 16px; right: 16px; z-index: 100 !important; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); cursor: pointer; animation: slideUp 0.3s; }
+        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <div class="fixed top-0 left-0 right-0 bg-opacity-90 backdrop-blur-md z-40 px-4 py-4 flex justify-between items-center border-b border-white/5" style="background-color: var(--bg-color); border-color: var(--border-color);">
-        <div><h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal" style="color:var(--text-color)">Chai</span></h1><p class="text-[10px] text-green-500 font-bold tracking-wide" id="shop-status-badge">● LIVE</p></div>
-        <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-700 active:scale-95 transition" style="background: var(--card-bg); border-color: var(--border-color);"><i class="fas fa-bars"></i></button>
+
+    <div class="fixed top-0 left-0 right-0 bg-[#050505]/90 backdrop-blur-md z-40 px-4 py-4 flex justify-between items-center border-b border-white/5">
+        <div>
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal text-white">Chai</span></h1>
+            <p class="text-[10px] text-green-500 font-bold tracking-wide" id="shop-status-badge">● LIVE</p>
+        </div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-800 bg-[#111] active:scale-95 transition"><i class="fas fa-bars"></i></button>
     </div>
     
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar p-6 flex flex-col h-full">
         <div class="flex justify-between items-center mb-8"><h2 class="text-xl font-bold text-orange-500">Menu</h2><button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button></div>
-        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm" style="color:var(--text-color)" id="sidebar-name">Guest</p><p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p></div></div>
+        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm text-white" id="sidebar-name">Guest</p><p class="text-[10px] text-gray-400">Tap to Edit Profile</p></div></div>
         <div class="space-y-3 flex-1">
-            <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex justify-between items-center glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-adjust text-purple-400 mr-2"></i> Appearance</span><i class="fas fa-toggle-on text-2xl text-purple-500" id="theme-icon"></i></button>
-            <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</span></button>
-            <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card"><span class="text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</span></button>
+            <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</button>
+            <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-comments text-blue-400 mr-2"></i> Support Chat</button>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v6.0 Fixed</div>
+        <div class="text-center text-xs text-gray-500 mt-4">v6.2 Pro</div>
     </div>
 
     <div class="h-20"></div>
 
-    <div id="status-strip" class="hidden" onclick="switchTab('orders')">
-        <div>
-            <p class="text-[10px] uppercase font-bold text-green-200">Active Order</p>
-            <p class="text-sm font-bold" id="strip-text">Preparing...</p>
-        </div>
-        <button onclick="event.stopPropagation(); document.getElementById('status-strip').classList.add('hidden')" class="w-6 h-6 rounded-full bg-green-800 flex items-center justify-center text-[10px]"><i class="fas fa-times"></i></button>
-    </div>
-
     <div id="view-menu" class="pb-10">
-        <div id="broadcast-bar" class="hidden ticker-wrap mb-2"><div class="ticker" id="broadcast-msg"></div></div>
-        <div class="sticky top-[60px] z-30 pt-2 pb-1 px-4 border-b border-white/5" style="background: var(--bg-color); border-color: var(--border-color);">
-            <div class="relative mb-3"><i class="fas fa-search absolute left-3 top-3 text-gray-500"></i><input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search..." class="w-full rounded-xl py-3 pl-10 pr-4 text-sm outline-none border transition-all" style="background:var(--input-bg); color:var(--text-color); border-color:var(--border-color)"></div>
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="category-container">
-                <button onclick="setCategory('All')" class="cat-chip font-bold bg-white text-black" id="cat-All">All</button>
-                <button onclick="setCategory('Chai')" class="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700" id="cat-Chai">Chai</button>
-                <button onclick="setCategory('Snacks')" class="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700" id="cat-Snacks">Snacks</button>
-                <button onclick="setCategory('Sutta')" class="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700" id="cat-Sutta">Sutta</button>
+        <div class="sticky top-[70px] z-30 pt-2 pb-1 px-4 border-b border-white/5 bg-[#050505]">
+            <div class="relative mb-4"><i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i><input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search items..." class="w-full rounded-2xl py-3 pl-12 pr-4 text-sm outline-none border border-[#333] bg-[#111] text-white"></div>
+            <div class="flex gap-3 overflow-x-auto no-scrollbar pb-3" id="category-container">
+                <button onclick="setCategory('All')" class="cat-chip cat-active" id="cat-All">All</button>
+                <button onclick="setCategory('Chai')" class="cat-chip cat-inactive" id="cat-Chai">Chai</button>
+                <button onclick="setCategory('Snacks')" class="cat-chip cat-inactive" id="cat-Snacks">Snacks</button>
+                <button onclick="setCategory('Sutta')" class="cat-chip cat-inactive" id="cat-Sutta">Sutta</button>
             </div>
         </div>
         <div id="closed-banner" class="hidden mx-4 mt-4 bg-red-900/20 border border-red-500/30 text-red-200 p-4 rounded-2xl text-center"><h3 class="font-bold text-sm">Shop is Closed</h3></div>
         <div id="menu-container" class="space-y-4 p-4 pt-2"></div>
     </div>
 
-    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4" style="color:var(--text-color)">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
+    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4 text-white">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
     <div id="view-udhaar" class="hidden p-4">
         <div class="glass-card p-6 text-center mb-6 border-blue-500/20 relative overflow-hidden">
-            <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Pending Dues</p>
+            <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Total Due</p>
             <h1 class="text-5xl font-bold text-blue-400 mb-2 font-mono">₹<span id="my-udhaar-amount">0</span></h1>
-            <button id="upi-pay-btn" onclick="payUdhaarViaUPI()" class="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-bold shadow-lg hidden mt-4">Pay Now</button>
+            <button id="upi-pay-btn" onclick="payUdhaarViaUPI()" class="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-bold shadow-lg hidden mt-4">Pay via UPI</button>
         </div>
-        <h3 class="font-bold text-sm mb-3 pl-1" style="color:var(--text-sub)">History (Tap for details)</h3><div id="udhaar-history" class="space-y-2"></div>
+        <div id="udhaar-history" class="space-y-2"></div>
     </div>
 
-    <div id="cart-bar" class="fixed bottom-20 left-4 right-4 bg-gradient-to-r from-orange-600 to-orange-500 text-white p-3 px-5 rounded-2xl shadow-2xl flex justify-between items-center z-40 hidden cursor-pointer" onclick="openCheckout()">
-        <div class="flex items-center gap-3"><div class="bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="cart-count">0</div><span class="font-bold text-lg">₹<span id="cart-total">0</span></span></div><span class="font-bold text-sm">Checkout ></span>
+    <div id="cart-bar" class="hidden" onclick="openCheckout()">
+        <div class="flex items-center gap-3">
+            <div class="bg-white text-orange-600 w-10 h-10 rounded-full flex items-center justify-center font-bold" id="cart-count">0</div>
+            <div><p class="text-[10px] uppercase font-bold text-orange-100 opacity-80">Total</p><span class="font-bold text-lg">₹<span id="cart-total">0</span></span></div>
+        </div>
+        <span class="font-bold text-sm flex items-center gap-2">Checkout <i class="fas fa-arrow-right"></i></span>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu"><i class="fas fa-th-large"></i> Menu</div>
-        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders"><i class="fas fa-receipt"></i> Orders</div>
-        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet"></i> Udhaar</div>
+        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu"><i class="fas fa-mug-hot text-xl mb-1"></i> Menu</div>
+        <div class="nav-item text-gray-500" onclick="switchTab('orders')" id="nav-orders"><i class="fas fa-receipt text-xl mb-1"></i> Orders</div>
+        <div class="nav-item text-gray-500" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet text-xl mb-1"></i> Wallet</div>
     </div>
 
-    <div id="checkout-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 hidden">
-        <div class="bg-[#151515] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t sm:border border-gray-800 shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up" style="background: var(--card-bg); border-color: var(--border-color);">
-            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold" style="color:var(--text-color)">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-gray-800 text-gray-400 flex items-center justify-center border border-gray-700"><i class="fas fa-times"></i></button></div>
-            
-            <div id="checkout-items" class="space-y-2 mb-4 max-h-40 overflow-y-auto pr-1"></div>
-            
-            <div class="space-y-4">
-                <div class="flex bg-gray-800/50 p-1 rounded-xl border border-gray-700"><button onclick="toggleOrderType('self')" id="tab-self" class="flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 transition">Self Order</button><button onclick="toggleOrderType('others')" id="tab-others" class="flex-1 py-2 rounded-lg text-xs font-bold text-gray-400 transition">Order for Others</button></div>
-                
-                <div class="glass-card p-4 border border-gray-700/50">
-                    <div id="form-self" class="space-y-3">
-                        <div class="flex items-center justify-between"><p class="text-[10px] uppercase font-bold text-orange-500 tracking-wider">Your Location</p><button onclick="detectLocation('self')" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-crosshairs"></i> Detect</button></div>
-                        <div class="flex items-center gap-2 bg-gray-900/50 p-2 rounded border border-gray-700/50"><i class="fas fa-map-marker-alt text-red-500"></i><p class="text-xs truncate text-gray-300 flex-1" id="gps-address-text">Click detect...</p></div>
-                        <div class="grid grid-cols-2 gap-2"><input type="text" id="self-flat" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Flat No *"><input type="text" id="self-landmark" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Landmark"></div>
-                    </div>
-                    <div id="form-others" class="space-y-3 hidden">
-                        <div class="flex gap-2"><input type="text" id="rec-name" placeholder="Name" class="flex-1 rounded-lg p-3 text-xs border outline-none"><input type="tel" id="rec-phone" placeholder="Phone" class="w-24 rounded-lg p-3 text-xs border outline-none"></div>
-                        <div><label class="text-[10px] uppercase font-bold text-orange-500 tracking-wider mb-1 block">Delivery Area</label><div class="flex gap-2"><input type="text" id="search-area" placeholder="Area Name" class="flex-1 rounded-lg p-3 text-xs border outline-none"><button onclick="verifyArea()" class="bg-gray-800 px-3 rounded-lg border border-gray-600 text-xs text-white" id="btn-verify">Check</button></div><p class="text-[10px] text-gray-500 mt-1" id="area-status">Verify area first.</p></div>
-                        <input type="text" id="others-flat" class="w-full rounded-lg p-3 text-xs border outline-none" placeholder="Full Address">
-                    </div>
-                </div>
+    <div id="delivery-off-modal">
+        <div class="bg-[#1a1a1a] p-8 rounded-3xl text-center border border-[#333] max-w-xs w-full shadow-2xl">
+            <i class="fas fa-motorcycle text-4xl text-gray-600 mb-4"></i>
+            <h2 class="text-xl font-bold text-white mb-2">Delivery Paused</h2>
+            <p class="text-sm text-gray-400 mb-6">Online ordering is currently turned off. Please visit the shop or try again later.</p>
+            <button onclick="document.getElementById('delivery-off-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Okay</button>
+        </div>
+    </div>
 
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Apply Coupon</label>
-                    <div id="coupon-list-container" class="max-h-32 overflow-y-auto mb-2"></div>
-                    <p id="coupon-msg" class="text-xs hidden"></p>
-                </div>
+    <div id="checkout-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 hidden">
+        <div class="bg-[#111] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-white">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-[#222] text-gray-400 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
+            
+            <div id="reward-claim-section" class="hidden mb-4">
+                <button onclick="claimReward()" class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-black font-bold py-3 rounded-xl flex items-center justify-center gap-2 animate-pulse shadow-lg">
+                    <i class="fas fa-trophy"></i> <span id="reward-text">Claim Free Item</span>
+                </button>
+            </div>
 
-                <div><button onclick="document.getElementById('note-box').classList.toggle('hidden')" class="text-xs text-blue-400 font-bold flex items-center gap-1">+ Note</button><textarea id="note-box" rows="2" class="w-full rounded-xl p-3 text-sm mt-2 border outline-none hidden" placeholder="Cooking instructions..."></textarea></div>
-                <div><label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Payment</label><div class="grid grid-cols-3 gap-3"><button onclick="setPayment('Cash')" id="pay-cash" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Cash</button><button onclick="setPayment('UPI')" id="pay-upi" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">UPI</button><button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Udhaar</button></div></div>
-                
-                <div class="flex justify-between items-center pt-2 border-t border-gray-700/50"><span class="text-xs text-gray-500">Total: <span class="text-white font-bold text-lg ml-1">₹<span id="checkout-total">0</span></span></span><button onclick="handlePlaceOrderClick()" class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg flex items-center gap-2" id="place-order-btn"><span>Place Order</span></button></div>
+            <div id="checkout-items" class="space-y-3 mb-6"></div>
+            
+            <div class="mb-4">
+                <label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Apply Coupon</label>
+                <div id="coupon-list-container" class="max-h-32 overflow-y-auto"></div>
+                <p id="coupon-msg" class="text-xs hidden mt-1"></p>
+            </div>
+
+            <div class="flex bg-[#222] p-1 rounded-xl mb-4">
+                <button onclick="toggleOrderType('self')" id="tab-self" class="flex-1 py-2.5 rounded-lg text-xs font-bold text-white bg-orange-600">Self Order</button>
+                <button onclick="toggleOrderType('others')" id="tab-others" class="flex-1 py-2.5 rounded-lg text-xs font-bold text-gray-400">Order for Others</button>
+            </div>
+
+            <div id="form-self" class="mb-4 space-y-3">
+                <button onclick="detectLocation('self')" class="w-full py-3 rounded-xl border border-dashed border-[#444] text-blue-400 text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-location-arrow"></i> Detect My Location</button>
+                <p class="text-[10px] text-gray-500 text-center truncate" id="gps-address-text">Location not detected</p>
+                <input type="text" id="self-flat" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none" placeholder="Flat / Room No (Required)">
+            </div>
+
+            <div id="form-others" class="hidden mb-4 space-y-2">
+                <input type="text" id="rec-name" placeholder="Receiver Name" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none">
+                <input type="tel" id="rec-phone" placeholder="Receiver Phone" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none">
+                <div class="flex gap-2"><input type="text" id="search-area" placeholder="Area Name" class="flex-1 bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none"><button onclick="verifyArea()" class="bg-[#333] px-3 rounded-xl text-white text-xs font-bold">Check</button></div>
+                <p class="text-[10px] text-gray-500" id="area-status">Area check required</p>
+                <input type="text" id="others-flat" placeholder="Full Address" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none">
+            </div>
+
+            <div class="mb-4"><textarea id="note-box" rows="2" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none" placeholder="Cooking instructions (e.g. Cheeni kam)..."></textarea></div>
+            <div class="mb-4"><label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Payment</label><div class="grid grid-cols-3 gap-2"><button onclick="setPayment('Cash')" id="pay-cash" class="py-3 rounded-xl border border-[#333] bg-[#222] text-xs font-bold text-white payment-opt">Cash</button><button onclick="setPayment('UPI')" id="pay-upi" class="py-3 rounded-xl border border-[#333] bg-[#222] text-xs font-bold text-gray-400 payment-opt">UPI</button><button onclick="setPayment('Udhaar')" id="pay-udhaar" class="py-3 rounded-xl border border-[#333] bg-[#222] text-xs font-bold text-gray-400 payment-opt">Udhaar</button></div></div>
+            
+            <div class="flex justify-between items-center pt-4 border-t border-[#333]">
+                <div><p class="text-xs text-gray-500">Total Amount</p><span class="text-white font-bold text-xl">₹<span id="checkout-total">0</span></span></div>
+                <button onclick="handlePlaceOrderClick()" class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg" id="place-order-btn">Place Order</button>
             </div>
         </div>
     </div>
 
     <div id="wheel-modal">
         <h2 class="text-white font-bold text-2xl mb-6">Spin & Win!</h2>
-        <div class="wheel-container" id="wheel-cont">
-            <div class="wheel-pointer"></div>
-            <div id="wheel" class="w-full h-full relative" style="transition: transform 4s ease-out; background: conic-gradient(#333 0deg 60deg, #444 60deg 120deg, #333 120deg 180deg, #444 180deg 240deg, #333 240deg 300deg, #444 300deg 360deg);"></div>
-        </div>
-        <button onclick="spinTheWheel()" id="spin-btn" class="mt-8 bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-10 py-3 rounded-full font-bold shadow-2xl text-lg animate-bounce">SPIN NOW</button>
+        <div class="wheel-outer"><div class="wheel-stopper"></div><div id="wheel" class="wheel-inner"></div></div>
+        <button onclick="spinTheWheel()" id="spin-btn" class="mt-8 bg-white text-black px-10 py-3 rounded-full font-bold shadow-[0_0_20px_white] text-lg animate-bounce">SPIN NOW</button>
         <div id="win-card">
-            <i class="fas fa-trophy text-4xl text-yellow-400 mb-3"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Congratulations!</h3>
-            <p class="text-gray-400 text-sm mb-4" id="win-text">You won something!</p>
-            <button onclick="closeWheel()" class="bg-orange-600 text-white w-full py-3 rounded-xl font-bold">Claim Reward</button>
+            <i class="fas fa-trophy text-4xl text-yellow-400 mb-3"></i><h3 class="text-xl font-bold text-white mb-2">Congratulations!</h3><p class="text-gray-400 text-sm mb-4" id="win-text">You won something!</p><button onclick="closeWheel()" class="bg-orange-600 text-white w-full py-3 rounded-xl font-bold">Claim Reward</button>
         </div>
     </div>
 
@@ -195,41 +204,56 @@
         let displayMenuItems=[], currentCategory='All', searchQuery='';
         let appliedCoupon = null;
         let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"];
+        let isDeliveryActive = true; // New Flag
 
         function init() { 
             loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); fetchRewardsData();
             const savedTab = localStorage.getItem('activeTab') || 'menu'; switchTab(savedTab);
             setTimeout(() => { const s = localStorage.getItem('menuScrollPos'); if(s && savedTab === 'menu') window.scrollTo(0, parseInt(s)); }, 500);
             window.addEventListener('scroll', () => { if(!document.getElementById('view-menu').classList.contains('hidden')){ localStorage.setItem('menuScrollPos', window.scrollY); } });
-            fetchShopLocation(); 
-            checkActiveOrder();
+            fetchShopLocation(); fetchDeliveryConfig();
         }
 
-        // --- NEW & FIXED LOGIC ---
-        
-        // 1. Close Strip Logic (Fixes X button not working)
-        function checkActiveOrder() {
-            const oid = localStorage.getItem('activeOrderId');
-            if(oid) {
-                document.getElementById('strip-text').innerText = `Order ${oid} Placed`;
-                document.getElementById('status-strip').classList.remove('hidden');
-            }
+        // --- NEW FEATURES ---
+        function fetchDeliveryConfig() {
+            db.collection('settings').doc('delivery_config').onSnapshot(d => {
+                if(d.exists) { isDeliveryActive = d.data().isActive !== false; } // Default true
+            });
         }
 
-        // 2. Fetch Live Coupons & Wheel
         function fetchRewardsData() { db.collection('settings').doc('rewards_config').onSnapshot(d => { if(d.exists && d.data().wheelItems) wheelItems = d.data().wheelItems; }); }
 
+        // CHECKOUT LOGIC WITH DELIVERY BLOCKER
         async function openCheckout(){
+            if(!isDeliveryActive) {
+                document.getElementById('delivery-off-modal').classList.add('open');
+                return;
+            }
+
             const c=document.getElementById('checkout-items'); let h='',t=0;
             for(let k in cart){
-                h+=`<div class="flex justify-between items-center bg-gray-800 p-2 rounded mb-2" style="color:var(--text-color)">
-                    <div class="flex-1"><span class="text-sm font-bold">${cart[k].name}</span><span class="text-xs block text-gray-500">₹${cart[k].price}</span></div>
-                    <div class="flex items-center gap-2"><button onclick="updateCartQty('${k}', -1)" class="w-6 h-6 bg-gray-700 rounded text-white">-</button><span class="text-sm font-bold">${cart[k].qty}</span><button onclick="updateCartQty('${k}', 1)" class="w-6 h-6 bg-orange-600 rounded text-white">+</button></div><span class="text-sm font-bold ml-2">₹${Number(cart[k].qty)*Number(cart[k].price)}</span></div>`;
+                h+=`<div class="flex justify-between items-center text-sm mb-2" style="color:var(--text-color)">
+                    <span>${cart[k].name} x${cart[k].qty}</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="updateCart('${k}',-1)" class="w-6 h-6 bg-gray-700 rounded text-white">-</button>
+                        <span>₹${Number(cart[k].qty)*Number(cart[k].price)}</span>
+                        <button onclick="updateCart('${k}',1)" class="w-6 h-6 bg-orange-600 rounded text-white">+</button>
+                    </div>
+                </div>`;
                 t+=Number(cart[k].qty)*Number(cart[k].price);
             }
             c.innerHTML=h;
             
-            // Populate Available Coupons
+            // REWARD CLAIM LOGIC
+            const pendingReward = localStorage.getItem('sgmc_pending_reward');
+            if(pendingReward) {
+                document.getElementById('reward-claim-section').classList.remove('hidden');
+                document.getElementById('reward-text').innerText = `Claim: ${pendingReward}`;
+            } else {
+                document.getElementById('reward-claim-section').classList.add('hidden');
+            }
+
+            // COUPONS
             const coupCont = document.getElementById('coupon-list-container');
             coupCont.innerHTML = '<p class="text-[10px] text-gray-500">Loading coupons...</p>';
             db.collection('coupons').get().then(snap => {
@@ -242,7 +266,20 @@
 
             updateCheckoutTotal();
             document.getElementById('checkout-modal').classList.remove('hidden');
-            setPayment('Cash'); document.getElementById('tab-others').classList.remove('bg-orange-600','text-white'); document.getElementById('form-others').classList.add('hidden'); toggleOrderType('self');
+            setPayment('Cash'); toggleOrderType('self');
+        }
+
+        function claimReward() {
+            const rewardName = localStorage.getItem('sgmc_pending_reward');
+            if(!rewardName) return;
+            // Add a temporary item to cart logic (simplified)
+            // Ideally should add to cart array with 0 price
+            // For now, let's just create a dummy cart item visually or handle in orderData
+            // Better: Add to order note or special field
+            document.getElementById('note-box').value += ` [CLAIM REWARD: ${rewardName}]`;
+            alert("Reward added to order note!");
+            localStorage.removeItem('sgmc_pending_reward');
+            document.getElementById('reward-claim-section').classList.add('hidden');
         }
 
         async function applyLiveCoupon(code, discount, newOnly) {
@@ -257,7 +294,7 @@
             document.getElementById('checkout-total').innerText = t;
         }
 
-        // 3. Wheel Logic
+        // WHEEL LOGIC
         function openWheel() { document.getElementById('wheel-modal').classList.add('open'); document.getElementById('wheel').style.transform = 'rotate(0deg)'; document.getElementById('spin-btn').style.display = 'block'; document.getElementById('win-card').classList.remove('show'); }
         function spinTheWheel() {
             document.getElementById('spin-btn').style.display = 'none';
@@ -268,13 +305,18 @@
                 document.getElementById('win-text').innerText = `You won: ${winItem}`;
                 document.getElementById('win-card').classList.add('show');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                
+                // SAVE REWARD
+                if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) {
+                    localStorage.setItem('sgmc_pending_reward', winItem);
+                }
             }, 4000);
         }
         function closeWheel() { document.getElementById('wheel-modal').classList.remove('open'); switchTab('orders'); }
 
         // --- CORE ---
         function loadMenuData(){ db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists){ let D=d.data(), C=D.customItems||[]; let M=C.map(i => ({ ...i, category: i.category || 'Chai', price: Number(i.price) || 0, stock: (typeof i.stock === 'number') ? i.stock : 9999, inStock: i.available !== false, image: i.image || null })); displayMenuItems=M; renderMenu(); } }); }
-        function setCategory(c){currentCategory=c;document.querySelectorAll('.cat-chip').forEach(e=>e.className="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700");document.getElementById('cat-'+c).className="cat-chip font-bold bg-white text-black";renderMenu()}
+        function setCategory(c){currentCategory=c;document.querySelectorAll('.cat-chip').forEach(e=>e.className="cat-chip cat-inactive");document.getElementById('cat-'+c).className="cat-chip cat-active";renderMenu()}
         function filterMenu(){searchQuery=document.getElementById('search-input').value.toLowerCase();renderMenu()}
         
         function renderMenu(){
@@ -306,18 +348,16 @@
             updateCartUI();
         }
 
-        // Fixed Cart Bar Visibility
+        // CART BAR VISIBILITY & CLICK BLOCKER IF DELIVERY OFF
         function updateCartUI(){
             const b=document.getElementById('cart-bar');
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); }
             const activeTab = localStorage.getItem('activeTab') || 'menu';
             if(c>0 && activeTab === 'menu'){ 
-                b.classList.remove('hidden'); b.classList.add('flex'); // Show
+                b.classList.remove('hidden'); b.classList.add('flex'); 
                 document.getElementById('cart-count').innerText=c; 
                 document.getElementById('cart-total').innerText=t; 
-            } else { 
-                b.classList.add('hidden'); b.classList.remove('flex'); // Hide
-            }
+            } else { b.classList.add('hidden'); b.classList.remove('flex'); }
             saveCartToStorage();
         }
 
