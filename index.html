@@ -15,54 +15,58 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* --- ORIGINAL DESIGN (Same as Index 16) --- */
+        /* --- ORIGINAL V16 STYLE VARIABLES --- */
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         
         .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
         .glass-card:active { transform: scale(0.98); }
+        
         input, textarea, select { background-color: var(--input-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
         
-        /* SIDEBAR */
+        /* Sidebar */
         .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg-color); z-index: 200; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.2); }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 190; backdrop-filter: blur(3px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
         
-        /* BOTTOM NAV */
+        /* Bottom Nav */
         .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px; padding-bottom: 24px; z-index: 50; }
         .nav-item { color: var(--text-sub); text-align: center; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .nav-item.active { color: #F97316; }
         
-        /* POPUPS */
+        /* Cart Bar */
+        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Popups */
         .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
         .popup-overlay.open { opacity: 1; pointer-events: auto; }
         .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; }
         .popup-overlay.open .popup-card { transform: scale(1); }
 
-        /* WHEEL */
+        /* Wheel */
         .wheel-outer { width: 280px; height: 280px; border-radius: 50%; border: 6px solid #222; position: relative; overflow: hidden; margin: 0 auto; box-shadow: 0 0 30px rgba(249, 115, 22, 0.2); }
         .wheel-inner { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#F97316 0deg 60deg, #111 60deg 120deg, #F97316 120deg 180deg, #111 180deg 240deg, #F97316 240deg 300deg, #111 300deg 360deg); transition: transform 4s cubic-bezier(0.2, 0.8, 0.1, 1); }
         .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid white; z-index: 20; }
 
-        /* CART BAR */
-        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* Toast */
+        #toast-box { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(20,20,20,0.95); border: 1px solid #333; padding: 12px 24px; border-radius: 50px; color: white; z-index: 200; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; font-size: 13px; backdrop-filter: blur(10px); }
+        #toast-box.show { transform: translateX(-50%) translateY(0); }
 
-        /* EXTRAS */
         .cat-chip { padding: 8px 20px; font-size: 14px; border-radius: 99px; }
         .item-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #222; }
-        .coupon-chip-item { background: rgba(255,255,255,0.05); border: 1px dashed #555; padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
-        .coupon-chip-item:active { background: rgba(249, 115, 22, 0.2); border-color: #F97316; }
-        .reward-history-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; font-size: 13px; }
+        
+        .coupon-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 10px; border-radius: 8px; border: 1px dashed #444; margin-bottom: 5px; cursor: pointer; }
+        .coupon-row:active { border-color: #F97316; background: rgba(249, 115, 22, 0.1); }
     </style>
 </head>
 <body>
 
     <div class="fixed top-0 left-0 right-0 bg-[#050505]/95 backdrop-blur-sm z-40 px-4 py-4 flex justify-between items-center border-b border-white/5">
         <div>
-            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal" style="color:var(--text-color)">Chai</span></h1>
-            <p class="text-[10px] text-green-500 font-bold tracking-wide pl-0.5" id="delivery-status-text">● LIVE STORE</p>
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal text-white">Chai</span></h1>
+            <p class="text-[10px] text-green-500 font-bold tracking-wide pl-0.5" id="header-status">● LIVE STORE</p>
         </div>
         <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-800 bg-[#111] active:scale-95 transition"><i class="fas fa-bars"></i></button>
     </div>
@@ -70,18 +74,19 @@
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar p-6 flex flex-col h-full">
         <div class="flex justify-between items-center mb-8"><h2 class="text-xl font-bold text-orange-500">Menu</h2><button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button></div>
-        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm" style="color:var(--text-color)" id="sidebar-name">Guest</p><p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p></div></div>
+        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm text-white" id="sidebar-name">Guest</p><p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p></div></div>
         <div class="space-y-3 flex-1">
-            <button onclick="openRewardsHistory()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-gift text-yellow-500 mr-2"></i> My Rewards</button>
+            <button onclick="openRewardHistory()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-gift text-yellow-500 mr-2"></i> My Rewards</button>
             <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</button>
             <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</button>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v14.Pro</div>
+        <div class="text-center text-xs text-gray-500 mt-4">v16.Restored</div>
     </div>
 
     <div class="h-20"></div>
 
     <div id="view-menu" class="pb-10">
+        <div id="broadcast-bar" class="hidden ticker-wrap mb-2"><div class="ticker" id="broadcast-msg"></div></div>
         <div class="sticky top-[60px] z-30 pt-2 pb-1 px-4 border-b border-white/5 bg-[#050505]">
             <div class="relative mb-4"><i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i><input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search..." class="w-full rounded-xl py-3 pl-12 pr-4 text-sm outline-none border border-[#333] bg-[#111] text-white"></div>
             <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="category-container">
@@ -95,13 +100,15 @@
         <div id="menu-container" class="space-y-4 p-4 pt-2"></div>
     </div>
 
-    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4" style="color:var(--text-color)">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
+    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4 text-white">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
+    
     <div id="view-udhaar" class="hidden p-4">
         <div class="glass-card p-6 text-center mb-6 border-blue-500/20 relative overflow-hidden">
             <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Pending Dues</p>
             <h1 class="text-5xl font-bold text-blue-400 mb-2 font-mono">₹<span id="my-udhaar-amount">0</span></h1>
             <button onclick="payUdhaarViaUPI()" class="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-bold shadow-lg mt-4">Pay Now</button>
         </div>
+        <h3 class="font-bold text-sm mb-3 pl-1 text-gray-400">Transaction History</h3>
         <div id="udhaar-history" class="space-y-2"></div>
     </div>
 
@@ -119,11 +126,27 @@
         <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet"></i> Udhaar</div>
     </div>
 
+    <div id="instruction-modal" class="popup-overlay">
+        <div class="popup-card">
+            <h3 class="text-lg font-bold text-white mb-4">Cooking Note</h3>
+            <textarea id="note-popup-input" rows="3" class="w-full bg-[#222] border border-[#444] rounded-xl p-3 text-sm text-white outline-none mb-4" placeholder="Kam cheeni, kadak chai..."></textarea>
+            <button onclick="saveInstructions()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Done</button>
+        </div>
+    </div>
+
     <div id="rewards-history-modal" class="popup-overlay">
         <div class="popup-card">
-            <h3 class="text-lg font-bold text-white mb-4">Reward History</h3>
-            <div id="rewards-list-content" class="max-h-60 overflow-y-auto mb-4"></div>
+            <h3 class="text-xl font-bold text-white mb-4">My Rewards</h3>
+            <div id="reward-history-list" class="max-h-60 overflow-y-auto mb-4 text-sm text-left space-y-2"></div>
             <button onclick="document.getElementById('rewards-history-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Close</button>
+        </div>
+    </div>
+
+    <div id="coupon-modal" class="popup-overlay">
+        <div class="popup-card">
+            <h3 class="text-lg font-bold text-white mb-4">Available Coupons</h3>
+            <div id="coupon-list-content" class="max-h-60 overflow-y-auto mb-4 text-left"></div>
+            <button onclick="document.getElementById('coupon-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Cancel</button>
         </div>
     </div>
 
@@ -131,7 +154,7 @@
         <div class="popup-card">
             <i class="fas fa-store-slash text-4xl text-gray-500 mb-4"></i>
             <h3 class="text-xl font-bold text-white mb-2">Delivery Paused</h3>
-            <p class="text-sm text-gray-400 mb-6">Online ordering is currently unavailable.</p>
+            <p class="text-sm text-gray-400 mb-6">Currently not accepting online orders.</p>
             <button onclick="document.getElementById('delivery-off-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Okay</button>
         </div>
     </div>
@@ -157,8 +180,8 @@
     </div>
 
     <div id="checkout-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 hidden">
-        <div class="bg-[#111] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-white">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-[#222] text-gray-400 flex items-center justify-center"><i class="fas fa-times"></i></button></div>
+        <div class="bg-[#151515] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-white">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-[#222] text-gray-400 flex items-center justify-center border border-gray-700"><i class="fas fa-times"></i></button></div>
             
             <button id="reward-btn" onclick="claimReward()" class="hidden w-full bg-gradient-to-r from-yellow-600 to-yellow-800 text-white py-3 rounded-xl mb-4 font-bold border border-yellow-500 shadow-lg flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> <span id="reward-btn-text">Claim Reward</span></button>
 
@@ -183,10 +206,9 @@
                 <input type="text" id="others-flat" placeholder="Full Address" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none">
             </div>
 
-            <div class="mb-4">
-                <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Available Coupons</p>
-                <div id="coupon-list" class="flex flex-col gap-2 max-h-32 overflow-y-auto"></div>
-            </div>
+            <button onclick="document.getElementById('instruction-modal').classList.add('open')" class="w-full py-3 mb-2 rounded-xl border border-dashed border-[#444] text-gray-400 text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-comment-alt"></i> <span id="instr-text">Add Cooking Instructions</span></button>
+
+            <button onclick="openCouponModal()" class="w-full py-3 mb-4 rounded-xl border border-dashed border-[#444] text-orange-400 text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-ticket-alt"></i> <span id="coupon-btn-text">Apply Coupon</span></button>
 
             <div class="flex justify-between items-center pt-4 border-t border-[#333]">
                 <div><p class="text-xs text-gray-500">Total</p><span class="text-white font-bold text-xl">₹<span id="checkout-total">0</span></span></div>
@@ -195,6 +217,7 @@
         </div>
     </div>
 
+    <div id="toast-box"><i class="fas fa-info-circle text-orange-500"></i><span id="toast-msg">Message</span></div>
     <div id="cooking-screen" class="popup-overlay bg-black"><div class="text-center"><i class="fas fa-mug-hot text-6xl text-orange-500 mb-6 block animate-pulse"></i><h2 class="text-2xl font-bold mb-2 text-white">Order Placed!</h2><p class="text-gray-400 text-sm">Preparing your Chai...</p></div></div>
     <div id="login-modal" class="popup-overlay"><div class="popup-card"><h2 class="text-2xl font-bold text-white mb-4">Profile</h2><input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-2" placeholder="Name"><input type="tel" id="user-phone" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-4" placeholder="Phone"><button onclick="saveProfile()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Save</button></div></div>
     <div id="chat-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] flex flex-col hidden"><div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center"><h3 class="font-bold text-white">Support</h3><button onclick="closeChat()" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="flex-1 overflow-y-auto p-4"></div><div class="p-3 border-t border-gray-700 flex gap-2"><input type="text" id="chat-input" class="flex-1 rounded-full px-4 py-2 text-sm bg-[#222] text-white border-none" placeholder="Message..."><button onclick="sendMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white"><i class="fas fa-paper-plane"></i></button></div></div>
@@ -209,6 +232,7 @@
         let displayMenuItems=[], currentCategory='All', searchQuery='';
         let appliedCoupon = null;
         let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"];
+        let orderNote = "";
 
         function init() { 
             loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); fetchRewardsData(); fetchDeliveryConfig();
@@ -218,11 +242,13 @@
             fetchShopLocation(); 
         }
 
+        function showToast(msg) { const b = document.getElementById('toast-box'); document.getElementById('toast-msg').innerText = msg; b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 3000); }
+
         function fetchDeliveryConfig() { 
             db.collection('settings').doc('delivery_config').onSnapshot(d => { 
                 if(d.exists) {
                     isDeliveryActive = d.data().isActive !== false;
-                    const badge = document.getElementById('delivery-status-text');
+                    const badge = document.getElementById('header-status');
                     if(isDeliveryActive) { badge.innerText = "● LIVE STORE"; badge.className="text-[10px] text-green-500 font-bold tracking-wide pl-0.5"; }
                     else { badge.innerText = "● DELIVERY PAUSED"; badge.className="text-[10px] text-red-500 font-bold tracking-wide pl-0.5"; }
                 } 
@@ -232,13 +258,8 @@
 
         function openCheckout(){
             if(!isDeliveryActive) { document.getElementById('delivery-off-modal').classList.add('open'); return; }
+            document.getElementById('cart-bar').classList.add('hidden'); 
             
-            // HIDE CART BAR
-            const cartBar = document.getElementById('cart-bar');
-            cartBar.classList.add('hidden');
-            cartBar.classList.remove('flex'); 
-
-            // Check Reward
             const pendingReward = localStorage.getItem('sgmc_pending_reward');
             if(pendingReward) {
                 document.getElementById('reward-btn').classList.remove('hidden');
@@ -249,7 +270,7 @@
                 document.getElementById('reward-btn').classList.remove('flex');
             }
 
-            renderCartItems(); renderCoupons();
+            renderCartItems(); 
             document.getElementById('checkout-modal').classList.remove('hidden');
             setPayment('Cash'); toggleOrderType('self');
         }
@@ -269,52 +290,54 @@
             c.innerHTML=h; updateCheckoutTotal();
         }
 
-        function renderCoupons() {
-            const c = document.getElementById('coupon-list');
+        function openCouponModal() {
+            const c = document.getElementById('coupon-list-content');
+            c.innerHTML = '<p class="text-xs text-gray-500">Loading...</p>';
             db.collection('coupons').get().then(snap => {
-                if(snap.empty) c.innerHTML = '<p class="text-xs text-gray-500">No active coupons</p>';
+                if(snap.empty) c.innerHTML = '<p class="text-xs text-gray-500">No coupons available</p>';
                 else c.innerHTML = snap.docs.map(d => {
                     const cp = d.data();
-                    return `<div onclick="applyCoupon('${cp.code}', ${cp.discount}, ${cp.newCustomerOnly})" class="coupon-chip-item">
-                        <span class="font-bold text-orange-500 text-xs">${cp.code}</span>
+                    return `<div onclick="applyCoupon('${cp.code}', ${cp.discount}, ${cp.newCustomerOnly})" class="coupon-row">
+                        <span class="font-bold text-orange-500 text-sm">${cp.code}</span>
                         <span class="text-green-400 text-xs font-bold">Save ₹${cp.discount}</span>
                     </div>`;
                 }).join('');
             });
+            document.getElementById('coupon-modal').classList.add('open');
         }
 
         async function applyCoupon(code, discount, newOnly) {
-            if(newOnly) { const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get(); if(!history.empty) return alert("Only for New Users!"); }
-            appliedCoupon = { code, discount }; updateCheckoutTotal(); alert(`Coupon ${code} Applied!`);
+            if(newOnly) { const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get(); if(!history.empty) { showToast("Only for New Users!"); return; } }
+            appliedCoupon = { code, discount }; updateCheckoutTotal(); 
+            document.getElementById('coupon-btn-text').innerText = `${code} Applied`;
+            document.getElementById('coupon-btn-text').className = "text-green-400";
+            document.getElementById('coupon-modal').classList.remove('open');
+            showToast("Coupon Applied!");
+        }
+
+        function saveInstructions() {
+            orderNote = document.getElementById('note-popup-input').value;
+            document.getElementById('instr-text').innerText = orderNote ? "Note Added" : "Add Cooking Instructions";
+            document.getElementById('instr-text').className = orderNote ? "text-green-400" : "text-gray-400";
+            document.getElementById('instruction-modal').classList.remove('open');
         }
 
         function claimReward() {
             const r = localStorage.getItem('sgmc_pending_reward');
-            if(!r) return;
-            // Add reward to note
-            const noteEl = document.getElementById('note-box') || document.createElement('input'); 
-            // In this version we dont have visible note box in checkout by default, we can add it to orderData directly
-            // Or add a hidden note logic.
-            // Let's assume we append to the backend order note.
-            alert("Reward Claimed! It will be added to your order.");
-            
-            // Move to history
-            const history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
-            history.push({ reward: r, date: new Date().toLocaleDateString(), status: 'Claimed' });
-            localStorage.setItem('sgmc_reward_history', JSON.stringify(history));
-            
-            // Clear pending
+            orderNote += ` [REWARD: ${r}]`;
+            showToast("Reward Added to Note!");
             localStorage.removeItem('sgmc_pending_reward');
+            let history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
+            history.push({item: r, date: new Date().toLocaleDateString()});
+            localStorage.setItem('sgmc_reward_history', JSON.stringify(history));
             document.getElementById('reward-btn').classList.add('hidden');
-            window.tempRewardClaimed = r; // Store temporarily to add to order data
         }
 
-        function openRewardsHistory() {
-            const list = document.getElementById('rewards-list-content');
-            const history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
+        function openRewardHistory() {
             toggleSidebar();
-            if(history.length === 0) list.innerHTML = "<p class='text-gray-500 text-center'>No rewards yet.</p>";
-            else list.innerHTML = history.map(h => `<div class="reward-history-item"><span class="text-white">${h.reward}</span><span class="text-green-500">${h.date}</span></div>`).join('');
+            const list = document.getElementById('reward-history-list');
+            const h = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
+            list.innerHTML = h.length ? h.map(x => `<div class="bg-[#222] p-2 rounded mb-1 flex justify-between"><span>${x.item}</span><span class="text-xs text-gray-500">${x.date}</span></div>`).join('') : "<p>No rewards yet.</p>";
             document.getElementById('rewards-history-modal').classList.add('open');
         }
 
@@ -329,11 +352,7 @@
                 document.getElementById('win-text').innerText = `You won: ${winItem}`;
                 document.getElementById('win-modal').classList.add('open');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                
-                // Save if reward
-                if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) {
-                    localStorage.setItem('sgmc_pending_reward', winItem);
-                }
+                if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) localStorage.setItem('sgmc_pending_reward', winItem);
             }, 4000);
         }
         function closeWheel() { document.getElementById('wheel-modal').classList.remove('open'); switchTab('orders'); }
@@ -344,23 +363,14 @@
         function filterMenu(){searchQuery=document.getElementById('search-input').value.toLowerCase();renderMenu()}
         function renderMenu(){ const c=document.getElementById('menu-container'); const f=displayMenuItems.filter(i=>(currentCategory==='All'||i.category===currentCategory)&&i.name.toLowerCase().includes(searchQuery)&&i.inStock); if(!f.length){c.innerHTML='<p class="text-center text-gray-500 mt-10">No items available.</p>';return} c.innerHTML=f.map(i=>{ const lowStock = i.stock <= 3; const isOOS = i.stock <= 0; return ` <div class="glass-card p-4 flex justify-between items-center mb-3"> <div class="flex gap-3 items-center"> ${i.image ? `<img src="${i.image}" class="item-thumb">` : `<div class="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center"><i class="fas fa-mug-hot text-gray-500"></i></div>`} <div><h3 class="font-bold text-sm" style="color:var(--text-color)">${i.name}</h3><div class="flex items-center gap-2"><p class="text-orange-400 text-xs font-bold">₹${i.price}</p>${lowStock ? `<span class="text-red-500 text-[9px] animate-pulse">Low Stock</span>` : ''}</div></div> </div> <div class="flex gap-2 bg-black/40 rounded-lg p-1 ${isOOS ? 'opacity-50' : ''}"><button onclick="updateCart('${i.id}',-1)" class="w-7 h-7 bg-gray-700 rounded text-white">-</button><span class="font-bold w-4 text-center text-sm" style="color:var(--text-color)" id="qty-${i.id}">0</span><button onclick="updateCart('${i.id}',1)" class="w-7 h-7 bg-orange-600 rounded text-white ${isOOS?'btn-disabled':''}" ${isOOS?'disabled':''}>+</button></div> </div>` }).join(''); for(let k in cart)if(document.getElementById(`qty-${k}`))document.getElementById(`qty-${k}`).innerText=cart[k].qty }
         
-        function updateCart(id,c){ if(!isShopOpen)return alert("Shop Closed"); const i=displayMenuItems.find(x=>x.id==id); if(!i)return; if(c>0 && i.stock>0 && cart[id] && cart[id].qty>=i.stock) return alert("Low Stock!"); if(!cart[id]) cart[id]={id,name:i.name,price:i.price,qty:0}; cart[id].qty+=c; if(cart[id].qty<=0)delete cart[id]; if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0; updateCartUI(); }
+        function updateCart(id,c){ if(!isShopOpen)return showToast("Shop is Closed!"); const i=displayMenuItems.find(x=>x.id==id); if(!i)return; if(c>0 && i.stock>0 && cart[id] && cart[id].qty>=i.stock) return showToast("Low Stock!"); if(!cart[id]) cart[id]={id,name:i.name,price:i.price,qty:0}; cart[id].qty+=c; if(cart[id].qty<=0)delete cart[id]; if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0; updateCartUI(); }
         
-        // --- CART BAR VISIBILITY FIX ---
         function updateCartUI(){ 
             const b=document.getElementById('cart-bar'); 
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
-            
-            // Only show cart bar if active tab is MENU (not orders or udhaar) AND cart has items
             const activeTab = localStorage.getItem('activeTab') || 'menu';
-            if(c>0 && activeTab === 'menu'){ 
-                b.classList.remove('hidden'); 
-                b.classList.add('flex'); 
-                document.getElementById('cart-count').innerText=c; 
-                document.getElementById('cart-total').innerText=t; 
-            } else { 
-                b.classList.add('hidden'); 
-            } 
+            // Only show on MENU tab
+            if(c>0 && activeTab === 'menu'){ b.classList.remove('hidden'); b.classList.add('flex'); document.getElementById('cart-count').innerText=c; document.getElementById('cart-total').innerText=t; } else { b.classList.add('hidden'); b.classList.remove('flex'); } 
             saveCartToStorage(); 
         }
         function updateCheckoutTotal() { let t=0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } if(appliedCoupon) t -= appliedCoupon.discount; if(t<0) t=0; document.getElementById('checkout-total').innerText = t; }
@@ -374,20 +384,20 @@
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; } else setTimeout(()=>document.getElementById('login-modal').classList.add('open'),1000); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.remove('open'); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.add('open'); toggleSidebar(); }
-        async function handlePlaceOrderClick() { if(Object.keys(cart).length === 0) return; if(!userProfile.phone) return openProfileEdit(); const isSelf = !document.getElementById('form-self').classList.contains('hidden'); let finalAddress="", finalCoords=null, recipient=null; if(isSelf) { if(!userLocation && shopLocation) return alert("Click Detect first."); const flat = document.getElementById('self-flat').value.trim(); const gpsTxt = document.getElementById('gps-address-text').innerText; if(!flat) return alert("Enter Flat/Room No."); finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; finalCoords = userLocation; if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return alert(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } } else { const name = document.getElementById('rec-name').value; const phone = document.getElementById('rec-phone').value; const area = document.getElementById('search-area').value; const flat = document.getElementById('others-flat').value; if(!name || !phone || !area || !flat) return alert("Fill all details"); if(!otherOrderCoords) return alert("Click 'Check' to verify area distance."); recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; } let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } let finalAmount = t; if(appliedCoupon) finalAmount -= appliedCoupon.discount; if(finalAmount < 0) finalAmount = 0; userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); const shortId = "#" + Date.now().toString().slice(-4); 
-        // Add Reward to note if exists
-        let note = ""; 
-        if(window.tempRewardClaimed) note += ` [REWARD: ${window.tempRewardClaimed}]`;
-        const orderData = { items: Object.values(cart), totalAmount: finalAmount, originalTotal: t, coupon: appliedCoupon, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: note, customerCoordinates: finalCoords, recipient: recipient, shortId: shortId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; placeOrderDB(orderData); }
-        function placeOrderDB(data) { document.getElementById('place-order-btn').innerText = "Processing..."; db.collection('orders').add(data).then(() => { cart = {}; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); document.getElementById('place-order-btn').innerHTML = `Place Order`; document.getElementById('cooking-screen').classList.add('active'); setTimeout(() => { document.getElementById('cooking-screen').classList.remove('active'); openWheel(); }, 2000); }).catch((err) => { alert("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `Place Order`; }); }
-        function fetchMyHistory() { if(!userProfile.phone) return; const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => { if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders.</p>'; return; } const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0)); cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data()); l.innerHTML = docs.map(doc => { const d = doc.data(); const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div></div>`; }).join(''); }); }
+        async function handlePlaceOrderClick() { if(Object.keys(cart).length === 0) return; if(!userProfile.phone) return openProfileEdit(); const isSelf = !document.getElementById('form-self').classList.contains('hidden'); let finalAddress="", finalCoords=null, recipient=null; if(isSelf) { if(!userLocation && shopLocation) return showToast("Click Detect first."); const flat = document.getElementById('self-flat').value.trim(); const gpsTxt = document.getElementById('gps-address-text').innerText; if(!flat) return showToast("Enter Flat/Room No."); finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; finalCoords = userLocation; if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return showToast(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } } else { const name = document.getElementById('rec-name').value; const phone = document.getElementById('rec-phone').value; const area = document.getElementById('search-area').value; const flat = document.getElementById('others-flat').value; if(!name || !phone || !area || !flat) return showToast("Fill all details"); if(!otherOrderCoords) return showToast("Click 'Check' to verify area."); recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; } let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } let finalAmount = t; if(appliedCoupon) finalAmount -= appliedCoupon.discount; if(finalAmount < 0) finalAmount = 0; userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); const shortId = "#" + Date.now().toString().slice(-4); const orderData = { items: Object.values(cart), totalAmount: finalAmount, originalTotal: t, coupon: appliedCoupon, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: orderNote, customerCoordinates: finalCoords, recipient: recipient, shortId: shortId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; placeOrderDB(orderData); }
+        function placeOrderDB(data) { document.getElementById('place-order-btn').innerText = "Processing..."; db.collection('orders').add(data).then(() => { cart = {}; orderNote=""; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); document.getElementById('place-order-btn').innerHTML = `Place Order`; document.getElementById('cooking-screen').classList.add('active'); setTimeout(() => { document.getElementById('cooking-screen').classList.remove('active'); openWheel(); }, 2000); }).catch((err) => { showToast("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `Place Order`; }); }
+        
+        // --- RESTORED FETCH UDHAAR ---
+        function fetchMyUdhaar() { if(!userProfile.phone) return; const l=document.getElementById('udhaar-history'); l.innerHTML='<div class="text-center mt-4">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).where('paymentMode','==','Udhaar').get().then(s => { let d=0, h=[]; s.forEach(doc => { const x=doc.data(); if(x.status!=='cancelled'){ d+=x.totalAmount; h.push({type:'buy',...x, id:doc.id}); cachedOrders[doc.id]=x; } }); db.collection('payments').where('phone','==',userProfile.phone).get().then(p => { let c=0; p.forEach(doc => { const x=doc.data(); c+=x.amount; h.push({type:'pay',...x}); }); document.getElementById('my-udhaar-amount').innerText = d-c; h.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0)); l.innerHTML = h.map(x => { const dt = x.timestamp ? new Date(x.timestamp.toDate()).toLocaleDateString() : ''; if(x.type === 'buy') return `<div class="glass-card p-3 mb-2 flex justify-between"><div><p class="text-xs text-gray-500">${dt}</p><p class="text-sm font-bold">Purchase</p></div><span class="text-red-400 font-bold">-₹${x.totalAmount}</span></div>`; else return `<div class="glass-card p-3 mb-2 flex justify-between"><div><p class="text-xs text-gray-500">${dt}</p><p class="text-sm font-bold">Paid</p></div><span class="text-green-500 font-bold">+₹${x.amount}</span></div>`; }).join(''); }); }); }
+        
+        function fetchMyHistory() { if(!userProfile.phone) return; const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => { if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders.</p>'; return; } const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0)); cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data()); l.innerHTML = docs.map(doc => { const d = doc.data(); const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div>${d.status==='pending' ? `<button onclick="event.stopPropagation(); cancelOrder('${doc.id}')" class="mt-2 text-red-500 text-xs border border-red-500 px-3 py-1 rounded">Cancel</button>` : ''}</div>`; }).join(''); }); }
         function payUdhaarViaUPI(){const a=document.getElementById('my-udhaar-amount').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${a}&cu=INR`}
-        function detectLocation(mode) { if(mode==='self'){const t=document.getElementById('gps-address-text'); t.innerText="Detecting..."; if(!navigator.geolocation) return alert("No Geo"); navigator.geolocation.getCurrentPosition(async p=>{ userLocation={lat:p.coords.latitude,lng:p.coords.longitude}; t.innerText="Lat: "+p.coords.latitude.toFixed(4); try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`);const d=await r.json();if(d&&d.display_name)t.innerText=d.display_name.split(',').slice(0,3).join(',');}catch(e){} },()=>{alert("Denied");t.innerText="Retry";},{enableHighAccuracy:true}); } }
-        async function verifyArea() { const t=document.getElementById('search-area').value; const b=document.getElementById('btn-verify'); const s=document.getElementById('area-status'); if(t.length<3)return alert("Enter Area"); b.innerText="..."; try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&limit=1`);const d=await r.json(); b.innerText="Check"; if(d.length>0){const la=parseFloat(d[0].lat),lo=parseFloat(d[0].lon); otherOrderCoords={lat:la,lng:lo}; if(shopLocation){const dist=haversine(shopLocation.lat,shopLocation.lng,la,lo); if(dist<=MAX_DISTANCE_KM){s.innerText=`✅ OK (${dist.toFixed(1)}km)`;s.className="text-[10px] text-green-500 mt-1 block";}else{s.innerText=`❌ Too Far (${dist.toFixed(1)}km)`;s.className="text-[10px] text-red-500 mt-1 block";otherOrderCoords=null;}}}else{s.innerText="Not Found";}}catch(e){b.innerText="Check";alert("Error");} }
+        function detectLocation(mode) { if(mode==='self'){const t=document.getElementById('gps-address-text'); t.innerText="Detecting..."; if(!navigator.geolocation) return showToast("No Geo"); navigator.geolocation.getCurrentPosition(async p=>{ userLocation={lat:p.coords.latitude,lng:p.coords.longitude}; t.innerText="Lat: "+p.coords.latitude.toFixed(4); try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`);const d=await r.json();if(d&&d.display_name)t.innerText=d.display_name.split(',').slice(0,3).join(',');}catch(e){} },()=>{showToast("Denied");t.innerText="Retry";},{enableHighAccuracy:true}); } }
+        async function verifyArea() { const t=document.getElementById('search-area').value; const b=document.getElementById('btn-verify'); const s=document.getElementById('area-status'); if(t.length<3)return showToast("Enter Area"); b.innerText="..."; try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&limit=1`);const d=await r.json(); b.innerText="Check"; if(d.length>0){const la=parseFloat(d[0].lat),lo=parseFloat(d[0].lon); otherOrderCoords={lat:la,lng:lo}; if(shopLocation){const dist=haversine(shopLocation.lat,shopLocation.lng,la,lo); if(dist<=MAX_DISTANCE_KM){s.innerText=`✅ OK (${dist.toFixed(1)}km)`;s.className="text-[10px] text-green-500 mt-1 block";}else{s.innerText=`❌ Too Far (${dist.toFixed(1)}km)`;s.className="text-[10px] text-red-500 mt-1 block";otherOrderCoords=null;}}}else{s.innerText="Not Found";}}catch(e){b.innerText="Check";showToast("Error");} }
         function haversine(a,b,c,d){const R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;const z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
         function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');}
         function toggleTheme(){document.body.classList.toggle('light-mode');}
-        function openChat(){if(!userProfile.phone)return alert("Login first");document.getElementById('chat-modal').classList.remove('hidden');setTimeout(()=>document.getElementById('chat-modal').classList.add('open'),10);toggleSidebar();loadMessages();}
+        function openChat(){if(!userProfile.phone)return showToast("Login first");document.getElementById('chat-modal').classList.remove('hidden');setTimeout(()=>document.getElementById('chat-modal').classList.add('open'),10);toggleSidebar();loadMessages();}
         function closeChat(){document.getElementById('chat-modal').classList.remove('open');setTimeout(()=>document.getElementById('chat-modal').classList.add('hidden'),300);}
         function sendMessage(){const t=document.getElementById('chat-input').value.trim();if(t){db.collection('chats').doc(userProfile.phone).collection('messages').add({text:t,sender:'user',timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('chat-input').value="";}}
         function loadMessages(){db.collection('chats').doc(userProfile.phone).collection('messages').orderBy('timestamp').onSnapshot(s=>{document.getElementById('chat-messages').innerHTML=s.docs.map(d=>`<div class="chat-bubble ${d.data().sender==='user'?'chat-user':'chat-admin'}">${d.data().text}</div>`).join('');});}
@@ -395,7 +405,7 @@
         function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
         function switchTab(t){ localStorage.setItem('activeTab',t); ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')}); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('nav-'+t).classList.add('active'); updateCartUI(); if(t==='orders')fetchMyHistory(); if(t==='udhaar')fetchMyUdhaar(); }
         function openOrderDetail(id){const d=cachedOrders[id];if(!d)return;document.getElementById('od-date').innerText=d.timestamp?new Date(d.timestamp.toDate()).toLocaleString():'';document.getElementById('od-total').innerText='₹'+d.totalAmount;document.getElementById('od-items').innerHTML=d.items.map(i=>`<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)"><span>${i.name} x${i.qty}</span><span>₹${i.qty*i.price}</span></div>`).join('');document.getElementById('order-detail-modal').classList.add('open')}
-        function shareApp(){ const url = window.location.href; if(navigator.share){ navigator.share({title: 'SGMC Chai', text: 'Order Chai & Snacks Online!', url: url}); } else { alert("Link copied!"); } }
+        function shareApp(){ const url = window.location.href; if(navigator.share){ navigator.share({title: 'SGMC Chai', text: 'Order Chai & Snacks Online!', url: url}); } else { showToast("Link copied!"); } }
 
         init();
     </script>
