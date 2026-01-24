@@ -15,62 +15,53 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* --- ORIGINAL DESIGN (v14) --- */
+        /* --- ORIGINAL DESIGN (Same as Index 16) --- */
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         
-        .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; transition: transform 0.2s; }
+        .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
         .glass-card:active { transform: scale(0.98); }
-        
         input, textarea, select { background-color: var(--input-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
         
-        /* Category Chips (Original Big Size) */
-        .cat-chip { padding: 10px 22px; font-size: 14px; border-radius: 99px; border: 1px solid transparent; font-weight: bold; flex-shrink: 0; }
-        .cat-active { background: white; color: black; }
-        .cat-inactive { background: #1f1f1f; color: #9ca3af; border-color: #333; }
-
-        /* Sidebar */
-        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg-color); z-index: 200; transform: translateX(100%); transition: 0.3s; border-left: 1px solid var(--border-color); }
+        /* SIDEBAR */
+        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg-color); z-index: 200; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.2); }
         .sidebar.open { transform: translateX(0); }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 190; backdrop-filter: blur(3px); }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
-
-        /* Popups (Center Aesthetic) */
+        
+        /* BOTTOM NAV */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px; padding-bottom: 24px; z-index: 50; }
+        .nav-item { color: var(--text-sub); text-align: center; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .nav-item.active { color: #F97316; }
+        
+        /* POPUPS */
         .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
         .popup-overlay.open { opacity: 1; pointer-events: auto; }
-        
         .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; }
         .popup-overlay.open .popup-card { transform: scale(1); }
 
-        /* Wheel */
+        /* WHEEL */
         .wheel-outer { width: 280px; height: 280px; border-radius: 50%; border: 6px solid #222; position: relative; overflow: hidden; margin: 0 auto; box-shadow: 0 0 30px rgba(249, 115, 22, 0.2); }
         .wheel-inner { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#F97316 0deg 60deg, #111 60deg 120deg, #F97316 120deg 180deg, #111 180deg 240deg, #F97316 240deg 300deg, #111 300deg 360deg); transition: transform 4s cubic-bezier(0.2, 0.8, 0.1, 1); }
         .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid white; z-index: 20; }
 
-        /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px; padding-bottom: 24px; z-index: 50; }
-        .nav-item { color: var(--text-sub); text-align: center; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .nav-item.active { color: #F97316; }
-
-        /* Cart Bar */
+        /* CART BAR */
         #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+        /* EXTRAS */
+        .cat-chip { padding: 8px 20px; font-size: 14px; border-radius: 99px; }
         .item-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #222; }
-        
-        /* Coupon & Reward Chips */
-        .coupon-chip-item { background: rgba(255,255,255,0.05); border: 1px dashed #555; padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .coupon-chip-item { background: rgba(255,255,255,0.05); border: 1px dashed #555; padding: 10px; border-radius: 8px; margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
         .coupon-chip-item:active { background: rgba(249, 115, 22, 0.2); border-color: #F97316; }
-        
-        /* Reward History Item */
-        .reward-item { background: #222; padding: 10px; border-radius: 8px; margin-bottom: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        .reward-history-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333; font-size: 13px; }
     </style>
 </head>
 <body>
 
     <div class="fixed top-0 left-0 right-0 bg-[#050505]/95 backdrop-blur-sm z-40 px-4 py-4 flex justify-between items-center border-b border-white/5">
         <div>
-            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal text-white">Chai</span></h1>
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal" style="color:var(--text-color)">Chai</span></h1>
             <p class="text-[10px] text-green-500 font-bold tracking-wide pl-0.5" id="delivery-status-text">● LIVE STORE</p>
         </div>
         <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-800 bg-[#111] active:scale-95 transition"><i class="fas fa-bars"></i></button>
@@ -79,19 +70,19 @@
     <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div id="sidebar" class="sidebar p-6 flex flex-col h-full">
         <div class="flex justify-between items-center mb-8"><h2 class="text-xl font-bold text-orange-500">Menu</h2><button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button></div>
-        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm text-white" id="sidebar-name">Guest</p><p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p></div></div>
+        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm" style="color:var(--text-color)" id="sidebar-name">Guest</p><p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p></div></div>
         <div class="space-y-3 flex-1">
-            <button onclick="openRewardHistory()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-gift text-yellow-500 mr-2"></i> My Rewards</button>
+            <button onclick="openRewardsHistory()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-gift text-yellow-500 mr-2"></i> My Rewards</button>
             <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</button>
             <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card text-white text-sm font-bold"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</button>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v10.0 Final</div>
+        <div class="text-center text-xs text-gray-500 mt-4">v14.Pro</div>
     </div>
 
     <div class="h-20"></div>
 
     <div id="view-menu" class="pb-10">
-        <div class="sticky top-[70px] z-30 pt-2 pb-1 px-4 border-b border-white/5 bg-[#050505]">
+        <div class="sticky top-[60px] z-30 pt-2 pb-1 px-4 border-b border-white/5 bg-[#050505]">
             <div class="relative mb-4"><i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i><input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search..." class="w-full rounded-xl py-3 pl-12 pr-4 text-sm outline-none border border-[#333] bg-[#111] text-white"></div>
             <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="category-container">
                 <button onclick="setCategory('All')" class="cat-chip cat-active" id="cat-All">All</button>
@@ -104,8 +95,7 @@
         <div id="menu-container" class="space-y-4 p-4 pt-2"></div>
     </div>
 
-    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4 text-white">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
-    
+    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4" style="color:var(--text-color)">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
     <div id="view-udhaar" class="hidden p-4">
         <div class="glass-card p-6 text-center mb-6 border-blue-500/20 relative overflow-hidden">
             <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Pending Dues</p>
@@ -129,12 +119,11 @@
         <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet"></i> Udhaar</div>
     </div>
 
-    <div id="reward-history-modal" class="popup-overlay">
+    <div id="rewards-history-modal" class="popup-overlay">
         <div class="popup-card">
-            <h3 class="text-xl font-bold text-white mb-4">My Rewards</h3>
-            <div id="reward-history-list" class="max-h-60 overflow-y-auto mb-4 text-sm text-gray-400">
-                </div>
-            <button onclick="document.getElementById('reward-history-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Close</button>
+            <h3 class="text-lg font-bold text-white mb-4">Reward History</h3>
+            <div id="rewards-list-content" class="max-h-60 overflow-y-auto mb-4"></div>
+            <button onclick="document.getElementById('rewards-history-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Close</button>
         </div>
     </div>
 
@@ -142,20 +131,8 @@
         <div class="popup-card">
             <i class="fas fa-store-slash text-4xl text-gray-500 mb-4"></i>
             <h3 class="text-xl font-bold text-white mb-2">Delivery Paused</h3>
-            <p class="text-sm text-gray-400 mb-6">Online ordering is currently unavailable. Please visit the shop.</p>
+            <p class="text-sm text-gray-400 mb-6">Online ordering is currently unavailable.</p>
             <button onclick="document.getElementById('delivery-off-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Okay</button>
-        </div>
-    </div>
-
-    <div id="cancel-confirm-modal" class="popup-overlay">
-        <div class="popup-card">
-            <i class="fas fa-exclamation-circle text-4xl text-red-500 mb-4"></i>
-            <h3 class="text-lg font-bold text-white mb-2">Cancel Order?</h3>
-            <p class="text-xs text-gray-400 mb-6">Are you sure you want to cancel? This cannot be undone.</p>
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('cancel-confirm-modal').classList.remove('open')" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-300 font-bold text-xs">No</button>
-                <button onclick="confirmCancelOrder()" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-xs">Yes, Cancel</button>
-            </div>
         </div>
     </div>
 
@@ -164,7 +141,7 @@
             <i class="fas fa-trophy text-4xl text-yellow-400 mb-3 animate-bounce"></i>
             <h3 class="text-2xl font-bold text-white mb-1">Congratulations!</h3>
             <p class="text-sm text-gray-300 mb-6" id="win-text">You won a prize!</p>
-            <button onclick="closeWheel()" class="w-full bg-gradient-to-r from-orange-600 to-yellow-500 text-white py-3 rounded-xl font-bold shadow-lg">Claim Later</button>
+            <button onclick="closeWheel()" class="w-full bg-gradient-to-r from-orange-600 to-yellow-500 text-white py-3 rounded-xl font-bold shadow-lg">Claim in Next Order</button>
         </div>
     </div>
 
@@ -211,8 +188,6 @@
                 <div id="coupon-list" class="flex flex-col gap-2 max-h-32 overflow-y-auto"></div>
             </div>
 
-            <div class="mb-4"><textarea id="note-box" rows="2" class="w-full bg-[#222] border border-[#333] rounded-xl p-3 text-sm text-white outline-none" placeholder="Cooking instructions..."></textarea></div>
-
             <div class="flex justify-between items-center pt-4 border-t border-[#333]">
                 <div><p class="text-xs text-gray-500">Total</p><span class="text-white font-bold text-xl">₹<span id="checkout-total">0</span></span></div>
                 <button onclick="handlePlaceOrderClick()" class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg" id="place-order-btn">Place Order</button>
@@ -258,7 +233,7 @@
         function openCheckout(){
             if(!isDeliveryActive) { document.getElementById('delivery-off-modal').classList.add('open'); return; }
             
-            // HIDE CART BAR WHEN CHECKOUT OPENS
+            // HIDE CART BAR
             const cartBar = document.getElementById('cart-bar');
             cartBar.classList.add('hidden');
             cartBar.classList.remove('flex'); 
@@ -308,43 +283,39 @@
             });
         }
 
-        function claimReward() {
-            const r = localStorage.getItem('sgmc_pending_reward');
-            document.getElementById('note-box').value += ` [REWARD CLAIMED: ${r}]`;
-            // Remove from pending
-            localStorage.removeItem('sgmc_pending_reward');
-            // Add to history
-            let history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
-            history.push({item: r, date: new Date().toLocaleDateString(), status: 'Claimed'});
-            localStorage.setItem('sgmc_reward_history', JSON.stringify(history));
-            
-            document.getElementById('reward-btn').classList.add('hidden');
-            alert("Reward added to order note!");
-        }
-
-        function openRewardHistory() {
-            const list = document.getElementById('reward-history-list');
-            const history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
-            toggleSidebar(); // Close sidebar
-            if(history.length === 0) {
-                list.innerHTML = "<p>No rewards claimed yet.</p>";
-            } else {
-                list.innerHTML = history.map(h => `<div class="reward-item"><span>${h.item}</span><span class="text-xs text-green-500">${h.date}</span></div>`).join('');
-            }
-            document.getElementById('reward-history-modal').classList.add('open');
-        }
-
         async function applyCoupon(code, discount, newOnly) {
             if(newOnly) { const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get(); if(!history.empty) return alert("Only for New Users!"); }
             appliedCoupon = { code, discount }; updateCheckoutTotal(); alert(`Coupon ${code} Applied!`);
         }
 
-        function cancelOrder(id) { cancelId = id; document.getElementById('cancel-confirm-modal').classList.add('open'); }
-        function confirmCancelOrder() { 
-            if(cancelId) db.collection('orders').doc(cancelId).update({status:'cancelled'}).then(()=>{ 
-                document.getElementById('cancel-confirm-modal').classList.remove('open'); 
-                fetchMyHistory(); 
-            }); 
+        function claimReward() {
+            const r = localStorage.getItem('sgmc_pending_reward');
+            if(!r) return;
+            // Add reward to note
+            const noteEl = document.getElementById('note-box') || document.createElement('input'); 
+            // In this version we dont have visible note box in checkout by default, we can add it to orderData directly
+            // Or add a hidden note logic.
+            // Let's assume we append to the backend order note.
+            alert("Reward Claimed! It will be added to your order.");
+            
+            // Move to history
+            const history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
+            history.push({ reward: r, date: new Date().toLocaleDateString(), status: 'Claimed' });
+            localStorage.setItem('sgmc_reward_history', JSON.stringify(history));
+            
+            // Clear pending
+            localStorage.removeItem('sgmc_pending_reward');
+            document.getElementById('reward-btn').classList.add('hidden');
+            window.tempRewardClaimed = r; // Store temporarily to add to order data
+        }
+
+        function openRewardsHistory() {
+            const list = document.getElementById('rewards-list-content');
+            const history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
+            toggleSidebar();
+            if(history.length === 0) list.innerHTML = "<p class='text-gray-500 text-center'>No rewards yet.</p>";
+            else list.innerHTML = history.map(h => `<div class="reward-history-item"><span class="text-white">${h.reward}</span><span class="text-green-500">${h.date}</span></div>`).join('');
+            document.getElementById('rewards-history-modal').classList.add('open');
         }
 
         // --- WHEEL LOGIC ---
@@ -358,18 +329,16 @@
                 document.getElementById('win-text').innerText = `You won: ${winItem}`;
                 document.getElementById('win-modal').classList.add('open');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                
+                // Save if reward
                 if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) {
                     localStorage.setItem('sgmc_pending_reward', winItem);
-                    // Add to history as Pending
-                    let history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
-                    history.push({item: winItem, date: new Date().toLocaleDateString(), status: 'Pending'});
-                    localStorage.setItem('sgmc_reward_history', JSON.stringify(history));
                 }
             }, 4000);
         }
         function closeWheel() { document.getElementById('wheel-modal').classList.remove('open'); switchTab('orders'); }
 
-        // --- STANDARD FUNCTIONS ---
+        // --- CORE FUNCTIONS ---
         function loadMenuData(){ db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists){ let D=d.data(), C=D.customItems||[]; let M=C.map(i => ({ ...i, category: i.category || 'Chai', price: Number(i.price) || 0, stock: (typeof i.stock === 'number') ? i.stock : 9999, inStock: i.available !== false, image: i.image || null })); displayMenuItems=M; renderMenu(); } }); }
         function setCategory(c){currentCategory=c;document.querySelectorAll('.cat-chip').forEach(e=>e.className="cat-chip cat-inactive");document.getElementById('cat-'+c).className="cat-chip cat-active";renderMenu()}
         function filterMenu(){searchQuery=document.getElementById('search-input').value.toLowerCase();renderMenu()}
@@ -377,19 +346,20 @@
         
         function updateCart(id,c){ if(!isShopOpen)return alert("Shop Closed"); const i=displayMenuItems.find(x=>x.id==id); if(!i)return; if(c>0 && i.stock>0 && cart[id] && cart[id].qty>=i.stock) return alert("Low Stock!"); if(!cart[id]) cart[id]={id,name:i.name,price:i.price,qty:0}; cart[id].qty+=c; if(cart[id].qty<=0)delete cart[id]; if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0; updateCartUI(); }
         
-        // Cart Bar Logic with Hidden class toggle for Checkout
+        // --- CART BAR VISIBILITY FIX ---
         function updateCartUI(){ 
             const b=document.getElementById('cart-bar'); 
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
-            // Only show if items exist AND checkout is NOT open (managed by openCheckout/closeCheckout)
-            if(c>0){ 
+            
+            // Only show cart bar if active tab is MENU (not orders or udhaar) AND cart has items
+            const activeTab = localStorage.getItem('activeTab') || 'menu';
+            if(c>0 && activeTab === 'menu'){ 
                 b.classList.remove('hidden'); 
                 b.classList.add('flex'); 
                 document.getElementById('cart-count').innerText=c; 
                 document.getElementById('cart-total').innerText=t; 
             } else { 
                 b.classList.add('hidden'); 
-                b.classList.remove('flex');
             } 
             saveCartToStorage(); 
         }
@@ -397,23 +367,20 @@
         
         function loadCartFromStorage(){const s=localStorage.getItem('sgmc_cart');if(s){cart=JSON.parse(s);updateCartUI()}}
         function saveCartToStorage(){localStorage.setItem('sgmc_cart',JSON.stringify(cart))}
-        
-        function closeCheckout(){
-            document.getElementById('checkout-modal').classList.add('hidden'); 
-            appliedCoupon=null;
-            // SHOW CART BAR AGAIN
-            updateCartUI();
-        }
-        
+        function closeCheckout(){document.getElementById('checkout-modal').classList.add('hidden'); appliedCoupon=null; updateCartUI();}
         function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>{ b.classList.remove('bg-orange-600','text-white'); b.classList.add('bg-gray-800','text-gray-300'); }); document.getElementById('pay-'+m.toLowerCase()).classList.add('bg-orange-600','text-white'); }
         function toggleOrderType(t){const s=t==='self';document.getElementById('tab-self').className=s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";document.getElementById('tab-others').className=!s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";document.getElementById('form-self').classList.toggle('hidden',!s);document.getElementById('form-others').classList.toggle('hidden',s);}
         function fetchShopLocation(){db.collection('settings').doc('config').get().then(d=>{if(d.exists&&d.data().location)shopLocation=d.data().location;});}
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; } else setTimeout(()=>document.getElementById('login-modal').classList.add('open'),1000); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.remove('open'); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.add('open'); toggleSidebar(); }
-        async function handlePlaceOrderClick() { if(Object.keys(cart).length === 0) return; if(!userProfile.phone) return openProfileEdit(); const isSelf = !document.getElementById('form-self').classList.contains('hidden'); let finalAddress="", finalCoords=null, recipient=null; if(isSelf) { if(!userLocation && shopLocation) return alert("Click Detect first."); const flat = document.getElementById('self-flat').value.trim(); const gpsTxt = document.getElementById('gps-address-text').innerText; if(!flat) return alert("Enter Flat/Room No."); finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; finalCoords = userLocation; if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return alert(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } } else { const name = document.getElementById('rec-name').value; const phone = document.getElementById('rec-phone').value; const area = document.getElementById('search-area').value; const flat = document.getElementById('others-flat').value; if(!name || !phone || !area || !flat) return alert("Fill all details"); if(!otherOrderCoords) return alert("Click 'Check' to verify area distance."); recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; } let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } let finalAmount = t; if(appliedCoupon) finalAmount -= appliedCoupon.discount; if(finalAmount < 0) finalAmount = 0; userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); const shortId = "#" + Date.now().toString().slice(-4); const orderData = { items: Object.values(cart), totalAmount: finalAmount, originalTotal: t, coupon: appliedCoupon, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: document.getElementById('note-box').value || '', customerCoordinates: finalCoords, recipient: recipient, shortId: shortId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; placeOrderDB(orderData); }
+        async function handlePlaceOrderClick() { if(Object.keys(cart).length === 0) return; if(!userProfile.phone) return openProfileEdit(); const isSelf = !document.getElementById('form-self').classList.contains('hidden'); let finalAddress="", finalCoords=null, recipient=null; if(isSelf) { if(!userLocation && shopLocation) return alert("Click Detect first."); const flat = document.getElementById('self-flat').value.trim(); const gpsTxt = document.getElementById('gps-address-text').innerText; if(!flat) return alert("Enter Flat/Room No."); finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; finalCoords = userLocation; if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return alert(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } } else { const name = document.getElementById('rec-name').value; const phone = document.getElementById('rec-phone').value; const area = document.getElementById('search-area').value; const flat = document.getElementById('others-flat').value; if(!name || !phone || !area || !flat) return alert("Fill all details"); if(!otherOrderCoords) return alert("Click 'Check' to verify area distance."); recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; } let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } let finalAmount = t; if(appliedCoupon) finalAmount -= appliedCoupon.discount; if(finalAmount < 0) finalAmount = 0; userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); const shortId = "#" + Date.now().toString().slice(-4); 
+        // Add Reward to note if exists
+        let note = ""; 
+        if(window.tempRewardClaimed) note += ` [REWARD: ${window.tempRewardClaimed}]`;
+        const orderData = { items: Object.values(cart), totalAmount: finalAmount, originalTotal: t, coupon: appliedCoupon, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: note, customerCoordinates: finalCoords, recipient: recipient, shortId: shortId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; placeOrderDB(orderData); }
         function placeOrderDB(data) { document.getElementById('place-order-btn').innerText = "Processing..."; db.collection('orders').add(data).then(() => { cart = {}; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); document.getElementById('place-order-btn').innerHTML = `Place Order`; document.getElementById('cooking-screen').classList.add('active'); setTimeout(() => { document.getElementById('cooking-screen').classList.remove('active'); openWheel(); }, 2000); }).catch((err) => { alert("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `Place Order`; }); }
-        function fetchMyHistory() { if(!userProfile.phone) return; const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => { if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders.</p>'; return; } const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0)); cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data()); l.innerHTML = docs.map(doc => { const d = doc.data(); const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div>${d.status==='pending' ? `<button onclick="event.stopPropagation(); cancelOrder('${doc.id}')" class="mt-2 text-red-500 text-xs border border-red-500 px-3 py-1 rounded">Cancel</button>` : ''}</div>`; }).join(''); }); }
+        function fetchMyHistory() { if(!userProfile.phone) return; const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => { if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders.</p>'; return; } const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0)); cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data()); l.innerHTML = docs.map(doc => { const d = doc.data(); const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div></div>`; }).join(''); }); }
         function payUdhaarViaUPI(){const a=document.getElementById('my-udhaar-amount').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${a}&cu=INR`}
         function detectLocation(mode) { if(mode==='self'){const t=document.getElementById('gps-address-text'); t.innerText="Detecting..."; if(!navigator.geolocation) return alert("No Geo"); navigator.geolocation.getCurrentPosition(async p=>{ userLocation={lat:p.coords.latitude,lng:p.coords.longitude}; t.innerText="Lat: "+p.coords.latitude.toFixed(4); try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`);const d=await r.json();if(d&&d.display_name)t.innerText=d.display_name.split(',').slice(0,3).join(',');}catch(e){} },()=>{alert("Denied");t.innerText="Retry";},{enableHighAccuracy:true}); } }
         async function verifyArea() { const t=document.getElementById('search-area').value; const b=document.getElementById('btn-verify'); const s=document.getElementById('area-status'); if(t.length<3)return alert("Enter Area"); b.innerText="..."; try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&limit=1`);const d=await r.json(); b.innerText="Check"; if(d.length>0){const la=parseFloat(d[0].lat),lo=parseFloat(d[0].lon); otherOrderCoords={lat:la,lng:lo}; if(shopLocation){const dist=haversine(shopLocation.lat,shopLocation.lng,la,lo); if(dist<=MAX_DISTANCE_KM){s.innerText=`✅ OK (${dist.toFixed(1)}km)`;s.className="text-[10px] text-green-500 mt-1 block";}else{s.innerText=`❌ Too Far (${dist.toFixed(1)}km)`;s.className="text-[10px] text-red-500 mt-1 block";otherOrderCoords=null;}}}else{s.innerText="Not Found";}}catch(e){b.innerText="Check";alert("Error");} }
@@ -424,7 +391,7 @@
         function closeChat(){document.getElementById('chat-modal').classList.remove('open');setTimeout(()=>document.getElementById('chat-modal').classList.add('hidden'),300);}
         function sendMessage(){const t=document.getElementById('chat-input').value.trim();if(t){db.collection('chats').doc(userProfile.phone).collection('messages').add({text:t,sender:'user',timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('chat-input').value="";}}
         function loadMessages(){db.collection('chats').doc(userProfile.phone).collection('messages').orderBy('timestamp').onSnapshot(s=>{document.getElementById('chat-messages').innerHTML=s.docs.map(d=>`<div class="chat-bubble ${d.data().sender==='user'?'chat-user':'chat-admin'}">${d.data().text}</div>`).join('');});}
-        function listenToShopStatus(){db.collection('settings').doc('status').onSnapshot(d=>{isShopOpen=d.exists?d.data().isOpen:true;document.getElementById('closed-banner').classList.toggle('hidden',isShopOpen);document.getElementById('shop-status-badge').innerText=isShopOpen?"● LIVE":"● CLOSED";updateCartUI();});}
+        function listenToShopStatus(){db.collection('settings').doc('status').onSnapshot(d=>{isShopOpen=d.exists?d.data().isOpen:true;document.getElementById('closed-banner').classList.toggle('hidden',isShopOpen);updateCartUI();});}
         function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
         function switchTab(t){ localStorage.setItem('activeTab',t); ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')}); document.getElementById('view-'+t).classList.remove('hidden'); document.getElementById('nav-'+t).classList.add('active'); updateCartUI(); if(t==='orders')fetchMyHistory(); if(t==='udhaar')fetchMyUdhaar(); }
         function openOrderDetail(id){const d=cachedOrders[id];if(!d)return;document.getElementById('od-date').innerText=d.timestamp?new Date(d.timestamp.toDate()).toLocaleString():'';document.getElementById('od-total').innerText='₹'+d.totalAmount;document.getElementById('od-items').innerHTML=d.items.map(i=>`<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)"><span>${i.name} x${i.qty}</span><span>₹${i.qty*i.price}</span></div>`).join('');document.getElementById('order-detail-modal').classList.add('open')}
