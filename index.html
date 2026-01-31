@@ -19,6 +19,9 @@
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         
+        /* FIX: Ensure confetti canvas does not block clicks */
+        canvas { pointer-events: none !important; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; }
+
         .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
         .glass-card:active { transform: scale(0.98); }
         
@@ -44,19 +47,18 @@
         #cooking-screen { position: fixed; inset: 0; background: #000; z-index: 250; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
         #cooking-screen.active { transform: translateY(0); }
         
-        /* Improved Wheel Styles */
-        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.5s; }
-        #wheel-modal.open { opacity: 1; pointer-events: auto; }
+        /* FIX: Wheel & Win Card now use DISPLAY: NONE to prevent blocking clicks */
+        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
+        #wheel-modal.open { display: flex; opacity: 1; }
+        
         .wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; }
         .wheel-outer { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #F97316; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.5); background: #111; }
         .wheel-inner { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#F97316 0deg 60deg, #222 60deg 120deg, #F97316 120deg 180deg, #222 180deg 240deg, #F97316 240deg 300deg, #222 300deg 360deg); transition: transform 4s cubic-bezier(0.1, 0.9, 0.2, 1); position: relative; }
-        /* Wheel Center Decoration */
         .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: white; border-radius: 50%; z-index: 5; border: 4px solid #F97316; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #fff; z-index: 20; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
         
-        /* Win Card - High Z-Index */
-        #win-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 400; width: 85%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-        #win-card.show { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+        #win-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; opacity: 0; display: none; transition: 0.3s; z-index: 400; width: 85%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
+        #win-card.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
         /* Cart Bar */
         #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
@@ -65,9 +67,10 @@
         /* Popups Overlay */
         .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
         .popup-overlay.open { opacity: 1; pointer-events: auto; }
-        /* Coupon Modal needs higher z-index than checkout */
         #coupon-modal { z-index: 160; }
-        .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; }
+        
+        /* Popup content needs explicit pointer events to be safe */
+        .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; pointer-events: auto; }
         .popup-overlay.open .popup-card { transform: scale(1); }
 
         /* Toast */
@@ -313,7 +316,6 @@
             }
 
             renderCartItems(); 
-            // Coupon modal rendering is handled by openCouponModal now
             document.getElementById('checkout-modal').classList.remove('hidden');
             setPayment('Cash'); toggleOrderType('self');
         }
@@ -339,7 +341,6 @@
             }
         }
 
-        // --- NEW: Open Coupon Modal Explicitly ---
         function openCouponModal() {
             renderCoupons();
             document.getElementById('coupon-modal').classList.add('open');
@@ -427,16 +428,15 @@
         
         function updateCart(id,c){ if(!isShopOpen)return showToast("Shop is Closed!"); const i=displayMenuItems.find(x=>x.id==id); if(!i)return; if(c>0 && i.stock>0 && cart[id] && cart[id].qty>=i.stock) return showToast("Low Stock!"); if(!cart[id]) cart[id]={id,name:i.name,price:i.price,qty:0}; cart[id].qty+=c; if(cart[id].qty<=0)delete cart[id]; if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0; updateCartUI(); }
         
-        // --- STRICT CART UI LOGIC ---
         function updateCartUI(){ 
             const b=document.getElementById('cart-bar'); 
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
             
-            const activeTab = localStorage.getItem('activeTab') || 'menu';
+            // Fix: Check DOM for view-menu visibility instead of unreliable LocalStorage
+            const isMenuOpen = !document.getElementById('view-menu').classList.contains('hidden');
             const isCheckoutOpen = !document.getElementById('checkout-modal').classList.contains('hidden');
             
-            // STRICT CONDITION: Has items AND is on Menu tab AND Checkout is closed
-            if(c > 0 && activeTab === 'menu' && !isCheckoutOpen){ 
+            if(c > 0 && isMenuOpen && !isCheckoutOpen){ 
                 b.classList.remove('hidden'); 
                 b.classList.add('flex'); 
                 document.getElementById('cart-count').innerText=c; 
@@ -478,22 +478,16 @@
         function listenToShopStatus(){db.collection('settings').doc('status').onSnapshot(d=>{isShopOpen=d.exists?d.data().isOpen:true;document.getElementById('closed-banner').classList.toggle('hidden',isShopOpen);updateCartUI();});}
         function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
         
-        // --- UPDATED TAB SWITCHER (For Strict Cart Hiding) ---
         function switchTab(t){ 
             localStorage.setItem('activeTab',t); 
-            // Hide cart immediately if leaving menu
+            // Fix: Immediately hide cart if not on menu
             if(t !== 'menu') {
-                 document.getElementById('cart-bar').classList.add('hidden');
-                 document.getElementById('cart-bar').classList.remove('flex');
+                document.getElementById('cart-bar').classList.add('hidden');
+                document.getElementById('cart-bar').classList.remove('flex');
             }
-
-            ['menu','orders','udhaar'].forEach(x=>{
-                document.getElementById('view-'+x).classList.add('hidden');
-                document.getElementById('nav-'+x).classList.remove('active')
-            }); 
+            ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')}); 
             document.getElementById('view-'+t).classList.remove('hidden'); 
             document.getElementById('nav-'+t).classList.add('active'); 
-            
             updateCartUI(); 
             if(t==='orders')fetchMyHistory(); 
             if(t==='udhaar')fetchMyUdhaar(); 
