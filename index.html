@@ -17,10 +17,7 @@
     <style>
         /* --- BASE STYLES --- */
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
-        
-        /* LIGHT MODE VARIABLES */
         body.light-mode { --bg-color: #f3f4f6; --text-color: #111827; --text-sub: #4b5563; --card-bg: rgba(255, 255, 255, 0.9); --border-color: #e5e7eb; --input-bg: #ffffff; }
-        
         body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; transition: background 0.3s, color 0.3s; }
         
         canvas { pointer-events: none !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; }
@@ -104,7 +101,7 @@
             <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</button>
             <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</button>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v19.0 Final</div>
+        <div class="text-center text-xs text-gray-500 mt-4">v20.0 Final</div>
     </div>
 
     <div class="h-20"></div>
@@ -161,7 +158,8 @@
 
     <div id="coupon-modal" class="popup-overlay">
         <div class="popup-card">
-            <h3 class="text-lg font-bold text-white mb-4">Available Coupons</h3>
+            <h3 class="text-lg font-bold text-white mb-2">Offers & Rewards</h3>
+            <button onclick="removeCoupon()" id="remove-coupon-btn" class="hidden w-full bg-red-900/50 text-red-300 py-2 rounded-xl text-xs font-bold mb-4 border border-red-800">Remove Applied Coupon</button>
             <div id="coupon-list-content" class="max-h-60 overflow-y-auto mb-4 text-left"></div>
             <button onclick="document.getElementById('coupon-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Close</button>
         </div>
@@ -223,8 +221,6 @@
         <div class="bg-[#151515] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-white">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-[#222] text-gray-400 flex items-center justify-center border border-gray-700"><i class="fas fa-times"></i></button></div>
             
-            <button id="reward-btn" onclick="claimReward()" class="hidden w-full bg-gradient-to-r from-yellow-600 to-yellow-800 text-white py-3 rounded-xl mb-4 font-bold border border-yellow-500 shadow-lg flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> <span id="reward-btn-text">Claim Reward</span></button>
-
             <div id="checkout-items" class="space-y-3 mb-6"></div>
             
             <div class="flex bg-[#222] p-1 rounded-xl mb-4">
@@ -288,11 +284,10 @@
         let cart={}, userProfile={name:"",phone:""}, selectedPayment='Cash', isShopOpen=true, isDeliveryActive=true, userLocation=null, shopLocation=null, cachedOrders={}, otherOrderCoords=null, cancelId=null;
         const MAX_DISTANCE_KM=3.0;
         let displayMenuItems=[], currentCategory='All', searchQuery='';
-        let appliedCoupon = null;
+        let appliedCoupon = null; // Can be a Coupon Object or a Reward Object
         let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"];
         let orderNote = "";
         
-        // --- DELIVERY & UDHAAR CONFIG STATE ---
         let deliveryConfig = { minOrder: 0, charge: 0, freeAbove: 0 };
         let currentUserLimit = 0;
         let currentUdhaarBalance = 0;
@@ -312,11 +307,7 @@
                 if(d.exists) {
                     const data = d.data();
                     isDeliveryActive = data.isActive !== false;
-                    deliveryConfig = {
-                        minOrder: data.minOrder || 0,
-                        charge: data.charge || 0,
-                        freeAbove: data.freeAbove || 99999
-                    };
+                    deliveryConfig = { minOrder: data.minOrder || 0, charge: data.charge || 0, freeAbove: data.freeAbove || 99999 };
                     const badge = document.getElementById('header-status');
                     if(isDeliveryActive) { badge.innerText = "● LIVE STORE"; badge.className="text-[10px] text-green-500 font-bold tracking-wide pl-0.5"; }
                     else { badge.innerText = "● DELIVERY PAUSED"; badge.className="text-[10px] text-red-500 font-bold tracking-wide pl-0.5"; }
@@ -327,25 +318,10 @@
 
         function openCheckout(){
             if(!isDeliveryActive) { document.getElementById('delivery-off-modal').classList.add('open'); return; }
-            
-            // HIDE CART BAR
             document.getElementById('cart-bar').style.display = 'none';
-
-            const pendingReward = localStorage.getItem('sgmc_pending_reward');
-            if(pendingReward) {
-                document.getElementById('reward-btn').classList.remove('hidden');
-                document.getElementById('reward-btn-text').innerText = `Claim: ${pendingReward}`;
-                document.getElementById('reward-btn').classList.add('flex');
-            } else {
-                document.getElementById('reward-btn').classList.add('hidden');
-                document.getElementById('reward-btn').classList.remove('flex');
-            }
-
             renderCartItems(); 
             document.getElementById('checkout-modal').classList.remove('hidden');
             setPayment('Cash'); toggleOrderType('self');
-            
-            // Re-fetch limits to be sure
             if(userProfile.phone) fetchUdhaarInfo();
         }
 
@@ -377,25 +353,75 @@
 
         function renderCoupons() {
             const c = document.getElementById('coupon-list-content');
+            
+            // Show/Hide Remove Button
+            const rmBtn = document.getElementById('remove-coupon-btn');
+            if(appliedCoupon) {
+                rmBtn.classList.remove('hidden');
+                rmBtn.innerText = `Remove: ${appliedCoupon.code}`;
+            } else {
+                rmBtn.classList.add('hidden');
+            }
+
+            let html = '';
+
+            // 1. Render Local Rewards (Personal)
+            const myRewards = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
+            if(myRewards.length > 0) {
+                html += `<p class="text-[10px] uppercase font-bold text-yellow-500 mb-2 mt-2">Your Rewards</p>`;
+                html += myRewards.map((r, idx) => `
+                    <div onclick="applyReward('${r.item}')" class="coupon-row border-yellow-600/50 bg-yellow-900/10">
+                        <span class="font-bold text-yellow-500 text-sm"><i class="fas fa-gift mr-2"></i>${r.item}</span>
+                        <span class="text-yellow-200 text-xs font-bold">Tap to Use</span>
+                    </div>
+                `).join('');
+            }
+
+            // 2. Render Admin Coupons
+            html += `<p class="text-[10px] uppercase font-bold text-gray-500 mb-2 mt-4">Store Coupons</p>`;
             db.collection('coupons').get().then(snap => {
-                if(snap.empty) c.innerHTML = '<p class="text-xs text-gray-500">No active coupons</p>';
-                else c.innerHTML = snap.docs.map(d => {
+                if(snap.empty) html += '<p class="text-xs text-gray-500">No active coupons</p>';
+                else html += snap.docs.map(d => {
                     const cp = d.data();
                     return `<div onclick="applyCoupon('${cp.code}', ${cp.discount}, ${cp.newCustomerOnly})" class="coupon-row">
                         <span class="font-bold text-orange-500 text-sm">${cp.code}</span>
                         <span class="text-green-400 text-xs font-bold">Save ₹${cp.discount}</span>
                     </div>`;
                 }).join('');
+                c.innerHTML = html;
             });
         }
 
         async function applyCoupon(code, discount, newOnly) {
-            if(newOnly) { const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get(); if(!history.empty) return showToast("Only for New Users!"); }
-            appliedCoupon = { code, discount }; updateCheckoutTotal(); 
+            if(newOnly) { 
+                const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get(); 
+                if(!history.empty) return showToast("Only for New Users!"); 
+            }
+            appliedCoupon = { code, discount, type: 'coupon' }; 
+            updateCheckoutTotal(); 
             document.getElementById('coupon-btn-text').innerText = `${code} Applied`;
             document.getElementById('coupon-btn-text').className = "text-green-400";
             document.getElementById('coupon-modal').classList.remove('open');
             showToast("Coupon Applied!");
+        }
+
+        function applyReward(rewardText) {
+            // Apply Reward as a 0-discount coupon (Value is in the item itself)
+            appliedCoupon = { code: `REWARD: ${rewardText}`, discount: 0, type: 'reward', rewardName: rewardText };
+            updateCheckoutTotal();
+            document.getElementById('coupon-btn-text').innerText = "Reward Applied";
+            document.getElementById('coupon-btn-text').className = "text-yellow-400";
+            document.getElementById('coupon-modal').classList.remove('open');
+            showToast("Reward Applied!");
+        }
+
+        function removeCoupon() {
+            appliedCoupon = null;
+            updateCheckoutTotal();
+            document.getElementById('coupon-btn-text').innerText = "Coupon";
+            document.getElementById('coupon-btn-text').className = "text-orange-400";
+            document.getElementById('coupon-modal').classList.remove('open');
+            showToast("Removed");
         }
 
         function saveInstructions() {
@@ -405,21 +431,10 @@
             document.getElementById('instruction-modal').classList.remove('open');
         }
 
-        function claimReward() {
-            const r = localStorage.getItem('sgmc_pending_reward');
-            orderNote += ` [REWARD: ${r}]`;
-            showToast("Reward Added to Note!");
-            localStorage.removeItem('sgmc_pending_reward');
-            let history = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
-            history.push({item: r, date: new Date().toLocaleDateString(), status: 'Claimed'});
-            localStorage.setItem('sgmc_reward_history', JSON.stringify(history));
-            document.getElementById('reward-btn').classList.add('hidden');
-        }
-
         function openRewardHistory() {
             toggleSidebar();
             const list = document.getElementById('reward-history-list');
-            const h = JSON.parse(localStorage.getItem('sgmc_reward_history') || "[]");
+            const h = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
             list.innerHTML = h.length ? h.map(x => `<div class="bg-[#222] p-2 rounded mb-1 flex justify-between"><span>${x.item}</span><span class="text-xs text-gray-500">${x.date}</span></div>`).join('') : "<p class='text-gray-500'>No rewards yet.</p>";
             document.getElementById('rewards-history-modal').classList.add('open');
         }
@@ -438,12 +453,16 @@
             setTimeout(() => {
                 const winItem = wheelItems[Math.floor(Math.random() * wheelItems.length)];
                 document.getElementById('win-text').innerText = `You won: ${winItem}`;
-                // Hide Wheel Modal completely
                 document.getElementById('wheel-modal').classList.remove('open');
-                // Show Win Card
                 document.getElementById('win-card').classList.add('show');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) localStorage.setItem('sgmc_pending_reward', winItem);
+                
+                // Save Reward if it's a "win"
+                if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) {
+                    let rewards = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
+                    rewards.push({ item: winItem, date: new Date().toLocaleDateString() });
+                    localStorage.setItem('sgmc_saved_rewards', JSON.stringify(rewards));
+                }
             }, 4000);
         }
         function closeWheel() { 
@@ -463,27 +482,16 @@
         function updateCartUI(){ 
             const b=document.getElementById('cart-bar'); 
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
-            
-            // STRICT DISPLAY LOGIC
             const isMenuOpen = !document.getElementById('view-menu').classList.contains('hidden');
             const isCheckoutOpen = !document.getElementById('checkout-modal').classList.contains('hidden');
-            
-            if(c > 0 && isMenuOpen && !isCheckoutOpen){ 
-                b.style.display = 'flex'; 
-                document.getElementById('cart-count').innerText=c; 
-                document.getElementById('cart-total').innerText=t; 
-            } else { 
-                b.style.display = 'none'; 
-            } 
+            if(c > 0 && isMenuOpen && !isCheckoutOpen){ b.style.display = 'flex'; document.getElementById('cart-count').innerText=c; document.getElementById('cart-total').innerText=t; } else { b.style.display = 'none'; } 
             saveCartToStorage(); 
         }
 
-        // --- UPDATED TOTAL CALCULATION WITH DELIVERY FEE ---
         function updateCheckoutTotal() { 
             let subtotal=0; 
             for(let k in cart){ subtotal += Number(cart[k].qty) * Number(cart[k].price); } 
             
-            // Delivery Logic
             let deliveryFee = 0;
             let msg = "";
             let btn = document.getElementById('place-order-btn');
@@ -521,13 +529,11 @@
 
             if(finalTotal < 0) finalTotal = 0;
 
-            // UI Updates
             document.getElementById('co-subtotal').innerText = subtotal;
             document.getElementById('co-delivery-fee').innerText = deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`;
             document.getElementById('co-delivery-msg').innerText = msg;
             document.getElementById('checkout-total').innerText = finalTotal; 
             
-            // Show the info box
             document.getElementById('delivery-info-box').classList.remove('hidden');
         }
         
@@ -541,26 +547,16 @@
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.remove('open'); fetchUdhaarInfo(); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.add('open'); toggleSidebar(); }
         
-        // --- NEW: FETCH UDHAAR INFO ---
         function fetchUdhaarInfo() {
             if(!userProfile.phone) return;
-            // Get Limit
             db.collection('user_limits').doc(userProfile.phone).get().then(d => {
-                if(d.exists) {
-                    currentUserLimit = d.data().limit || 0;
-                    if(currentUserLimit > 0) {
-                        document.getElementById('udhaar-limit-display').innerText = `Limit: ₹${currentUserLimit}`;
-                        document.getElementById('udhaar-limit-display').classList.remove('hidden');
-                    }
-                }
+                if(d.exists) { currentUserLimit = d.data().limit || 0; if(currentUserLimit > 0) { document.getElementById('udhaar-limit-display').innerText = `Limit: ₹${currentUserLimit}`; document.getElementById('udhaar-limit-display').classList.remove('hidden'); } }
             });
-            // Get Balance
             db.collection('orders').where('customerPhone','==',userProfile.phone).where('paymentMode','==','Udhaar').get().then(s => { 
                 let d=0; s.forEach(doc => { if(doc.data().status!=='cancelled') d+=doc.data().totalAmount; });
                 db.collection('payments').where('phone','==',userProfile.phone).get().then(p => { 
                     let c=0; p.forEach(doc => { c+=doc.data().amount; }); 
-                    currentUdhaarBalance = d-c;
-                    document.getElementById('my-udhaar-amount').innerText = currentUdhaarBalance;
+                    currentUdhaarBalance = d-c; document.getElementById('my-udhaar-amount').innerText = currentUdhaarBalance;
                 });
             });
         }
@@ -568,15 +564,12 @@
         async function handlePlaceOrderClick() { 
             if(Object.keys(cart).length === 0) return; 
             
-            // Validation for Min Order
             let subtotal=0; for(let k in cart){ subtotal += Number(cart[k].qty) * Number(cart[k].price); }
             if(subtotal < deliveryConfig.minOrder) return showToast(`Min Order ₹${deliveryConfig.minOrder}`);
 
             if(!userProfile.phone) return openProfileEdit(); 
             
-            // --- NEW: UDHAAR LIMIT CHECK ---
             if(selectedPayment === 'Udhaar' && currentUserLimit > 0) {
-                // Approximate new balance check
                 if(currentUdhaarBalance + subtotal > currentUserLimit) {
                     return showToast(`Udhaar Limit Exceeded! (Limit: ₹${currentUserLimit})`);
                 }
@@ -591,10 +584,7 @@
                 if(!flat) return showToast("Enter Flat/Room No."); 
                 finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; 
                 finalCoords = userLocation; 
-                if(shopLocation && userLocation) { 
-                    const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); 
-                    if(d > MAX_DISTANCE_KM) return showToast(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); 
-                } 
+                if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return showToast(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } 
             } else { 
                 const name = document.getElementById('rec-name').value; 
                 const phone = document.getElementById('rec-phone').value; 
@@ -602,9 +592,7 @@
                 const flat = document.getElementById('others-flat').value; 
                 if(!name || !phone || !area || !flat) return showToast("Fill all details"); 
                 if(!otherOrderCoords) return showToast("Click 'Check' to verify area distance."); 
-                recipient = { name, phone }; 
-                finalAddress = `${flat}, ${area}`; 
-                finalCoords = otherOrderCoords; 
+                recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; 
             } 
             
             let deliveryFee = (subtotal < deliveryConfig.freeAbove) ? deliveryConfig.charge : 0;
@@ -615,6 +603,13 @@
             userProfile.lastAddress = finalAddress; 
             localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); 
             
+            // REMOVE REWARD FROM SAVED LIST IF USED
+            if(appliedCoupon && appliedCoupon.type === 'reward') {
+                let rewards = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
+                rewards = rewards.filter(r => r.item !== appliedCoupon.rewardName);
+                localStorage.setItem('sgmc_saved_rewards', JSON.stringify(rewards));
+            }
+
             const shortId = "#" + Date.now().toString().slice(-4); 
             const orderData = { 
                 items: Object.values(cart), 
@@ -658,7 +653,6 @@
         
         function switchTab(t){ 
             localStorage.setItem('activeTab',t); 
-            // Fix: Immediately hide cart if not on menu
             if(t !== 'menu') {
                 document.getElementById('cart-bar').style.display = 'none';
             }
