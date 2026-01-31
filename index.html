@@ -19,8 +19,8 @@
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         
-        /* FIX: Ensure confetti canvas does not block clicks */
-        canvas { pointer-events: none !important; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; }
+        /* FIX: Canvas (Confetti) should NEVER block clicks */
+        canvas { pointer-events: none !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; }
 
         .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
         .glass-card:active { transform: scale(0.98); }
@@ -47,9 +47,8 @@
         #cooking-screen { position: fixed; inset: 0; background: #000; z-index: 250; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
         #cooking-screen.active { transform: translateY(0); }
         
-        /* FIX: Wheel & Win Card now use DISPLAY: NONE to prevent blocking clicks */
-        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.5s; }
-        #wheel-modal.open { display: flex; opacity: 1; }
+        /* FIX: Using display none for modals to prevent click blocking */
+        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; }
         
         .wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; }
         .wheel-outer { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #F97316; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.5); background: #111; }
@@ -57,11 +56,11 @@
         .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: white; border-radius: 50%; z-index: 5; border: 4px solid #F97316; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #fff; z-index: 20; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
         
-        #win-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; opacity: 0; display: none; transition: 0.3s; z-index: 400; width: 85%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-        #win-card.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        #win-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; display: none; opacity: 0; transition: 0.3s; z-index: 400; width: 85%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
+        #win-card.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
-        /* Cart Bar */
-        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
+        /* FIX: Removed 'display: none' from CSS. Will handle via JS/Inline style */
+        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         /* Popups Overlay */
@@ -69,7 +68,6 @@
         .popup-overlay.open { opacity: 1; pointer-events: auto; }
         #coupon-modal { z-index: 160; }
         
-        /* Popup content needs explicit pointer events to be safe */
         .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; pointer-events: auto; }
         .popup-overlay.open .popup-card { transform: scale(1); }
 
@@ -137,7 +135,7 @@
         <div id="udhaar-history" class="space-y-2"></div>
     </div>
 
-    <div id="cart-bar" class="hidden" onclick="openCheckout()">
+    <div id="cart-bar" style="display: none;" onclick="openCheckout()">
         <div class="flex items-center gap-3">
             <div class="bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="cart-count">0</div>
             <div><p class="text-[10px] uppercase font-bold text-orange-100 opacity-80">Total</p><span class="font-bold text-lg">₹<span id="cart-total">0</span></span></div>
@@ -302,8 +300,7 @@
             if(!isDeliveryActive) { document.getElementById('delivery-off-modal').classList.add('open'); return; }
             
             // HIDE CART BAR
-            document.getElementById('cart-bar').classList.add('hidden'); 
-            document.getElementById('cart-bar').classList.remove('flex');
+            document.getElementById('cart-bar').style.display = 'none';
 
             const pendingReward = localStorage.getItem('sgmc_pending_reward');
             if(pendingReward) {
@@ -409,6 +406,9 @@
             setTimeout(() => {
                 const winItem = wheelItems[Math.floor(Math.random() * wheelItems.length)];
                 document.getElementById('win-text').innerText = `You won: ${winItem}`;
+                // Hide Wheel Modal completely so it doesn't block clicks
+                document.getElementById('wheel-modal').classList.remove('open');
+                // Show Win Card
                 document.getElementById('win-card').classList.add('show');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) localStorage.setItem('sgmc_pending_reward', winItem);
@@ -432,18 +432,16 @@
             const b=document.getElementById('cart-bar'); 
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
             
-            // Fix: Check DOM for view-menu visibility instead of unreliable LocalStorage
+            // FIX: Use explicit display style to override CSS
             const isMenuOpen = !document.getElementById('view-menu').classList.contains('hidden');
             const isCheckoutOpen = !document.getElementById('checkout-modal').classList.contains('hidden');
             
             if(c > 0 && isMenuOpen && !isCheckoutOpen){ 
-                b.classList.remove('hidden'); 
-                b.classList.add('flex'); 
+                b.style.display = 'flex'; 
                 document.getElementById('cart-count').innerText=c; 
                 document.getElementById('cart-total').innerText=t; 
             } else { 
-                b.classList.add('hidden'); 
-                b.classList.remove('flex'); 
+                b.style.display = 'none'; 
             } 
             saveCartToStorage(); 
         }
@@ -482,8 +480,7 @@
             localStorage.setItem('activeTab',t); 
             // Fix: Immediately hide cart if not on menu
             if(t !== 'menu') {
-                document.getElementById('cart-bar').classList.add('hidden');
-                document.getElementById('cart-bar').classList.remove('flex');
+                document.getElementById('cart-bar').style.display = 'none';
             }
             ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')}); 
             document.getElementById('view-'+t).classList.remove('hidden'); 
