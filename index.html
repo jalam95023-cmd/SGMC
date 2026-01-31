@@ -19,7 +19,7 @@
         :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
         body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; }
         
-        /* FIX: Canvas (Confetti) should NEVER block clicks */
+        /* STRICT FIX: Canvas & Modals should NEVER block clicks when hidden */
         canvas { pointer-events: none !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; }
 
         .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
@@ -47,8 +47,9 @@
         #cooking-screen { position: fixed; inset: 0; background: #000; z-index: 250; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
         #cooking-screen.active { transform: translateY(0); }
         
-        /* FIX: Using display none for modals to prevent click blocking */
-        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        /* FIX: Ensure Wheel/Win Card use DISPLAY: NONE when closed */
+        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        #wheel-modal.open { display: flex; opacity: 1; pointer-events: auto; }
         
         .wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; }
         .wheel-outer { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #F97316; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.5); background: #111; }
@@ -59,13 +60,13 @@
         #win-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; display: none; opacity: 0; transition: 0.3s; z-index: 400; width: 85%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
         #win-card.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
 
-        /* FIX: Removed 'display: none' from CSS. Will handle via JS/Inline style */
-        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
+        /* Cart Bar */
+        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
         @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         /* Popups Overlay */
-        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .popup-overlay.open { opacity: 1; pointer-events: auto; }
+        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .popup-overlay.open { display: flex; opacity: 1; pointer-events: auto; }
         #coupon-modal { z-index: 160; }
         
         .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; pointer-events: auto; }
@@ -248,6 +249,22 @@
                 <button onclick="openCouponModal()" class="py-3 rounded-xl border border-dashed border-[#444] text-orange-400 text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-ticket-alt"></i> <span id="coupon-btn-text">Coupon</span></button>
             </div>
 
+            <div id="delivery-info-box" class="bg-gray-800/50 p-3 rounded-xl mb-4 border border-gray-700/50 hidden">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-gray-400">Subtotal</span>
+                    <span class="text-white">₹<span id="co-subtotal">0</span></span>
+                </div>
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-gray-400">Delivery Fee</span>
+                    <span class="text-orange-400" id="co-delivery-fee">₹0</span>
+                </div>
+                <div class="flex justify-between text-xs mb-1 hidden" id="co-discount-row">
+                    <span class="text-green-400">Discount</span>
+                    <span class="text-green-400">-₹<span id="co-discount">0</span></span>
+                </div>
+                <div class="text-[10px] text-gray-500 mt-1 border-t border-gray-700 pt-1 italic" id="co-delivery-msg"></div>
+            </div>
+
             <div><label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Payment</label><div class="grid grid-cols-3 gap-3"><button onclick="setPayment('Cash')" id="pay-cash" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Cash</button><button onclick="setPayment('UPI')" id="pay-upi" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">UPI</button><button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Udhaar</button></div></div>
             
             <div class="flex justify-between items-center pt-4 border-t border-[#333] mt-4">
@@ -273,6 +290,9 @@
         let appliedCoupon = null;
         let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"];
         let orderNote = "";
+        
+        // --- DELIVERY CONFIG STATE ---
+        let deliveryConfig = { minOrder: 0, charge: 0, freeAbove: 0 };
 
         function init() { 
             loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); fetchRewardsData(); fetchDeliveryConfig();
@@ -287,7 +307,14 @@
         function fetchDeliveryConfig() { 
             db.collection('settings').doc('delivery_config').onSnapshot(d => { 
                 if(d.exists) {
-                    isDeliveryActive = d.data().isActive !== false;
+                    const data = d.data();
+                    isDeliveryActive = data.isActive !== false;
+                    // LOAD DELIVERY SETTINGS
+                    deliveryConfig = {
+                        minOrder: data.minOrder || 0,
+                        charge: data.charge || 0,
+                        freeAbove: data.freeAbove || 99999
+                    };
                     const badge = document.getElementById('header-status');
                     if(isDeliveryActive) { badge.innerText = "● LIVE STORE"; badge.className="text-[10px] text-green-500 font-bold tracking-wide pl-0.5"; }
                     else { badge.innerText = "● DELIVERY PAUSED"; badge.className="text-[10px] text-red-500 font-bold tracking-wide pl-0.5"; }
@@ -406,7 +433,7 @@
             setTimeout(() => {
                 const winItem = wheelItems[Math.floor(Math.random() * wheelItems.length)];
                 document.getElementById('win-text').innerText = `You won: ${winItem}`;
-                // Hide Wheel Modal completely so it doesn't block clicks
+                // Hide Wheel Modal completely
                 document.getElementById('wheel-modal').classList.remove('open');
                 // Show Win Card
                 document.getElementById('win-card').classList.add('show');
@@ -432,7 +459,7 @@
             const b=document.getElementById('cart-bar'); 
             let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
             
-            // FIX: Use explicit display style to override CSS
+            // STRICT DISPLAY LOGIC
             const isMenuOpen = !document.getElementById('view-menu').classList.contains('hidden');
             const isCheckoutOpen = !document.getElementById('checkout-modal').classList.contains('hidden');
             
@@ -445,7 +472,59 @@
             } 
             saveCartToStorage(); 
         }
-        function updateCheckoutTotal() { let t=0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } if(appliedCoupon) t -= appliedCoupon.discount; if(t<0) t=0; document.getElementById('checkout-total').innerText = t; }
+
+        // --- UPDATED TOTAL CALCULATION WITH DELIVERY FEE ---
+        function updateCheckoutTotal() { 
+            let subtotal=0; 
+            for(let k in cart){ subtotal += Number(cart[k].qty) * Number(cart[k].price); } 
+            
+            // Delivery Logic
+            let deliveryFee = 0;
+            let msg = "";
+            let btn = document.getElementById('place-order-btn');
+
+            if(subtotal < deliveryConfig.minOrder) {
+                msg = `Min Order is ₹${deliveryConfig.minOrder}`;
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.innerText = `Min ₹${deliveryConfig.minOrder}`;
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerText = "Place Order";
+                
+                if(subtotal < deliveryConfig.freeAbove) {
+                    deliveryFee = deliveryConfig.charge;
+                    msg = `Add ₹${deliveryConfig.freeAbove - subtotal} more for Free Delivery`;
+                } else {
+                    msg = "Free Delivery Applied!";
+                    deliveryFee = 0;
+                }
+            }
+
+            let finalTotal = subtotal + deliveryFee;
+            
+            if(appliedCoupon) {
+                finalTotal -= appliedCoupon.discount;
+                document.getElementById('co-discount-row').classList.remove('hidden');
+                document.getElementById('co-discount-row').classList.add('flex');
+                document.getElementById('co-discount').innerText = appliedCoupon.discount;
+            } else {
+                document.getElementById('co-discount-row').classList.add('hidden');
+                document.getElementById('co-discount-row').classList.remove('flex');
+            }
+
+            if(finalTotal < 0) finalTotal = 0;
+
+            // UI Updates
+            document.getElementById('co-subtotal').innerText = subtotal;
+            document.getElementById('co-delivery-fee').innerText = deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`;
+            document.getElementById('co-delivery-msg').innerText = msg;
+            document.getElementById('checkout-total').innerText = finalTotal; 
+            
+            // Show the info box
+            document.getElementById('delivery-info-box').classList.remove('hidden');
+        }
         
         function loadCartFromStorage(){const s=localStorage.getItem('sgmc_cart');if(s){cart=JSON.parse(s);updateCartUI()}}
         function saveCartToStorage(){localStorage.setItem('sgmc_cart',JSON.stringify(cart))}
@@ -456,7 +535,71 @@
         function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; } else setTimeout(()=>document.getElementById('login-modal').classList.add('open'),1000); }
         function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.remove('open'); } }
         function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.add('open'); toggleSidebar(); }
-        async function handlePlaceOrderClick() { if(Object.keys(cart).length === 0) return; if(!userProfile.phone) return openProfileEdit(); const isSelf = !document.getElementById('form-self').classList.contains('hidden'); let finalAddress="", finalCoords=null, recipient=null; if(isSelf) { if(!userLocation && shopLocation) return showToast("Click Detect first."); const flat = document.getElementById('self-flat').value.trim(); const gpsTxt = document.getElementById('gps-address-text').innerText; if(!flat) return showToast("Enter Flat/Room No."); finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; finalCoords = userLocation; if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return showToast(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } } else { const name = document.getElementById('rec-name').value; const phone = document.getElementById('rec-phone').value; const area = document.getElementById('search-area').value; const flat = document.getElementById('others-flat').value; if(!name || !phone || !area || !flat) return showToast("Fill all details"); if(!otherOrderCoords) return showToast("Click 'Check' to verify area distance."); recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; } let t = 0; for(let k in cart){ t += Number(cart[k].qty) * Number(cart[k].price); } let finalAmount = t; if(appliedCoupon) finalAmount -= appliedCoupon.discount; if(finalAmount < 0) finalAmount = 0; userProfile.lastAddress = finalAddress; localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); const shortId = "#" + Date.now().toString().slice(-4); const orderData = { items: Object.values(cart), totalAmount: finalAmount, originalTotal: t, coupon: appliedCoupon, paymentMode: selectedPayment, paymentVerified: false, status: 'pending', customerName: userProfile.name, customerPhone: userProfile.phone, customerAddress: finalAddress, orderNote: orderNote, customerCoordinates: finalCoords, recipient: recipient, shortId: shortId, timestamp: firebase.firestore.FieldValue.serverTimestamp() }; placeOrderDB(orderData); }
+        
+        async function handlePlaceOrderClick() { 
+            if(Object.keys(cart).length === 0) return; 
+            
+            // Final Validation for Min Order
+            let subtotal=0; for(let k in cart){ subtotal += Number(cart[k].qty) * Number(cart[k].price); }
+            if(subtotal < deliveryConfig.minOrder) return showToast(`Min Order ₹${deliveryConfig.minOrder}`);
+
+            if(!userProfile.phone) return openProfileEdit(); 
+            const isSelf = !document.getElementById('form-self').classList.contains('hidden'); 
+            let finalAddress="", finalCoords=null, recipient=null; 
+            
+            if(isSelf) { 
+                if(!userLocation && shopLocation) return showToast("Click Detect first."); 
+                const flat = document.getElementById('self-flat').value.trim(); 
+                if(!flat) return showToast("Enter Flat/Room No."); 
+                finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; 
+                finalCoords = userLocation; 
+                if(shopLocation && userLocation) { 
+                    const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); 
+                    if(d > MAX_DISTANCE_KM) return showToast(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); 
+                } 
+            } else { 
+                const name = document.getElementById('rec-name').value; 
+                const phone = document.getElementById('rec-phone').value; 
+                const area = document.getElementById('search-area').value; 
+                const flat = document.getElementById('others-flat').value; 
+                if(!name || !phone || !area || !flat) return showToast("Fill all details"); 
+                if(!otherOrderCoords) return showToast("Click 'Check' to verify area distance."); 
+                recipient = { name, phone }; 
+                finalAddress = `${flat}, ${area}`; 
+                finalCoords = otherOrderCoords; 
+            } 
+            
+            // Final Calculation
+            let deliveryFee = (subtotal < deliveryConfig.freeAbove) ? deliveryConfig.charge : 0;
+            let finalAmount = subtotal + deliveryFee;
+            if(appliedCoupon) finalAmount -= appliedCoupon.discount; 
+            if(finalAmount < 0) finalAmount = 0; 
+            
+            userProfile.lastAddress = finalAddress; 
+            localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); 
+            
+            const shortId = "#" + Date.now().toString().slice(-4); 
+            const orderData = { 
+                items: Object.values(cart), 
+                totalAmount: finalAmount, 
+                subTotal: subtotal,
+                deliveryFee: deliveryFee,
+                coupon: appliedCoupon, 
+                paymentMode: selectedPayment, 
+                paymentVerified: false, 
+                status: 'pending', 
+                customerName: userProfile.name, 
+                customerPhone: userProfile.phone, 
+                customerAddress: finalAddress, 
+                orderNote: orderNote, 
+                customerCoordinates: finalCoords, 
+                recipient: recipient, 
+                shortId: shortId, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            }; 
+            placeOrderDB(orderData); 
+        }
+
         function placeOrderDB(data) { document.getElementById('place-order-btn').innerText = "Processing..."; db.collection('orders').add(data).then(() => { cart = {}; orderNote=""; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); document.getElementById('place-order-btn').innerHTML = `Place Order`; document.getElementById('cooking-screen').classList.add('active'); setTimeout(() => { document.getElementById('cooking-screen').classList.remove('active'); openWheel(); }, 2000); }).catch((err) => { showToast("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `Place Order`; }); }
         
         function fetchMyHistory() { if(!userProfile.phone) return; const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => { if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders yet.</p>'; return; } const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0)); cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data()); l.innerHTML = docs.map(doc => { const d = doc.data(); const canCancel = d.status === 'pending'; const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div>${canCancel ? `<button onclick="event.stopPropagation(); cancelOrder('${doc.id}')" class="mt-2 text-red-500 text-xs border border-red-500 px-3 py-1 rounded">Cancel</button>` : ''}</div>`; }).join(''); }); }
