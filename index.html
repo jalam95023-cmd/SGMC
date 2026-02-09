@@ -543,9 +543,53 @@
         function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>{ b.classList.remove('bg-orange-600','text-white'); b.classList.add('bg-gray-800','text-gray-300'); }); document.getElementById('pay-'+m.toLowerCase()).classList.add('bg-orange-600','text-white'); }
         function toggleOrderType(t){const s=t==='self';document.getElementById('tab-self').className=s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";document.getElementById('tab-others').className=!s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";document.getElementById('form-self').classList.toggle('hidden',!s);document.getElementById('form-others').classList.toggle('hidden',s);}
         function fetchShopLocation(){db.collection('settings').doc('config').get().then(d=>{if(d.exists&&d.data().location)shopLocation=d.data().location;});}
-        function loadProfile() { const s=localStorage.getItem('sgmc_customer_profile'); if(s) { userProfile=JSON.parse(s); document.getElementById('sidebar-name').innerText=userProfile.name; fetchUdhaarInfo(); } else setTimeout(()=>document.getElementById('login-modal').classList.add('open'),1000); }
-        function saveProfile() { const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; if(n&&p.length>9){ userProfile={name:n,phone:p}; localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); document.getElementById('sidebar-name').innerText=n; document.getElementById('login-modal').classList.remove('open'); fetchUdhaarInfo(); } }
-        function openProfileEdit() { document.getElementById('user-name').value=userProfile.name||""; document.getElementById('user-phone').value=userProfile.phone||""; document.getElementById('login-modal').classList.add('open'); toggleSidebar(); }
+        // --- NEW UPDATED PROFILE FUNCTIONS WITH ONLINE STATUS ---
+        
+        function loadProfile() { 
+            const s=localStorage.getItem('sgmc_customer_profile'); 
+            if(s) { 
+                userProfile=JSON.parse(s); 
+                document.getElementById('sidebar-name').innerText=userProfile.name; 
+                fetchUdhaarInfo(); 
+                startHeartbeat(); // Yahan se Online Signal shuru hoga
+            } else {
+                setTimeout(()=>document.getElementById('login-modal').classList.add('open'),1000); 
+            }
+        }
+
+        function saveProfile() { 
+            const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; 
+            if(n&&p.length>9){ 
+                userProfile={name:n,phone:p}; 
+                localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); 
+                document.getElementById('sidebar-name').innerText=n; 
+                document.getElementById('login-modal').classList.remove('open'); 
+                fetchUdhaarInfo(); 
+                startHeartbeat(); // Login karte hi Online Signal shuru
+            } 
+        }
+
+        function openProfileEdit() { 
+            document.getElementById('user-name').value=userProfile.name||""; 
+            document.getElementById('user-phone').value=userProfile.phone||""; 
+            document.getElementById('login-modal').classList.add('open'); 
+            toggleSidebar(); 
+        }
+
+        // Ye wo naya function hai jo har 2 minute me "I am Online" bolega
+        function startHeartbeat() {
+            if(!userProfile.phone) return;
+            const update = () => {
+                db.collection('users').doc(userProfile.phone).set({
+                    lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                    name: userProfile.name, // Name bhi update rahega
+                    phone: userProfile.phone
+                }, {merge:true});
+            };
+            update(); // Turant update karein
+            // Har 2 minute (120000ms) me repeat karein
+            if(!window.heartbeatInterval) window.heartbeatInterval = setInterval(update, 120000);
+        }
         
         function fetchUdhaarInfo() {
             if(!userProfile.phone) return;
