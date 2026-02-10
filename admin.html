@@ -635,6 +635,60 @@
             const due = document.getElementById('up-udhaar').innerText;
             openSettle(currentProfilePhone, name, due);
         }
+// --- RIDER MANAGEMENT LOGIC ---
+        function renderRiders() {
+            const list = document.getElementById('riders-list-container');
+            list.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
+            
+            db.collection('riders').onSnapshot(snap => {
+                if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500">No riders yet.</p>'; return; }
+                
+                list.innerHTML = snap.docs.map(doc => {
+                    const r = doc.data();
+                    const cash = r.cashInHand || 0;
+                    return `
+                    <div class="aesthetic-card p-4 flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-lg text-white">${r.name}</h3>
+                                <span class="text-[10px] bg-gray-800 px-2 rounded text-gray-400">${r.phone}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Status: <span class="${r.isOnline?'text-green-500':'text-red-500'} font-bold">${r.isOnline?'ONLINE':'OFFLINE'}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] text-gray-400 uppercase">Cash Collected</p>
+                            <p class="text-xl font-bold ${cash>0?'text-red-400':'text-green-500'}">₹${cash}</p>
+                            ${cash > 0 ? `<button onclick="settleRiderCash('${doc.id}', ${cash})" class="mt-2 bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold shadow">COLLECT CASH</button>` : ''}
+                        </div>
+                    </div>`;
+                }).join('');
+            });
+        }
+
+        function addNewRider() {
+            const name = document.getElementById('new-rider-name').value;
+            const phone = document.getElementById('new-rider-phone').value;
+            if(name && phone) {
+                db.collection('riders').doc(phone).set({
+                    name, phone, cashInHand: 0, isOnline: false, joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    document.getElementById('add-rider-modal').classList.remove('open');
+                    showToast("Rider Added Successfully");
+                });
+            } else showToast("Enter details");
+        }
+
+        function settleRiderCash(phone, amount) {
+            if(confirm(`Collect ₹${amount} from rider?`)) {
+                // 1. Log the settlement
+                db.collection('payments').add({
+                    type: 'rider_settlement', riderPhone: phone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                // 2. Reset Rider Balance
+                db.collection('riders').doc(phone).update({ cashInHand: 0 }).then(() => showToast("Cash Settled"));
+            }
+        }
+        
         // --- INITIALIZATION ---
         function init() {
             // Load Sound Setting from LocalStorage
