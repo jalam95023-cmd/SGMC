@@ -708,7 +708,38 @@
             if(t==='udhaar')fetchMyUdhaar(); 
         }
 
-        function openOrderDetail(id){const d=cachedOrders[id];if(!d)return;document.getElementById('od-date').innerText=d.timestamp?new Date(d.timestamp.toDate()).toLocaleString():'';document.getElementById('od-total').innerText='₹'+d.totalAmount;document.getElementById('od-items').innerHTML=d.items.map(i=>`<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)"><span>${i.name} x${i.qty}</span><span>₹${i.qty*i.price}</span></div>`).join('');document.getElementById('order-detail-modal').classList.add('open')}
+        function openOrderDetail(id){
+            const d = cachedOrders[id];
+            if(!d) return;
+            
+            document.getElementById('od-date').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
+            document.getElementById('od-total').innerText = '₹' + d.totalAmount;
+            
+            // --- NEW: RIDER INFO CARD (Agar Rider Assign ho gaya hai) ---
+            let riderHtml = '';
+            if(d.riderName && (d.status === 'out_delivery' || d.status === 'completed')) {
+                riderHtml = `
+                <div class="bg-gray-800 p-3 rounded-xl mb-4 border border-gray-700 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold">Delivery Partner</p>
+                        <p class="text-sm font-bold text-white">${d.riderName}</p>
+                    </div>
+                    <a href="tel:${d.riderPhone}" class="bg-green-600/20 text-green-500 border border-green-500/50 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
+                        <i class="fas fa-phone-alt"></i> Call
+                    </a>
+                </div>`;
+            }
+            // -----------------------------------------------------------
+
+            document.getElementById('od-items').innerHTML = riderHtml + d.items.map(i => 
+                `<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)">
+                    <span>${i.name} <span class="text-gray-500">x${i.qty}</span></span>
+                    <span>₹${i.qty*i.price}</span>
+                </div>`
+            ).join('');
+            
+            document.getElementById('order-detail-modal').classList.add('open');
+        }
         function shareApp(){ const url = window.location.href; if(navigator.share){ navigator.share({title: 'SGMC Chai', text: 'Order Chai & Snacks Online!', url: url}); } else { showToast("Link copied!"); } }
 
         init();
