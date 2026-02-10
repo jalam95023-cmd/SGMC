@@ -250,7 +250,26 @@
             </div>
             <div id="users-list-container" class="space-y-2 pb-20"></div>
         </div>
-        ```
+       <div id="view-riders" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-bold text-yellow-500">Rider Force</h2>
+                <button onclick="document.getElementById('add-rider-modal').classList.add('open')" class="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-xl text-xs font-bold">+ Add Rider</button>
+            </div>
+            
+            <div id="riders-list-container" class="grid gap-3"></div>
+        </div>
+
+        <div id="add-rider-modal" class="popup-modal">
+            <div class="aesthetic-card w-full max-w-xs p-6">
+                <h3 class="font-bold text-lg mb-4 text-center">New Rider</h3>
+                <input id="new-rider-name" placeholder="Rider Name" class="mb-3">
+                <input id="new-rider-phone" type="tel" placeholder="Phone Number" class="mb-4">
+                <div class="flex gap-2">
+                    <button onclick="document.getElementById('add-rider-modal').classList.remove('open')" class="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 font-bold">Cancel</button>
+                    <button onclick="addNewRider()" class="flex-1 py-3 rounded-xl bg-yellow-600 text-black font-bold">Add</button>
+                </div>
+            </div>
+        </div> 
 
 <div id="main-content">
     <div id="view-live" ...></div>
