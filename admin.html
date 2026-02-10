@@ -1207,31 +1207,35 @@
         function toggleBusyMode() { db.collection('settings').doc('config').get().then(d => { const s = d.exists ? d.data().isBusy : false; db.collection('settings').doc('config').set({isBusy: !s}, {merge:true}); updateBusyUI(!s); }); }
         function updateBusyUI(isBusy) { const b = document.getElementById('sidebar-busy-btn'); if(b) { b.innerText = isBusy ? "ON" : "OFF"; b.className = isBusy ? "px-3 py-1 rounded text-xs font-bold bg-orange-500 text-white shadow" : "px-3 py-1 rounded text-xs font-bold bg-gray-700 text-gray-400 shadow"; } }
         function switchView(v) { 
-            if (['live', 'history', 'udhaar'].includes(v)) localStorage.setItem('admin_active_tab', v); 
+            // 1. Save active tab (Ab Riders bhi save hoga)
+            if (['live', 'history', 'udhaar', 'riders'].includes(v)) localStorage.setItem('admin_active_tab', v); 
             
-            // Yahan humne 'users' add kar diya hai taaki baaki tabs band ho jayein
-            ['live', 'history', 'udhaar', 'messages', 'users'].forEach(x => { 
+            // 2. Hide ALL views (Users aur Riders dono ko chhupana zaroori hai)
+            ['live', 'history', 'udhaar', 'messages', 'users', 'riders'].forEach(x => { 
                 const el = document.getElementById('view-' + x);
                 if(el) el.classList.add('hidden'); 
                 const tab = document.getElementById('tab-' + x);
                 if(tab) tab.classList.remove('tab-active'); 
             }); 
             
+            // 3. Show SELECTED view
             const viewEl = document.getElementById('view-' + v);
             if(viewEl) viewEl.classList.remove('hidden'); 
             
             const tabEl = document.getElementById('tab-' + v);
             if(tabEl) tabEl.classList.add('tab-active'); 
             
-            // Logic call karein
+            // 4. Run Logic
             if (v === 'history') renderHistory(); 
             if (v === 'udhaar') renderUdhaar(); 
             if (v === 'messages') renderMessagesList(); 
-            if (v === 'users') renderUsers(); // Naya function call
+            if (v === 'users') renderUsers();
+            if (v === 'riders') renderRiders(); // <-- Ye Nayi Line hai
 
-            // Dashboard aur Tabs ko chhupana agar Messages ya Users khula hai
-            document.getElementById('dashboard-section').style.display = (v === 'messages' || v === 'users') ? 'none' : 'grid'; 
-            document.getElementById('tabs-section').style.display = (v === 'messages' || v === 'users') ? 'none' : 'flex'; 
+            // 5. Hide Dashboard if not main tabs
+            const isMainTab = ['live', 'history', 'udhaar'].includes(v);
+            document.getElementById('dashboard-section').style.display = isMainTab ? 'grid' : 'none'; 
+            document.getElementById('tabs-section').style.display = isMainTab ? 'flex' : 'none'; 
         }
         
         init();
