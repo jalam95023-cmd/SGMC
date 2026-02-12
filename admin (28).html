@@ -235,7 +235,15 @@
             <input type="text" id="search-udhaar" onkeyup="renderUdhaar()" placeholder="Search Udhaar..." class="mb-3">
             <div id="udhaar-list" class="space-y-2"></div>
         </div>
-
+        
+        <div id="view-users" class="hidden space-y-3">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-indigo-400">Customer 360°</h2>
+                <input type="text" id="search-users" onkeyup="renderUsers()" placeholder="Search..." class="bg-gray-900 border border-gray-800 rounded px-3 py-1 text-sm w-40 text-white outline-none focus:border-indigo-500">
+            </div>
+    
+            <div id="users-list-container" class="space-y-2 pb-20"></div>
+        </div>
         <div id="view-messages" class="hidden space-y-3">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-orange-500">Inbox</h2>
