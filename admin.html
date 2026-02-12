@@ -1174,21 +1174,50 @@
             document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g, '')}`; 
             document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
             
-            renderFullModalItems(isHistorical);
-
+            // REPLACE "ELSE" BLOCK IN openFullModal
             const c = document.getElementById('fm-controls');
-            if (isHistorical) { c.innerHTML = ""; } else {
-                c.innerHTML = `
-                <div class="grid grid-cols-4 gap-2">
-                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Pending</button>
-                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Cooking</button>
-                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button>
+            
+            if (isHistorical) { 
+                c.innerHTML = ""; 
+            } else {
+                // 1. Status Buttons
+                let controlsHtml = `
+                <div class="grid grid-cols-4 gap-2 mb-3">
+                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='pending'?'ring-2 ring-orange-500':''}">Pending</button>
+                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='cooking'?'ring-2 ring-orange-500':''}">Cooking</button>
+                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='ready'?'ring-2 ring-orange-500':''}">Ready</button>
                     <button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button>
-                </div>
-                <button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
+                </div>`;
+                
+                // 2. Rider Tracking UI (If Assigned/On Way)
+                if (d.status === 'out_delivery' && d.riderPhone) {
+                    // Fetch Rider Location logic here requires async, so we use a simple link for now
+                    // In a real app, we'd fetch db.collection('riders').doc(d.riderPhone)
+                    controlsHtml += `
+                    <div class="p-3 bg-blue-900/20 border border-blue-500/30 rounded-xl mb-3 animate-pulse">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-blue-400 font-bold uppercase">Order on Way</p>
+                                <p class="text-sm font-bold text-white"><i class="fas fa-motorcycle mr-1"></i> ${d.riderName}</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <a href="tel:${d.riderPhone}" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white"><i class="fas fa-phone"></i></a>
+                                <button onclick="openRiderDetails('${d.riderPhone}')" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white"><i class="fas fa-map-marker-alt"></i></button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+
+                // 3. Delete Button
+                controlsHtml += `<button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
+                
+                c.innerHTML = controlsHtml;
+
+                // 4. Inject Assign Option (Async) if Ready/Cooking AND not assigned yet
+                if ((d.status === 'ready' || d.status === 'cooking') && d.status !== 'out_delivery') {
+                    showAssignOption(currentOpenOrder.id);
+                }
             }
-            document.getElementById('order-full-modal').classList.add('open');
-        }
 
         function renderFullModalItems(isHistorical) {
             const l = document.getElementById('fm-items-list'); let t = 0;
