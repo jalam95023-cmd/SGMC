@@ -131,6 +131,9 @@
 </head>
 <body class="p-4 max-w-2xl mx-auto" onclick="stopAlarmInteraction()">
 
+    <!-- CRITICAL FIX: Add the missing audio element -->
+    <audio id="order-sound" style="display: none;"></audio>
+
     <div class="flex justify-between items-center mb-6 relative z-50">
         <div>
             <h1 class="text-2xl font-bold text-orange-500">SGMC Admin</h1>
@@ -248,210 +251,361 @@
             <div id="udhaar-list" class="space-y-2"></div>
         </div>
 <div id="view-users" class="hidden space-y-3">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-indigo-400">Customer 360°</h2>
-                <input type="text" id="search-users" onkeyup="renderUsers()" placeholder="Search..." class="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-sm w-40 text-white outline-none focus:border-indigo-500">
-            </div>
-            <div id="users-list-container" class="space-y-2 pb-20"></div>
-        </div>
-       <div id="view-riders" class="hidden space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold text-yellow-500">Rider Force</h2>
-                <button onclick="document.getElementById('add-rider-modal').classList.add('open')" class="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-xl text-xs font-bold">+ Add Rider</button>
-            </div>
-            
-            <div id="riders-list-container" class="grid gap-3"></div>
-        </div>
-
-        <div id="add-rider-modal" class="popup-modal">
-            <div class="aesthetic-card w-full max-w-xs p-6">
-                <h3 class="font-bold text-lg mb-4 text-center">New Rider</h3>
-                <input id="new-rider-name" placeholder="Rider Name" class="mb-3">
-                <input id="new-rider-phone" type="tel" placeholder="Phone Number" class="mb-4">
-                <div class="flex gap-2">
-                    <button onclick="document.getElementById('add-rider-modal').classList.remove('open')" class="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 font-bold">Cancel</button>
-                    <button onclick="addNewRider()" class="flex-1 py-3 rounded-xl bg-yellow-600 text-black font-bold">Add</button>
-                </div>
-            </div>
-        </div> 
-
-<div id="main-content">
-    <div id="view-live" ...></div>
-    <div id="view-history" ...></div>
-    <div id="view-udhaar" ...></div>
-
-    <div id="view-users" class="hidden space-y-3">
-         ...
+    <input type="text" id="search-users" onkeyup="renderUsers()" placeholder="Search Users..." class="mb-3 p-3 bg-gray-800 text-white rounded-xl border border-gray-700">
+    <div id="users-list-container" class="space-y-2">
+        <p class="text-center opacity-50 mt-10">Loading users...</p>
     </div>
-
-    <div id="view-messages" ...></div> </div>
-        <div id="view-messages" class="hidden space-y-3">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-orange-500">Inbox</h2>
-                <button onclick="switchView('live')" class="text-gray-500 text-sm">Close</button>
+</div>
+        <div id="view-riders" class="hidden space-y-3">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-bold text-white">Delivery Partners</h3>
+                <button onclick="document.getElementById('add-rider-modal').classList.add('open')" class="bg-green-600 text-white font-bold px-4 py-2 rounded-lg text-sm">
+                    <i class="fas fa-plus mr-1"></i> Add Rider
+                </button>
             </div>
-            <div id="messages-list" class="space-y-2"></div>
+            <div id="riders-list-container" class="space-y-2">
+                <p class="text-center opacity-50 mt-10">Loading riders...</p>
+            </div>
+        </div>
+
+        <div id="view-messages" class="hidden">
+            <div id="messages-list"></div>
         </div>
     </div>
 
-    <div id="custom-prompt" class="popup-modal"><div class="aesthetic-card w-full max-w-xs p-6"><h3 id="prompt-title" class="font-bold text-lg mb-4 text-center">Input</h3><input id="prompt-input" type="text" class="w-full bg-gray-900 border border-gray-800 rounded p-3 text-white mb-4 text-center"><div class="flex gap-2"><button onclick="document.getElementById('custom-prompt').classList.remove('open')" class="flex-1 py-2 rounded-xl bg-gray-800 text-gray-400 font-bold">Cancel</button><button id="prompt-confirm-btn" class="flex-1 py-2 rounded-xl bg-orange-600 text-white font-bold shadow-lg">Save</button></div></div></div>
-    <div id="custom-confirm" class="popup-modal"><div class="aesthetic-card w-full max-w-xs text-center p-6"><div class="w-12 h-12 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4 text-xl"><i class="fas fa-trash"></i></div><h3 class="font-bold text-lg mb-2" id="confirm-title">Are you sure?</h3><div class="flex gap-3 mt-6"><button onclick="closeConfirm(false)" class="flex-1 py-2.5 rounded-xl border border-gray-700 font-bold text-xs hover:bg-gray-800">No, Keep</button><button onclick="closeConfirm(true)" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-bold text-xs shadow-lg">Yes, Delete</button></div></div></div>
+    <div id="toast-container"></div>
 
-    <div id="delivery-modal" class="popup-modal"><div class="aesthetic-card w-full max-w-xs p-6"><h3 class="font-bold text-lg mb-4">Delivery Settings</h3><label class="text-xs text-gray-500">Min Order Value (₹)</label><input type="number" id="del-min" class="mb-2"><label class="text-xs text-gray-500">Delivery Charge (₹)</label><input type="number" id="del-charge" class="mb-2"><label class="text-xs text-gray-500">Free Delivery Above (₹)</label><input type="number" id="del-free" class="mb-4"><div class="flex gap-2"><button onclick="document.getElementById('delivery-modal').classList.remove('open')" class="flex-1 bg-gray-800 py-2 rounded">Cancel</button><button onclick="saveDeliverySettings()" class="flex-1 bg-green-600 py-2 rounded font-bold">Save</button></div></div></div>
-
-    <div id="rewards-modal" class="fs-modal p-4"><div class="flex justify-between items-center mb-6"><h3 class="font-bold text-xl">Rewards & Offers</h3><button onclick="document.getElementById('rewards-modal').classList.remove('open')"><i class="fas fa-times"></i></button></div><div class="aesthetic-card mb-4"><h4 class="font-bold text-orange-500 mb-2">Manage Spin Wheel Items</h4><div id="wheel-inputs" class="grid grid-cols-2 gap-2 mb-2"></div><button onclick="saveWheelSettings()" class="w-full bg-orange-600 py-2 rounded text-sm font-bold">Save Wheel Items</button></div><div class="aesthetic-card"><h4 class="font-bold text-green-500 mb-2">Create Coupon</h4><input id="coup-code" placeholder="Code (e.g. WELCOME50)" class="uppercase"><input id="coup-amt" type="number" placeholder="Discount Amount (₹)"><div class="flex items-center gap-2 mb-4"><input type="checkbox" id="coup-new" class="w-4 h-4"><span class="text-sm">New Customers Only</span></div><button onclick="createCoupon()" class="w-full bg-green-600 py-2 rounded text-sm font-bold mb-4">Create Coupon</button><h5 class="text-xs text-gray-500 uppercase font-bold mb-2">Active Coupons</h5><div id="coupons-list" class="space-y-2"></div></div></div>
-
-    <div id="coupon-stats-modal" class="hidden fixed inset-0 bg-black/95 z-[160] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Coupon Statistics</h3><button onclick="document.getElementById('coupon-stats-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="coupon-stats-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
-
-    <div id="order-full-modal" class="fs-modal p-4">
-        <div class="max-w-2xl mx-auto min-h-screen flex flex-col">
-            <div class="flex justify-between items-center mb-6">
-                <button onclick="closeFullModal()" class="text-gray-400 flex items-center gap-2"><i class="fas fa-arrow-left"></i> Back</button>
-                <span id="fm-status-badge" class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-800 text-white">STATUS</span>
-            </div>
-            
-            <div class="aesthetic-card mb-4 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
-                <h1 class="text-2xl font-bold" id="fm-name">Customer</h1>
-                <p class="text-sm opacity-70" id="fm-phone">Phone</p>
-                <div class="mt-2" id="fm-payment-info"></div>
-                
-                <div id="fm-coupon-box" class="hidden mt-2 p-2 bg-green-900/20 border border-green-500/30 rounded-lg flex justify-between items-center">
-                    <span class="text-green-400 font-bold text-xs"><i class="fas fa-ticket-alt mr-1"></i> Coupon: <span id="fm-coupon-code"></span></span>
-                    <span class="text-green-400 font-bold text-sm">-₹<span id="fm-coupon-amt">0</span></span>
-                </div>
-
-                <div id="fm-recipient-box" class="hidden mt-3 p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg"><p class="text-xs text-blue-400 font-bold"><i class="fas fa-gift mr-1"></i> Delivery For</p><p class="text-sm" id="fm-recipient">Name (Phone)</p></div>
-                <p class="text-xs opacity-50 mt-2" id="fm-time">Time</p>
-                <p class="text-xs text-yellow-500 italic mt-1 hidden" id="fm-note"></p>
-                <p class="text-sm mt-3 border-t border-gray-700 pt-2 flex items-center gap-2" id="fm-address" style="border-color:var(--border)"><i class="fas fa-map-marker-alt text-red-500"></i> Address</p>
-            </div>
-
-            <div class="grid grid-cols-3 gap-3 mb-6">
-                <a id="fm-btn-call" href="#" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-phone text-green-500 text-xl mb-1"></i><span class="text-[10px]">Call</span></a>
-                <a id="fm-btn-wa" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fab fa-whatsapp text-green-500 text-xl mb-1"></i><span class="text-[10px]">Chat</span></a>
-                <a id="fm-btn-map" href="#" target="_blank" class="aesthetic-card flex flex-col items-center justify-center p-3 hover:bg-gray-800/50"><i class="fas fa-map-marker-alt text-blue-500 text-xl mb-1"></i><span class="text-[10px]">Map</span></a>
-            </div>
-
-            <div class="aesthetic-card mb-6">
-                <p class="text-xs uppercase font-bold opacity-50 mb-3 tracking-wider">Items (Adjust Qty)</p>
-                <div id="fm-items-list" class="space-y-3 border-b border-gray-700/50 pb-4 mb-4"></div>
-                <div class="flex justify-between items-center"><span class="font-bold text-lg">Total</span><span class="font-bold text-2xl text-orange-500">₹<span id="fm-total">0</span></span></div>
-            </div>
-
-            <div id="fm-controls" class="space-y-3 pb-10"></div>
+    <!-- FULL SCREEN ORDER MODAL -->
+    <div id="full-order-modal" class="fs-modal p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-orange-500">Order Details</h2>
+            <button onclick="closeFullModal()" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
         </div>
+        <div id="fm-content"></div>
+        <div id="fm-controls" class="mt-6"></div>
     </div>
 
-    <div id="menu-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4"><h3 class="font-bold text-xl">Inventory Control</h3><button onclick="document.getElementById('menu-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="menu-list-items" class="overflow-y-auto flex-1 mb-4 space-y-2"></div><div class="sticky-add-btn"><button onclick="openAddItemModal()" class="w-full bg-gradient-to-r from-orange-600 to-yellow-500 text-white py-3.5 rounded-xl font-bold shadow-xl flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Add New Item</button></div></div></div>
-    
-    <div id="add-item-modal" class="popup-modal"><div class="aesthetic-card w-full max-w-xs p-6 relative"><h3 class="font-bold text-lg mb-4 text-center">Add New Product</h3><input id="new-item-name" placeholder="Item Name" class="mb-3"><div class="flex gap-2 mb-3"><input id="new-item-price" type="number" placeholder="Price" class="flex-1"><input id="new-item-stock" type="number" placeholder="Stock" class="w-20"></div><div class="flex gap-2 mb-3"><select id="new-item-cat" class="flex-1 p-3 rounded bg-gray-900 border border-gray-700 text-white text-sm"></select><button onclick="openPrompt('New Category', 'Category Name', (val)=>{ if(val){ currentMenuData.categories.push(val); saveMenuStatus(); openAddItemModal(); } })" class="w-12 bg-gray-800 border border-gray-700 rounded text-white font-bold hover:bg-gray-700">+</button></div><input id="new-item-img" placeholder="Image Link" class="mb-4 text-xs"><div class="flex gap-2"><button onclick="document.getElementById('add-item-modal').classList.remove('open')" class="flex-1 py-3 rounded-xl bg-gray-800 text-gray-400 font-bold">Cancel</button><button onclick="saveNewItem()" class="flex-1 py-3 rounded-xl bg-orange-600 text-white font-bold">Save</button></div></div></div>
-    
-    <div id="chat-window" class="fs-modal flex flex-col"><div class="p-4 border-b border-gray-800 flex justify-between items-center" style="background:var(--card); border-color:var(--border)"><div class="flex items-center gap-3"><button onclick="closeChatWindow()" class="text-gray-400"><i class="fas fa-arrow-left"></i></button><h3 class="font-bold" id="chat-user-name">User</h3></div></div><div id="chat-messages" class="flex-1 overflow-y-auto p-4 flex flex-col bg-black/50"></div><div class="p-3 border-t border-gray-800 flex gap-2" style="background:var(--card); border-color:var(--border)"><input type="text" id="chat-input" placeholder="Type reply..." class="rounded-full px-4 text-sm"><button onclick="sendAdminMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white flex items-center justify-center"><i class="fas fa-paper-plane"></i></button></div></div>
-    <div id="sales-modal" class="hidden fixed inset-0 bg-black/95 z-[160] flex items-center justify-center p-4 backdrop-blur-sm"><div class="aesthetic-card w-full max-w-sm h-[85vh] flex flex-col"><div class="flex justify-between mb-6"><h3 class="font-bold text-xl">Analytics</h3><button onclick="document.getElementById('sales-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div class="grid grid-cols-2 gap-3 mb-6"><div class="p-4 rounded-xl bg-green-500/10 border border-green-500/20"><p class="text-xs text-green-400">Total Sales</p><p class="text-xl font-bold mt-1">₹<span id="an-sales">0</span></p></div><div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20"><p class="text-xs text-blue-400">Orders</p><p class="text-xl font-bold mt-1" id="an-count">0</p></div></div><div class="mb-4"><h4 class="font-bold text-sm mb-2 text-gray-400">Last 10 Days History</h4><div id="sales-history-list" class="space-y-1 text-xs max-h-32 overflow-y-auto border border-gray-800 p-2 rounded"></div></div><button onclick="exportData()" class="w-full py-2 rounded bg-blue-600/20 text-blue-400 text-xs font-bold border border-blue-600/50"><i class="fas fa-download mr-1"></i> Export Daily Report</button><p class="text-xs uppercase font-bold opacity-50 mb-3 mt-4">Top Selling Items</p><div id="today-breakdown-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
-    <div id="logs-modal" class="hidden fixed inset-0 bg-black/95 z-[160] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm h-[80vh] flex flex-col"><div class="flex justify-between mb-4 pb-2 border-b border-gray-700"><h3 class="font-bold text-lg">Payment Logs</h3><button onclick="document.getElementById('logs-modal').classList.add('hidden')"><i class="fas fa-times"></i></button></div><div id="logs-list" class="overflow-y-auto flex-1 space-y-2"></div></div></div>
-    <div id="broadcast-modal" class="hidden fixed inset-0 bg-black/90 z-[160] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-2">Broadcast</h3><textarea id="broadcast-input" rows="3" placeholder="Message..."></textarea><div class="flex gap-2 mt-4"><button onclick="saveBroadcast('')" class="flex-1 bg-red-900/50 text-red-200 p-2 rounded">Clear</button><button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 bg-orange-600 text-white p-2 rounded">Send</button></div><button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="w-full mt-4 text-xs text-gray-500">Cancel</button></div></div>
-    <div id="settle-modal" class="hidden fixed inset-0 bg-black/90 z-[160] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold">Settle Payment</h3><p id="settle-name" class="text-gray-400 text-sm mb-4"></p><h1 class="text-4xl font-bold text-red-400 mb-4 text-center">₹<span id="settle-due">0</span></h1><input id="settle-amount" type="number" class="text-center text-xl font-bold mb-4" placeholder="Amount"><button onclick="submitPayment()" class="w-full bg-green-600 p-3 rounded font-bold text-white shadow-lg">Settle</button><button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="w-full mt-3 text-gray-500">Cancel</button></div></div>
-    <div id="user-profile-modal" class="fs-modal p-0 bg-black">
-        <div class="sticky top-0 z-20 bg-gray-900/90 backdrop-blur-md p-4 border-b border-gray-800 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <button onclick="document.getElementById('user-profile-modal').classList.remove('open')" class="text-gray-400"><i class="fas fa-arrow-left"></i></button>
-                <div>
-                    <h3 class="font-bold text-lg text-white flex items-center gap-2">
-                        <span id="up-name">User Name</span>
-                        <span id="up-status-dot" class="w-3 h-3 rounded-full bg-gray-500 border-2 border-black"></span>
-                    </h3>
-                    <p id="up-phone" class="text-xs text-gray-500">Phone</p>
-                </div>
-            </div>
+    <!-- MENU CONTROL (INVENTORY) MODAL -->
+    <div id="menu-modal" class="fs-modal p-6 hidden">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-orange-500">Inventory Control</h2>
+            <button onclick="closeMenuControl()" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="inv-controls" class="mb-6 space-y-3">
+            <input type="text" id="cat-add-input" placeholder="New Category..." class="p-3">
+            <button onclick="addCategory()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-xl">Add Category</button>
+            <hr class="border-gray-700">
+            <input type="text" id="item-name" placeholder="Item Name..." class="p-3">
+            <input type="number" id="item-price" placeholder="Price..." class="p-3">
+            <input type="text" id="item-image" placeholder="Image URL (Optional)..." class="p-3">
+            <select id="item-cat" class="p-3"></select>
+            <button onclick="addItem()" class="w-full bg-green-600 text-white font-bold py-2 rounded-xl">Add Item</button>
+        </div>
+        <div id="inv-list"></div>
+    </div>
+
+    <!-- CUSTOM CONFIRM POPUP -->
+    <div id="custom-confirm" class="popup-modal">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-xs mx-4 text-center shadow-2xl">
+            <p id="confirm-title" class="text-white font-bold text-lg mb-6"></p>
             <div class="flex gap-3">
-                <a id="up-btn-call" href="#" class="w-8 h-8 rounded-full bg-green-900/30 text-green-500 flex items-center justify-center"><i class="fas fa-phone"></i></a>
-                <a id="up-btn-wa" href="#" target="_blank" class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center"><i class="fab fa-whatsapp"></i></a>
+                <button onclick="closeCustomConfirm()" class="flex-1 py-2 bg-gray-700 text-white rounded-lg font-bold">Cancel</button>
+                <button onclick="confirmAction()" class="flex-1 py-2 bg-red-600 text-white rounded-lg font-bold">Confirm</button>
             </div>
         </div>
+    </div>
 
-        <div class="p-4 space-y-4 pb-20 overflow-y-auto" style="height: calc(100vh - 70px);">
-            <div class="grid grid-cols-3 gap-2">
-                <div class="bg-gray-800 p-3 rounded-xl text-center border border-gray-700">
-                    <p class="text-[10px] text-gray-400 uppercase">Spent</p>
-                    <p class="text-lg font-bold text-green-400">₹<span id="up-spent">0</span></p>
-                </div>
-                <div class="bg-gray-800 p-3 rounded-xl text-center border border-gray-700 relative overflow-hidden">
-                    <p class="text-[10px] text-gray-400 uppercase">Udhaar</p>
-                    <p class="text-lg font-bold text-red-400">₹<span id="up-udhaar">0</span></p>
-                    <div id="up-limit-bar" class="absolute bottom-0 left-0 h-1 bg-red-600 transition-all" style="width:0%"></div>
-                </div>
-                <div class="bg-gray-800 p-3 rounded-xl text-center border border-gray-700">
-                    <p class="text-[10px] text-gray-400 uppercase">Orders</p>
-                    <p class="text-lg font-bold text-blue-400" id="up-orders">0</p>
-                </div>
+    <!-- BROADCAST MODAL -->
+    <div id="broadcast-modal" class="popup-modal hidden">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-sm mx-4 shadow-2xl">
+            <h3 class="text-white font-bold text-lg mb-4">Send Broadcast</h3>
+            <textarea id="broadcast-input" rows="4" placeholder="Type your message..." class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700"></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="document.getElementById('broadcast-modal').classList.add('hidden')" class="flex-1 py-2 bg-gray-700 text-white rounded-lg font-bold">Cancel</button>
+                <button onclick="saveBroadcast(document.getElementById('broadcast-input').value)" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-bold">Send</button>
             </div>
+        </div>
+    </div>
 
+    <!-- LIMIT MODAL -->
+    <div id="limit-modal" class="popup-modal hidden">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-xs mx-4 shadow-2xl">
+            <h3 class="text-white font-bold text-lg mb-2">Set Limit</h3>
+            <p id="limit-name" class="text-sm text-gray-400 mb-4"></p>
+            <input type="number" id="limit-input" placeholder="Enter Limit Amount..." class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 mb-4">
             <div class="flex gap-3">
-                <button onclick="quickLimitUpdate()" class="flex-1 py-3 rounded-xl bg-gray-800 border border-gray-700 text-xs font-bold text-gray-300">Set Limit</button>
-                <button onclick="quickSettlePayment()" class="flex-1 py-3 rounded-xl bg-blue-600/20 border border-blue-500/50 text-xs font-bold text-blue-400">Settle Bill</button>
+                <button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="flex-1 py-2 bg-gray-700 text-white rounded-lg font-bold">Cancel</button>
+                <button onclick="saveLimit()" class="flex-1 py-2 bg-blue-600 text-white rounded-lg font-bold">Save</button>
             </div>
+        </div>
+    </div>
 
-            <div class="aesthetic-card p-4">
-                <h4 class="text-xs font-bold text-gray-500 uppercase mb-4">Consumption Habits</h4>
-                <div id="up-consumption-chart" class="space-y-3"></div>
+    <!-- SETTLE MODAL -->
+    <div id="settle-modal" class="popup-modal hidden">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-xs mx-4 shadow-2xl">
+            <h3 class="text-white font-bold text-lg mb-2">Settle Payment</h3>
+            <p id="settle-name" class="text-sm text-gray-400"></p>
+            <p class="text-xs text-red-400 mb-4">Due: ₹<span id="settle-due"></span></p>
+            <input type="number" id="settle-amount" placeholder="Amount Paid..." class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 mb-4">
+            <div class="flex gap-3">
+                <button onclick="document.getElementById('settle-modal').classList.add('hidden')" class="flex-1 py-2 bg-gray-700 text-white rounded-lg font-bold">Cancel</button>
+                <button onclick="submitPayment()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-bold">Settle</button>
             </div>
+        </div>
+    </div>
 
+    <!-- SALES ANALYSIS MODAL -->
+    <div id="sales-modal" class="popup-modal hidden">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-md mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-bold text-lg">Sales Analysis</h3>
+                <button onclick="document.getElementById('sales-modal').classList.add('hidden')" class="text-gray-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="p-3 bg-green-900/20 border border-green-500/30 rounded-xl text-center">
+                    <p class="text-xs text-green-400 uppercase">Today's Revenue</p>
+                    <p class="text-xl font-bold text-white">₹<span id="an-sales">0</span></p>
+                </div>
+                <div class="p-3 bg-blue-900/20 border border-blue-500/30 rounded-xl text-center">
+                    <p class="text-xs text-blue-400 uppercase">Orders</p>
+                    <p class="text-xl font-bold text-white"><span id="an-count">0</span></p>
+                </div>
+            </div>
+            <h4 class="text-xs uppercase font-bold text-gray-500 mb-2">Today's Breakdown</h4>
+            <div id="today-breakdown-list" class="mb-4"></div>
+            <h4 class="text-xs uppercase font-bold text-gray-500 mb-2">Sales History (30 Days)</h4>
+            <div id="sales-history-list"></div>
+        </div>
+    </div>
+
+    <!-- PAYMENT LOGS MODAL -->
+    <div id="logs-modal" class="popup-modal hidden">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-md mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-bold text-lg">Payment Logs</h3>
+                <button onclick="document.getElementById('logs-modal').classList.add('hidden')" class="text-gray-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="logs-list"></div>
+        </div>
+    </div>
+
+    <!-- CHAT WINDOW -->
+    <div id="chat-window" class="fs-modal p-4">
+        <div class="flex justify-between items-center mb-4">
             <div>
-                <div class="flex border-b border-gray-800 mb-2">
-                    <button onclick="switchProfileTab('orders')" id="ptab-orders" class="flex-1 pb-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500">Orders</button>
-                    <button onclick="switchProfileTab('logs')" id="ptab-logs" class="flex-1 pb-2 text-sm text-gray-500">Logs</button>
-                </div>
-                <div id="up-list-content" class="space-y-2 min-h-[200px]"></div>
+                <h2 class="text-xl font-bold text-white" id="chat-name"></h2>
+                <p class="text-xs text-gray-400" id="chat-phone"></p>
             </div>
+            <button onclick="closeChatWindow()" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="chat-messages" class="flex flex-col space-y-2 mb-4 overflow-y-auto" style="max-height: 70vh;"></div>
+        <div class="flex gap-2">
+            <input type="text" id="chat-input" placeholder="Type..." class="flex-1 p-3 bg-gray-800 text-white rounded-xl border border-gray-700" onkeydown="if(event.key==='Enter') sendAdminMessage()">
+            <button onclick="sendAdminMessage()" class="bg-orange-500 text-white font-bold px-6 rounded-xl"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
-    <div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-[160] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-4">Set Limit</h3><p id="limit-name" class="mb-2 text-gray-400"></p><input id="limit-input" type="number" placeholder="Amount"><button onclick="saveLimit()" class="w-full bg-purple-600 p-3 rounded font-bold text-white mt-4">Save</button><button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500">Cancel</button></div></div>
 
-    <div id="rider-details-modal" class="fs-modal p-0 bg-black">
-        <div class="sticky top-0 z-20 bg-gray-900/90 backdrop-blur-md p-4 border-b border-gray-800 flex justify-between items-center">
-            <h3 class="font-bold text-lg text-white">Rider Profile</h3>
-            <button onclick="document.getElementById('rider-details-modal').classList.remove('open')" class="w-8 h-8 rounded-full bg-gray-800 text-white"><i class="fas fa-times"></i></button>
+    <!-- DELIVERY SETTINGS MODAL -->
+    <div id="delivery-modal" class="fs-modal p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-cyan-400">Delivery Settings</h2>
+            <button onclick="document.getElementById('delivery-modal').classList.remove('open')" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs text-gray-400 uppercase mb-2 block">Minimum Order for Delivery (₹)</label>
+                <input type="number" id="del-min" class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white">
+            </div>
+            <div>
+                <label class="text-xs text-gray-400 uppercase mb-2 block">Delivery Charge (₹)</label>
+                <input type="number" id="del-charge" class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white">
+            </div>
+            <div>
+                <label class="text-xs text-gray-400 uppercase mb-2 block">Free Delivery Above (₹)</label>
+                <input type="number" id="del-free" class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white">
+            </div>
+            <button onclick="saveDeliverySettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- REWARDS MODAL -->
+    <div id="rewards-modal" class="fs-modal p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-pink-400">Rewards & Offers</h2>
+            <button onclick="document.getElementById('rewards-modal').classList.remove('open')" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
         </div>
         
-        <div class="p-4 space-y-4">
-            <div class="text-center">
-                <div class="w-20 h-20 rounded-full bg-gray-800 border-2 border-orange-500 mx-auto flex items-center justify-center text-3xl font-bold text-white mb-2" id="rd-avatar">R</div>
-                <h2 class="text-2xl font-bold text-white" id="rd-name">Rider Name</h2>
-                <p class="text-gray-400 font-mono text-sm" id="rd-phone">Phone</p>
-                <div class="flex justify-center gap-2 mt-2">
-                    <span id="rd-status" class="px-3 py-1 rounded-full text-xs font-bold bg-green-900 text-green-400 border border-green-500/30">ONLINE</span>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-900 text-yellow-400 border border-yellow-500/30">⭐ 4.8 Rating</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <a id="rd-call-btn" href="#" class="py-3 bg-gray-800 rounded-xl text-center text-white font-bold border border-gray-700"><i class="fas fa-phone mr-2"></i> Call</a>
-                <a id="rd-track-btn" href="#" target="_blank" class="py-3 bg-blue-900/20 rounded-xl text-center text-blue-400 font-bold border border-blue-500/30"><i class="fas fa-map-marker-alt mr-2"></i> Live Track</a>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
-                    <p class="text-[10px] text-gray-500 uppercase">Cash in Hand</p>
-                    <p class="text-xl font-bold text-red-400">₹<span id="rd-cash">0</span></p>
-                    <button onclick="settleCurrentRider()" class="mt-2 w-full py-1 bg-green-600 text-white text-[10px] font-bold rounded">COLLECT CASH</button>
-                </div>
-                <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
-                    <p class="text-[10px] text-gray-500 uppercase">Total Deliveries</p>
-                    <p class="text-xl font-bold text-orange-500" id="rd-total">0</p>
-                    <p class="text-[10px] text-gray-500 mt-1">Life Time</p>
-                </div>
-            </div>
-
-            <div>
-                <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase">Recent Deliveries</h4>
-                <div id="rd-history-list" class="space-y-2"></div>
-            </div>
+        <div class="mb-6">
+            <h3 class="text-sm font-bold text-white mb-3">Spin Wheel Segments</h3>
+            <div id="wheel-inputs" class="grid grid-cols-2 gap-2 mb-3"></div>
+            <button onclick="saveWheelSettings()" class="w-full bg-pink-600 text-white font-bold py-2 rounded-xl">Save Wheel</button>
+        </div>
+        
+        <hr class="border-gray-700 mb-6">
+        
+        <div>
+            <h3 class="text-sm font-bold text-white mb-3">Create Coupon</h3>
+            <input type="text" id="coup-code" placeholder="Coupon Code..." class="w-full p-2 bg-gray-800 rounded-lg border border-gray-700 text-white mb-2">
+            <input type="number" id="coup-amt" placeholder="Discount Amount..." class="w-full p-2 bg-gray-800 rounded-lg border border-gray-700 text-white mb-2">
+            <label class="flex items-center gap-2 text-sm text-gray-400 mb-3">
+                <input type="checkbox" id="coup-new" class="w-4 h-4">
+                <span>New Customers Only</span>
+            </label>
+            <button onclick="createCoupon()" class="w-full bg-green-600 text-white font-bold py-2 rounded-xl mb-4">Create Coupon</button>
+            
+            <h4 class="text-xs uppercase font-bold text-gray-500 mb-2">Active Coupons</h4>
+            <div id="coupons-list" class="space-y-2"></div>
         </div>
     </div>
-    
-    <div id="toast-container"></div>
-    <audio id="order-sound"></audio>
+
+    <!-- COUPON STATS MODAL -->
+    <div id="coupon-stats-modal" class="popup-modal hidden">
+        <div class="bg-gray-900 rounded-3xl p-6 border border-gray-700 max-w-md mx-4 shadow-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-white font-bold text-lg">Coupon Analytics</h3>
+                <button onclick="document.getElementById('coupon-stats-modal').classList.add('hidden')" class="text-gray-500"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="coupon-stats-list"></div>
+        </div>
+    </div>
+
+    <!-- USER PROFILE MODAL -->
+    <div id="user-profile-modal" class="fs-modal p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-indigo-400">Customer 360</h2>
+            <button onclick="document.getElementById('user-profile-modal').classList.remove('open')" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <!-- Header Card -->
+        <div class="aesthetic-card p-4 mb-4 bg-gradient-to-br from-indigo-900/30 to-purple-900/30 border-indigo-500/30">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xl">
+                    <span id="up-avatar">A</span>
+                </div>
+                <div class="flex-1">
+                    <h3 id="up-name" class="font-bold text-white text-lg"></h3>
+                    <p id="up-phone" class="text-xs text-gray-400"></p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 mt-3">
+                <div class="text-center p-2 bg-gray-800/50 rounded">
+                    <p class="text-[10px] text-gray-400 uppercase">Spent</p>
+                    <p class="text-sm font-bold text-green-400">₹<span id="up-spent">0</span></p>
+                </div>
+                <div class="text-center p-2 bg-gray-800/50 rounded">
+                    <p class="text-[10px] text-gray-400 uppercase">Orders</p>
+                    <p class="text-sm font-bold text-blue-400"><span id="up-orders">0</span></p>
+                </div>
+                <div class="text-center p-2 bg-gray-800/50 rounded">
+                    <p class="text-[10px] text-gray-400 uppercase">Udhaar</p>
+                    <p class="text-sm font-bold text-red-400">₹<span id="up-udhaar">0</span></p>
+                </div>
+            </div>
+
+            <!-- Limit Progress Bar -->
+            <div class="mt-3">
+                <div class="flex justify-between text-xs text-gray-400 mb-1">
+                    <span>Limit</span>
+                    <span id="up-limit-text">No Limit</span>
+                </div>
+                <div class="relative w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div id="up-limit-bar" class="absolute bottom-0 left-0 h-2 bg-blue-500 transition-all"></div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex gap-2 mt-3">
+                <button onclick="quickLimitUpdate()" class="flex-1 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-bold">
+                    <i class="fas fa-ruler-horizontal mr-1"></i> Set Limit
+                </button>
+                <button onclick="quickSettlePayment()" class="flex-1 py-2 bg-green-600/20 border border-green-500/30 text-green-400 rounded-lg text-xs font-bold">
+                    <i class="fas fa-rupee-sign mr-1"></i> Settle
+                </button>
+            </div>
+        </div>
+
+        <!-- Consumption Chart -->
+        <div class="aesthetic-card p-4 mb-4">
+            <h4 class="text-xs uppercase font-bold text-gray-500 mb-3">Top Consumed Items</h4>
+            <div id="up-consumption-chart" class="space-y-2"></div>
+        </div>
+
+        <!-- Tabs: Orders vs Logs -->
+        <div class="flex border-b border-gray-700 mb-3">
+            <button id="ptab-orders" onclick="switchProfileTab('orders')" class="flex-1 pb-2 text-sm font-bold text-orange-500 border-b-2 border-orange-500">Orders</button>
+            <button id="ptab-logs" onclick="switchProfileTab('logs')" class="flex-1 pb-2 text-sm text-gray-500">Udhaar Logs</button>
+        </div>
+
+        <!-- Dynamic List -->
+        <div id="up-list-content" class="space-y-2"></div>
+    </div>
+
+    <!-- RIDER DETAILS MODAL -->
+    <div id="rider-details-modal" class="fs-modal p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-yellow-400">Rider Profile</h2>
+            <button onclick="document.getElementById('rider-details-modal').classList.remove('open')" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <!-- Header Card -->
+        <div class="aesthetic-card p-4 mb-4 bg-gradient-to-br from-yellow-900/30 to-orange-900/30 border-yellow-500/30">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-12 h-12 rounded-full bg-yellow-600 flex items-center justify-center text-white font-bold text-xl">
+                    <span id="rd-avatar">R</span>
+                </div>
+                <div class="flex-1">
+                    <h3 id="rd-name" class="font-bold text-white text-lg"></h3>
+                    <p id="rd-phone" class="text-xs text-gray-400"></p>
+                </div>
+                <span id="rd-status" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-800 text-gray-500 border border-gray-600">OFFLINE</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-3">
+                <div class="text-center p-2 bg-gray-800/50 rounded">
+                    <p class="text-[10px] text-gray-400 uppercase">Cash Held</p>
+                    <p class="text-lg font-bold text-red-400">₹<span id="rd-cash">0</span></p>
+                </div>
+                <div class="text-center p-2 bg-gray-800/50 rounded">
+                    <p class="text-[10px] text-gray-400 uppercase">Deliveries</p>
+                    <p class="text-lg font-bold text-green-400"><span id="rd-total">0</span></p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex gap-2 mt-3">
+                <a id="rd-track-btn" href="#" class="flex-1 py-2 bg-blue-600/20 border border-blue-500/30 text-blue-400 rounded-lg text-xs font-bold text-center">
+                    <i class="fas fa-map-marker-alt mr-1"></i> Live Location
+                </a>
+                <a id="rd-call-btn" href="tel:" class="flex-1 py-2 bg-green-600/20 border border-green-500/30 text-green-400 rounded-lg text-xs font-bold text-center">
+                    <i class="fas fa-phone mr-1"></i> Call
+                </a>
+            </div>
+
+            <button onclick="settleCurrentRider()" class="w-full mt-2 py-2 bg-orange-600 text-white rounded-lg font-bold">
+                <i class="fas fa-hand-holding-usd mr-1"></i> Settle Cash
+            </button>
+        </div>
+
+        <!-- Delivery History -->
+        <div class="aesthetic-card p-4">
+            <h4 class="text-xs uppercase font-bold text-gray-500 mb-3">Recent Deliveries</h4>
+            <div id="rd-history-list" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- ADD RIDER MODAL -->
+    <div id="add-rider-modal" class="fs-modal p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-green-400">Add New Rider</h2>
+            <button onclick="document.getElementById('add-rider-modal').classList.remove('open')" class="text-gray-500 text-2xl"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="space-y-4">
+            <input type="text" id="new-rider-name" placeholder="Rider Name..." class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white">
+            <input type="tel" id="new-rider-phone" placeholder="Phone Number..." class="w-full p-3 bg-gray-800 rounded-xl border border-gray-700 text-white">
+            <button onclick="addNewRider()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl">Add Rider</button>
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
@@ -476,7 +630,21 @@
         let chatUsers = [];
         let todaysOrderCount = 0;
         let limitsMap = {};
-        const audioEl = document.getElementById('order-sound');
+        
+        // CRITICAL FIX: Initialize audioEl AFTER the DOM is loaded or create it dynamically
+        let audioEl = null;
+        
+        // Initialize audio element after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            audioEl = document.getElementById('order-sound');
+            if (!audioEl) {
+                // Create it if it doesn't exist
+                audioEl = document.createElement('audio');
+                audioEl.id = 'order-sound';
+                audioEl.style.display = 'none';
+                document.body.appendChild(audioEl);
+            }
+        });
         
 // --- CUSTOMER 360 LOGIC ---
         let currentProfilePhone = null;
@@ -498,115 +666,99 @@
                     userMap[p].spent += o.totalAmount;
                     userMap[p].orders++;
                 }
-                if(o.timestamp && o.timestamp.seconds > userMap[p].lastOrder) userMap[p].lastOrder = o.timestamp.seconds;
-                // Name update agar naya order hai
-                if(o.customerName) userMap[p].name = o.customerName;
+                
+                if(o.timestamp && o.timestamp.seconds > userMap[p].lastOrder) {
+                    userMap[p].lastOrder = o.timestamp.seconds;
+                }
             });
 
-            // Online Status se data merge karo
-            if(window.usersStatusSnap) {
-                window.usersStatusSnap.docs.forEach(d => {
-                    const p = d.id;
-                    const data = d.data();
-                    if(!userMap[p]) userMap[p] = { name: data.name || 'User', phone: p, spent: 0, orders: 0, lastOrder: 0 };
-                    userMap[p].lastActive = data.lastActive ? data.lastActive.seconds : 0;
-                });
+            // Udhaar data nikalo
+            Object.keys(udhaarMap).forEach(phone => {
+                if(!userMap[phone]) userMap[phone] = { name: udhaarMap[phone].name, phone: phone, spent: 0, orders: 0, lastOrder: 0 };
+            });
+
+            // 2. Filter & Sort
+            let users = Object.values(userMap);
+            if(q) users = users.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
+            users.sort((a,b) => b.spent - a.spent); // Top Spenders First
+
+            // 3. Render
+            if(users.length === 0) {
+                list.innerHTML = '<p class="text-center text-gray-500 mt-10 opacity-50">No users found.</p>';
+                return;
             }
 
-            // 2. Convert to Array & Sort
-            let usersArr = Object.values(userMap);
-            // Sort: Jo Online hai wo sabse upar, fir hal hi me order karne wale
-            const now = Date.now() / 1000;
-            usersArr.sort((a,b) => {
-                const aOnline = (now - (a.lastActive||0)) < 300; // 5 min active
-                const bOnline = (now - (b.lastActive||0)) < 300;
-                if(aOnline && !bOnline) return -1;
-                if(!aOnline && bOnline) return 1;
-                return b.lastOrder - a.lastOrder;
-            });
-
-            // 3. Render HTML
-            const html = usersArr.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q)).map(u => {
-                const isOnline = (now - (u.lastActive||0)) < 300; // Green dot logic (5 min)
-                const udhaar = udhaarMap[u.phone] ? (udhaarMap[u.phone].debit - udhaarMap[u.phone].credit) : 0;
+            list.innerHTML = users.map(u => {
+                const udhaar = (udhaarMap[u.phone]?.debit || 0) - (udhaarMap[u.phone]?.credit || 0);
                 const limit = limitsMap[u.phone] || 0;
-                
+                const isRisky = limit > 0 && udhaar > limit * 0.9;
+
                 return `
-                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openUserProfile('${u.phone}')">
+                <div onclick="openUserProfile('${u.phone}')" class="aesthetic-card p-4 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 transition ${isRisky ? 'border-l-4 border-red-500' : ''}">
                     <div class="flex items-center gap-3">
-                        <div class="relative">
-                            <div class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-sm font-bold text-gray-400">${u.name.charAt(0)}</div>
-                            ${isOnline ? '<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#141414] rounded-full animate-pulse"></div>' : ''}
+                        <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold">
+                            ${u.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                            <p class="font-bold text-sm text-white">${u.name} ${udhaar > limit && limit > 0 ? '<i class="fas fa-exclamation-circle text-red-500 text-xs"></i>' : ''}</p>
+                            <h3 class="font-bold text-white text-sm">${u.name}</h3>
                             <p class="text-xs text-gray-500">${u.phone}</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        ${udhaar > 0 ? `<p class="font-bold text-red-400 text-sm">₹${udhaar}</p>` : `<p class="font-bold text-green-500 text-xs">Clear</p>`}
-                        <p class="text-[10px] text-gray-600">${u.orders} Orders</p>
+                        <p class="text-xs text-gray-400">Spent</p>
+                        <p class="text-lg font-bold text-green-500">₹${u.spent}</p>
+                        ${udhaar > 0 ? `<p class="text-[10px] text-red-400 mt-1">Due: ₹${udhaar}</p>` : ''}
                     </div>
-                </div>`;
+                </div>
+                `;
             }).join('');
-
-            list.innerHTML = html || '<div class="text-center text-gray-500 mt-10">No users found</div>';
         }
 
         function openUserProfile(phone) {
             currentProfilePhone = phone;
-            const uData = udhaarMap[phone] || { name: 'User', debit:0, credit:0 };
-            const udhaar = uData.debit - uData.credit;
+            
+            // Aggregate Data
+            const userData = allOrders.filter(o => o.customerPhone === phone);
+            const spent = userData.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.totalAmount, 0);
+            const orders = userData.filter(o => o.status === 'completed').length;
+            const udhaar = (udhaarMap[phone]?.debit || 0) - (udhaarMap[phone]?.credit || 0);
             const limit = limitsMap[phone] || 0;
+            const name = udhaarMap[phone]?.name || userData[0]?.customerName || 'Unknown';
 
-            // Fill Basic Info
-            document.getElementById('up-name').innerText = uData.name;
+            // Fill Data
+            document.getElementById('up-avatar').innerText = name.charAt(0).toUpperCase();
+            document.getElementById('up-name').innerText = name;
             document.getElementById('up-phone').innerText = phone;
+            document.getElementById('up-spent').innerText = spent;
+            document.getElementById('up-orders').innerText = orders;
             document.getElementById('up-udhaar').innerText = udhaar;
-            document.getElementById('up-btn-call').href = `tel:${phone}`;
-            document.getElementById('up-btn-wa').href = `https://wa.me/${phone.replace(/\D/g,'')}`;
 
-            // Online Status Dot in Modal
-            const now = Date.now() / 1000;
-            let isOnline = false;
-            if(window.usersStatusSnap) {
-                 const d = window.usersStatusSnap.docs.find(doc => doc.id === phone);
-                 if(d && d.data().lastActive && (now - d.data().lastActive.seconds < 300)) isOnline = true;
-            }
-            document.getElementById('up-status-dot').className = `w-3 h-3 rounded-full border-2 border-black ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`;
-
-            // Calculate Stats & Chart
-            let totalSpent = 0;
-            let orderCount = 0;
-            let itemCounts = {};
-
-            const userOrders = allOrders.filter(o => o.customerPhone === phone && o.status !== 'cancelled');
-            userOrders.forEach(o => {
-                if(o.status === 'completed') {
-                    totalSpent += o.totalAmount;
-                    orderCount++;
-                }
-                o.items.forEach(i => {
-                    if(!itemCounts[i.name]) itemCounts[i.name] = 0;
-                    itemCounts[i.name] += i.qty;
-                });
-            });
-
-            document.getElementById('up-spent').innerText = totalSpent;
-            document.getElementById('up-orders').innerText = orderCount;
-
-            // Limit Bar Logic
+            // Limit Bar
+            const limitText = document.getElementById('up-limit-text');
             const bar = document.getElementById('up-limit-bar');
+            
             if(limit > 0) {
+                limitText.innerText = `₹${udhaar} / ₹${limit}`;
                 const pct = Math.min((udhaar / limit) * 100, 100);
                 bar.style.width = pct + "%";
                 bar.className = `absolute bottom-0 left-0 h-1 transition-all ${pct > 90 ? 'bg-red-500' : 'bg-blue-500'}`;
             } else {
+                limitText.innerText = "No Limit Set";
                 bar.style.width = "0%";
             }
 
-            // Render Consumption Chart
-            const sortedItems = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]).slice(0, 5); // Top 5
+            // Consumption Chart
+            let itemCounts = {};
+            userData.forEach(o => {
+                if(o.status === 'completed') {
+                    o.items.forEach(item => {
+                        if(!itemCounts[item.name]) itemCounts[item.name] = 0;
+                        itemCounts[item.name] += item.qty;
+                    });
+                }
+            });
+
+            const sortedItems = Object.entries(itemCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
             const maxVal = sortedItems[0] ? sortedItems[0][1] : 1;
             
             document.getElementById('up-consumption-chart').innerHTML = sortedItems.map(([name, qty]) => `
@@ -619,7 +771,7 @@
                 </div>
             `).join('') || '<p class="text-xs text-gray-500 text-center">No data yet</p>';
 
-            switchProfileTab('orders'); // Load Orders by default
+            switchProfileTab('orders');
             document.getElementById('user-profile-modal').classList.add('open');
         }
 
@@ -643,13 +795,11 @@
                     </div>
                 `).join('') || '<p class="text-center text-gray-500 text-xs mt-4">No Orders</p>';
             } else {
-                // Udhaar Logs (Combine Orders & Payments)
+                // Udhaar Logs
                 let logs = [];
-                // Payments
                 if(window.paymentsSnap) window.paymentsSnap.docs.forEach(d => {
                     if(d.data().phone === currentProfilePhone) logs.push({type:'pay', ...d.data()});
                 });
-                // Udhaar Orders
                 allOrders.forEach(o => {
                     if(o.customerPhone === currentProfilePhone && o.paymentMode === 'Udhaar' && o.status !== 'cancelled') {
                         logs.push({type:'buy', ...o});
@@ -694,7 +844,6 @@
                     const cash = r.cashInHand || 0;
                     const isOnline = r.isOnline || false;
                     
-                    // Note: 'onclick' now opens the profile
                     return `
                     <div onclick="openRiderDetails('${r.phone}')" class="aesthetic-card p-4 flex justify-between items-center border-l-4 ${isOnline ? 'border-green-500' : 'border-gray-700'} cursor-pointer hover:bg-gray-800/50 transition">
                         <div>
@@ -734,10 +883,10 @@
                 statusEl.innerText = isOnline ? "ONLINE" : "OFFLINE";
                 statusEl.className = isOnline ? "px-3 py-1 rounded-full text-xs font-bold bg-green-900 text-green-400 border border-green-500/30" : "px-3 py-1 rounded-full text-xs font-bold bg-gray-800 text-gray-500 border border-gray-600";
                 
-                // Live Map Link
+                // CRITICAL FIX: Correct Google Maps URL
                 const trackBtn = document.getElementById('rd-track-btn');
                 if(r.location) {
-                    trackBtn.href = `http://googleusercontent.com/maps.google.com/3{r.location.lat},${r.location.lng}`;
+                    trackBtn.href = `https://www.google.com/maps?q=${r.location.lat},${r.location.lng}`;
                     trackBtn.classList.remove('opacity-50', 'pointer-events-none');
                     trackBtn.innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i> Live Location';
                 } else {
@@ -753,7 +902,7 @@
 
                 // Load History List
                 const historyList = document.getElementById('rd-history-list');
-                const recent = allOrders.filter(o => o.riderPhone === phone).slice(0, 5); // Last 5
+                const recent = allOrders.filter(o => o.riderPhone === phone).slice(0, 5);
                 
                 historyList.innerHTML = recent.map(o => `
                     <div class="flex justify-between items-center p-2 bg-gray-900/50 rounded border border-gray-800">
@@ -787,7 +936,6 @@
         function showAssignOption(orderId) {
             const container = document.getElementById('fm-controls');
             
-            // Only show if order is Ready or Cooking
             db.collection('riders').where('isOnline', '==', true).get().then(snap => {
                 let options = snap.docs.map(d => `<option value="${d.id}">${d.data().name} (${d.data().isOnline?'🟢':'⚫'})</option>`).join('');
                 
@@ -817,7 +965,7 @@
             const name = select.options[select.selectedIndex].text.split(' (')[0];
             
             db.collection('orders').doc(orderId).update({
-                status: 'out_delivery', // This updates status to On Way
+                status: 'out_delivery',
                 riderPhone: phone,
                 riderName: name,
                 pickupTime: firebase.firestore.FieldValue.serverTimestamp()
@@ -841,11 +989,9 @@
 
         function settleRiderCash(phone, amount) {
             if(confirm(`Collect ₹${amount} from rider?`)) {
-                // 1. Log the settlement
                 db.collection('payments').add({
                     type: 'rider_settlement', riderPhone: phone, amount: amount, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                // 2. Reset Rider Balance
                 db.collection('riders').doc(phone).update({ cashInHand: 0 }).then(() => showToast("Cash Settled"));
             }
         }
@@ -992,9 +1138,8 @@
             if (!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
             if (!document.getElementById('view-udhaar').classList.contains('hidden')) renderUdhaar();
             
-            // --- SOUND LOGIC (Looping) ---
+            // --- SOUND LOGIC ---
             if (active > (window.lastActive || 0)) {
-                // Check if any fresh pending order exists
                 const hasPending = allOrders.some(o => o.status === 'pending' && (o.timestamp?.seconds > (Date.now()/1000 - 300))); 
                 if(hasPending) playAlarm();
             }
@@ -1098,232 +1243,287 @@
                 list.innerHTML = "<p class='text-center opacity-50'>No history available.</p>"; 
                 return; 
             }
+
+            let filtered = allOrders.filter(o => 
+                (o.customerName && o.customerName.toLowerCase().includes(q)) || 
+                (o.customerPhone && o.customerPhone.includes(q))
+            );
             
-            let historyUsers = {};
-            allOrders.forEach(o => {
-                const key = o.customerPhone || o.customerName || "Unknown";
-                if (!historyUsers[key]) {
-                    historyUsers[key] = { name: o.customerName || "Unknown", phone: o.customerPhone || "No Phone", lastOrder: 0, lastAmount: 0, id: key };
-                }
-                if (o.timestamp && o.timestamp.seconds > historyUsers[key].lastOrder) { 
-                    historyUsers[key].lastOrder = o.timestamp.seconds; 
-                    historyUsers[key].lastAmount = o.totalAmount; 
-                    historyUsers[key].name = o.customerName || historyUsers[key].name; 
-                }
-            });
-
-            const users = Object.values(historyUsers).sort((a, b) => b.lastOrder - a.lastOrder).filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
-
-            if (users.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No matching users.</p>"; return; }
-            list.innerHTML = users.map(u => `
-                <div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openUserHistory('${u.id}', '${u.name}')">
-                    <div class="flex items-center gap-3"><div class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-400">${u.name.charAt(0)}</div><div><p class="font-bold text-sm">${u.name}</p><p class="text-xs opacity-50">${u.phone}</p></div></div>
-                    <div class="text-right"><p class="text-[10px] opacity-50">Latest</p><p class="font-bold text-green-400">₹${u.lastAmount || 0}</p></div>
-                </div>`
-            ).join('');
-        }
-        
-        function openUserHistory(key, name) {
-            const list = document.getElementById('history-list');
-            const userOrders = allOrders.filter(o => (o.customerPhone === key) || (o.customerName === name && !o.customerPhone) || (key === 'Unknown' && !o.customerPhone && !o.customerName));
-            list.innerHTML = `<div class="mb-4"><button onclick="renderHistory()" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-arrow-left"></i> Back to Users</button></div>` + 
-            userOrders.map(d => {
-                const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : '';
+            list.innerHTML = filtered.map(d => {
+                const statusColor = d.status === 'completed' ? 'text-green-500' : d.status === 'cancelled' ? 'text-red-500' : 'text-yellow-500';
                 return `
-                <div class="aesthetic-card p-3 mb-2 flex justify-between items-center cursor-pointer hover:bg-gray-800/50" onclick="openFullModal('${d.id}')">
-                    <div><p class="text-xs opacity-50">${date} • <span class="uppercase font-bold ${d.status === 'cancelled' ? 'text-red-500' : 'text-green-500'}">${d.status}</span></p><p class="text-sm font-bold mt-1">${d.items.length} Items</p></div>
-                    <div class="text-right"><span class="font-bold text-orange-400 block">₹${d.totalAmount}</span><span class="text-[10px] font-bold ${d.paymentMode === 'Udhaar' ? 'text-red-400' : d.paymentMode === 'Online' ? 'text-blue-400' : 'text-green-400'}">${d.paymentMode || 'Cash'}</span></div>
-                </div>`;
-            }).join('');
-        }
-
-        // --- ORDER DETAIL MODAL ---
-        function openFullModal(id) {
-            const d = allOrders.find(o => o.id === id); 
-            if (!d) return; 
-            currentOpenOrder = {id, ...d};
-            const isHistorical = d.status === 'completed' || d.status === 'cancelled';
-
-            document.getElementById('fm-name').innerText = isHistorical ? "Order Details (History)" : d.customerName;
-            document.getElementById('fm-phone').innerText = d.customerPhone;
-            document.getElementById('fm-time').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
-            
-            const badge = document.getElementById('fm-status-badge');
-            badge.innerText = d.status; 
-            badge.className = `text-xs font-bold uppercase px-3 py-1 rounded-full text-white ${d.status === 'completed' ? 'bg-green-600' : d.status === 'cancelled' ? 'bg-red-600' : 'bg-yellow-600'}`;
-            
-            document.getElementById('fm-address').innerHTML = `<i class="fas fa-map-marker-alt text-red-500 mr-2"></i> ${d.customerAddress || "No Address"}`;
-            const payClass = d.paymentMode === 'Udhaar' ? 'pay-udhaar' : d.paymentMode === 'Online' ? 'pay-online' : 'pay-cash';
-            document.getElementById('fm-payment-info').innerHTML = `<span class="pay-badge ${payClass}" style="margin-left:0; font-size:12px">${d.paymentMode || 'Cash'}</span>`;
-
-            if (d.coupon) {
-                document.getElementById('fm-coupon-box').classList.remove('hidden');
-                document.getElementById('fm-coupon-box').classList.add('flex');
-                document.getElementById('fm-coupon-code').innerText = d.coupon.code;
-                document.getElementById('fm-coupon-amt').innerText = d.coupon.discount;
-            } else {
-                document.getElementById('fm-coupon-box').classList.add('hidden');
-                document.getElementById('fm-coupon-box').classList.remove('flex');
-            }
-
-            if (d.recipient) { document.getElementById('fm-recipient-box').classList.remove('hidden'); document.getElementById('fm-recipient').innerText = `${d.recipient.name} (${d.recipient.phone})`; } else document.getElementById('fm-recipient-box').classList.add('hidden');
-            if (d.orderNote) { document.getElementById('fm-note').innerText = `Note: "${d.orderNote}"`; document.getElementById('fm-note').classList.remove('hidden'); } else document.getElementById('fm-note').classList.add('hidden');
-
-            const callPh = d.recipient ? d.recipient.phone : d.customerPhone; 
-            document.getElementById('fm-btn-call').href = `tel:${callPh}`; 
-            document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g, '')}`; 
-            document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
-            
-            // REPLACE "ELSE" BLOCK IN openFullModal
-            const c = document.getElementById('fm-controls');
-            
-            if (isHistorical) { 
-                c.innerHTML = ""; 
-            } else {
-                // 1. Status Buttons
-                let controlsHtml = `
-                <div class="grid grid-cols-4 gap-2 mb-3">
-                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='pending'?'ring-2 ring-orange-500':''}">Pending</button>
-                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='cooking'?'ring-2 ring-orange-500':''}">Cooking</button>
-                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='ready'?'ring-2 ring-orange-500':''}">Ready</button>
-                    <button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button>
-                </div>`;
-                
-                // 2. Rider Tracking UI (If Assigned/On Way)
-                if (d.status === 'out_delivery' && d.riderPhone) {
-                    // Fetch Rider Location logic here requires async, so we use a simple link for now
-                    // In a real app, we'd fetch db.collection('riders').doc(d.riderPhone)
-                    controlsHtml += `
-                    <div class="p-3 bg-blue-900/20 border border-blue-500/30 rounded-xl mb-3 animate-pulse">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-xs text-blue-400 font-bold uppercase">Order on Way</p>
-                                <p class="text-sm font-bold text-white"><i class="fas fa-motorcycle mr-1"></i> ${d.riderName}</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <a href="tel:${d.riderPhone}" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white"><i class="fas fa-phone"></i></a>
-                                <button onclick="openRiderDetails('${d.riderPhone}')" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white"><i class="fas fa-map-marker-alt"></i></button>
-                            </div>
+                <div class="aesthetic-card p-4 cursor-pointer" onclick="openFullModal('${d.id}')">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-bold text-white text-sm">${d.customerName}</h3>
+                            <p class="text-xs text-gray-500">${d.customerPhone}</p>
                         </div>
-                    </div>`;
-                }
+                        <span class="text-xs font-bold ${statusColor} uppercase">${d.status}</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs text-gray-400">${d.items.length} Items</span>
+                        <h3 class="font-bold text-lg text-orange-400">₹${d.totalAmount}</h3>
+                    </div>
+                </div>`;
+            }).join('') || "<p class='text-center opacity-50 mt-10'>No matching orders found.</p>";
+        }
 
-                // 3. Delete Button
-                controlsHtml += `<button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
-                
-                c.innerHTML = controlsHtml;
+        // --- UDHAAR LOGIC ---
+        function renderUdhaar() {
+            const list = document.getElementById('udhaar-list');
+            const q = document.getElementById('search-udhaar').value.toLowerCase();
+            
+            let udhaarList = Object.keys(udhaarMap).map(phone => {
+                const u = udhaarMap[phone];
+                const balance = u.debit - u.credit;
+                const limit = limitsMap[phone] || 0;
+                return {phone, name: u.name, balance, limit};
+            }).filter(u => u.balance > 0);
 
-                // 4. Inject Assign Option (Async) if Ready/Cooking AND not assigned yet
-                if ((d.status === 'ready' || d.status === 'cooking') && d.status !== 'out_delivery') {
-                    showAssignOption(currentOpenOrder.id);
-                }
+            if (q) udhaarList = udhaarList.filter(u => u.name.toLowerCase().includes(q) || u.phone.includes(q));
+            
+            udhaarList.sort((a, b) => b.balance - a.balance);
+
+            if (udhaarList.length === 0) { 
+                list.innerHTML = "<p class='text-center opacity-50 mt-10'>No pending udhaar.</p>"; 
+                return; 
             }
 
-        function renderFullModalItems(isHistorical) {
-            const l = document.getElementById('fm-items-list'); let t = 0;
-            l.innerHTML = currentOpenOrder.items.map((i, idx) => { 
-                if (!i.originalQty) i.originalQty = i.qty; t += i.qty * i.price; 
-                return `<div class="flex justify-between items-center p-2 rounded bg-gray-800/30 border border-gray-700"><div class="flex-1"><span class="text-sm font-bold">${i.name}</span></div><div class="flex items-center gap-3">${!isHistorical ? `<button onclick="adjustPNA(${idx}, -1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">-</button>` : ''}<span class="text-sm font-bold text-orange-400 w-4 text-center">${i.qty}</span>${!isHistorical ? `<button onclick="adjustPNA(${idx}, 1)" class="w-6 h-6 rounded bg-gray-700 text-white flex items-center justify-center">+</button>` : ''}</div></div>`; 
+            list.innerHTML = udhaarList.map(u => {
+                const pct = u.limit > 0 ? Math.min((u.balance / u.limit) * 100, 100) : 0;
+                const isRisky = pct > 90;
+                return `
+                <div class="aesthetic-card p-4 ${isRisky ? 'border-l-4 border-red-500' : ''}">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 class="font-bold text-white text-sm">${u.name}</h3>
+                            <p class="text-xs text-gray-500">${u.phone}</p>
+                        </div>
+                        <h3 class="font-bold text-2xl text-red-400">₹${u.balance}</h3>
+                    </div>
+                    ${u.limit > 0 ? `
+                    <div class="limit-bar-bg mt-2">
+                        <div class="limit-bar-fill ${pct > 90 ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${pct}%"></div>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1">Limit: ₹${u.limit}</p>
+                    ` : ''}
+                    <div class="flex gap-2 mt-3">
+                        <button onclick="openLimitModal('${u.phone}', '${u.name}')" class="flex-1 py-1.5 text-xs bg-blue-600/20 border border-blue-500/30 text-blue-400 rounded font-bold">Set Limit</button>
+                        <button onclick="openSettle('${u.phone}', '${u.name}', ${u.balance})" class="flex-1 py-1.5 text-xs bg-green-600/20 border border-green-500/30 text-green-400 rounded font-bold">Settle</button>
+                    </div>
+                </div>`;
             }).join('');
+        }
+
+        // --- MESSAGES LOGIC ---
+        function renderMessagesList() {
+            const list = document.getElementById('messages-list');
+            if (chatUsers.length === 0) { 
+                list.innerHTML = "<p class='text-center opacity-50 mt-10'>No messages yet.</p>"; 
+                return; 
+            }
+            list.innerHTML = chatUsers.map(u => `
+            <div class="aesthetic-card p-4 cursor-pointer" onclick="openChat('${u.id}', '${u.name}', '${u.phone}')">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="font-bold text-white text-sm">${u.name || 'User'}</h3>
+                        <p class="text-xs text-gray-500">${u.phone || u.id}</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-2 truncate">${u.lastMsg || 'No messages'}</p>
+            </div>`).join('');
+        }
+
+        function openChat(uid, name, phone) {
+            currentChatUser = uid;
+            document.getElementById('chat-name').innerText = name;
+            document.getElementById('chat-phone').innerText = phone;
+            document.getElementById('chat-window').classList.add('open');
             
-            let displayTotal = t;
-            if (currentOpenOrder.coupon) displayTotal -= currentOpenOrder.coupon.discount;
-            if (displayTotal < 0) displayTotal = 0;
-
-            document.getElementById('fm-total').innerText = displayTotal; 
-            currentOpenOrder._liveTotal = displayTotal; 
+            db.collection('chats').doc(uid).collection('messages').orderBy('timestamp', 'asc').onSnapshot(s => {
+                const msgs = document.getElementById('chat-messages');
+                msgs.innerHTML = s.docs.map(d => {
+                    const m = d.data();
+                    const isAdmin = m.sender === 'admin';
+                    return `<div class="chat-bubble ${isAdmin ? 'chat-admin' : 'chat-user'}">${m.text}</div>`;
+                }).join('');
+                msgs.scrollTop = msgs.scrollHeight;
+            });
         }
 
-        function adjustPNA(idx, change) { 
-            const item = currentOpenOrder.items[idx]; 
-            const newQty = item.qty + change; 
-            if (newQty >= 0) { 
-                item.qty = newQty; 
-                let newTotal = currentOpenOrder.items.reduce((acc, i) => acc + (i.qty * i.price), 0);
-                if(currentOpenOrder.coupon) newTotal -= currentOpenOrder.coupon.discount;
-                if(newTotal < 0) newTotal = 0;
+        function sendAdminMessage() { const t = document.getElementById('chat-input').value.trim(); if (t && currentChatUser) { db.collection('chats').doc(currentChatUser).collection('messages').add({ text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge: true}); document.getElementById('chat-input').value = ""; } }
+        function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); }
 
-                db.collection('orders').doc(currentOpenOrder.id).update({ items: currentOpenOrder.items, totalAmount: newTotal }); 
-                renderFullModalItems(false); 
-            } 
-        }
-        function updateStatus(s) { if (!currentOpenOrder) return; db.collection('orders').doc(currentOpenOrder.id).update({status: s}).then(() => { closeFullModal(); showToast("Updated"); }); }
-        
-        function deleteOrder() { 
-            document.getElementById('confirm-title').innerText = "Delete Permanently?"; 
-            document.getElementById('custom-confirm').classList.add('open'); 
-            pendingAction = () => { db.collection('orders').doc(currentOpenOrder.id).delete().then(() => { closeFullModal(); showToast("Deleted"); }); };
-        }
-        function closeFullModal() { document.getElementById('order-full-modal').classList.remove('open'); }
+        // --- ORDER MODAL LOGIC ---
+        function openFullModal(id) {
+            currentOpenOrder = id;
+            const order = allOrders.find(o => o.id === id);
+            if (!order) return;
 
-        // --- INVENTORY MANAGEMENT FIX (Instant Update) ---
-        function openMenuControl() { 
-            renderInventory(); // Just call render directly
-            document.getElementById('menu-modal').classList.remove('hidden'); 
+            const content = document.getElementById('fm-content');
+            const controls = document.getElementById('fm-controls');
+
+            content.innerHTML = `
+                <div class="aesthetic-card p-4 mb-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h3 class="font-bold text-white text-lg">${order.customerName}</h3>
+                            <p class="text-xs text-gray-400">${order.customerPhone}</p>
+                            ${order.deliveryAddress ? `<p class="text-xs text-gray-400 mt-1"><i class="fas fa-map-marker-alt mr-1"></i> ${order.deliveryAddress}</p>` : ''}
+                            ${order.recipient ? `<p class="text-xs text-blue-400 mt-2"><i class="fas fa-gift mr-1"></i> Gift for ${order.recipient.name} (${order.recipient.phone})</p>` : ''}
+                        </div>
+                        <span class="status-pill ${order.status === 'pending' ? 'status-pending' : order.status === 'cooking' ? 'status-cooking' : 'status-ready'}">${order.status}</span>
+                    </div>
+                    
+                    <div class="space-y-2 mb-3">
+                        ${order.items.map(i => `
+                            <div class="flex justify-between items-center p-2 bg-gray-800/50 rounded">
+                                ${i.image ? `<img src="${i.image}" class="item-thumb mr-2">` : ''}
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold text-white">${i.name}</p>
+                                    <p class="text-xs text-gray-400">Qty: ${i.qty}</p>
+                                </div>
+                                <p class="text-sm font-bold text-orange-400">₹${i.price * i.qty}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    ${order.specialInstructions ? `<p class="text-xs text-yellow-400 mb-3"><i class="fas fa-sticky-note mr-1"></i> ${order.specialInstructions}</p>` : ''}
+                    
+                    <div class="flex justify-between items-center pt-3 border-t border-gray-700">
+                        <span class="text-sm text-gray-400">Total</span>
+                        <h2 class="text-2xl font-bold text-green-400">₹${order.totalAmount}</h2>
+                    </div>
+                    
+                    <div class="flex gap-2 mt-3 text-xs">
+                        <span class="pay-badge ${order.paymentMode === 'Udhaar' ? 'pay-udhaar' : order.paymentMode === 'Online' ? 'pay-online' : 'pay-cash'}">${order.paymentMode || 'Cash'}</span>
+                        <span class="text-gray-500">${new Date(order.timestamp.toDate()).toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+
+            controls.innerHTML = '';
+            
+            if (order.status === 'pending') {
+                controls.innerHTML = `
+                    <button onclick="updateOrderStatus('${id}', 'cooking')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mb-2">Start Cooking</button>
+                    <button onclick="confirmCancel('${id}')" class="w-full bg-red-600/20 border border-red-500/30 text-red-400 font-bold py-2 rounded-xl">Cancel Order</button>
+                `;
+            } else if (order.status === 'cooking') {
+                controls.innerHTML = `
+                    <button onclick="updateOrderStatus('${id}', 'ready')" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl mb-2">Mark Ready</button>
+                `;
+            } else if (order.status === 'ready') {
+                controls.innerHTML = `<button onclick="updateOrderStatus('${id}', 'completed')" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl">Complete Order</button>`;
+                
+                if(order.deliveryType === 'Delivery') showAssignOption(id);
+            }
+
+            document.getElementById('full-order-modal').classList.add('open');
         }
+
+        function closeFullModal() { document.getElementById('full-order-modal').classList.remove('open'); }
+
+        function updateOrderStatus(id, status) {
+            db.collection('orders').doc(id).update({status}).then(() => {
+                closeFullModal();
+                showToast("Order Updated!");
+            });
+        }
+
+        function confirmCancel(id) {
+            document.getElementById('confirm-title').innerText = "Cancel this order?";
+            document.getElementById('custom-confirm').classList.add('open');
+            pendingAction = () => updateOrderStatus(id, 'cancelled');
+        }
+
+        function confirmAction() {
+            if (pendingAction) pendingAction();
+            closeCustomConfirm();
+        }
+        function closeCustomConfirm() { document.getElementById('custom-confirm').classList.remove('open'); }
+
+        // --- MENU CONTROL ---
+        function openMenuControl() {
+            renderInventory();
+            document.getElementById('menu-modal').classList.remove('hidden');
+        }
+        function closeMenuControl() { document.getElementById('menu-modal').classList.add('hidden'); }
 
         function renderInventory() {
-            const container = document.getElementById('menu-list-items');
-            if (currentMenuData.customItems && currentMenuData.customItems.length) {
-                container.innerHTML = currentMenuData.customItems.map((item, idx) => {
-                    const isAvail = item.available !== false; const stock = item.stock || 0;
-                    return `<div class="flex justify-between items-center p-3 bg-gray-800 rounded border border-gray-700 mb-2">
-                        <div class="flex items-center gap-3">
-                            ${item.image?`<img src="${item.image}" class="item-thumb">`:''}
-                            <div>
-                                <span class="text-white block font-bold text-sm ${isAvail ? '' : 'opacity-40 line-through'}">${item.name} <span class="text-orange-400">₹${item.price}</span></span>
-                                <span class="text-xs text-gray-500">Stock: ${stock} 
-                                    <button onclick="openPrompt('Add Stock', '10', (val)=>{ if(val && !isNaN(val)){ currentMenuData.customItems[${idx}].stock = (currentMenuData.customItems[${idx}].stock || 0) + parseInt(val); saveMenuStatus(); } })" class="ml-2 text-green-400 font-bold bg-green-900/30 px-2 rounded hover:bg-green-900/50">+</button>
-                                </span>
+            const catSelect = document.getElementById('item-cat');
+            catSelect.innerHTML = currentMenuData.categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            const list = document.getElementById('inv-list');
+            list.innerHTML = `
+                <h3 class="text-sm font-bold text-white mb-2">Categories</h3>
+                <div class="space-y-2 mb-4">
+                    ${currentMenuData.categories.map(c => `
+                        <div class="flex justify-between items-center p-2 bg-gray-800 rounded">
+                            <span class="text-white text-sm">${c}</span>
+                            <button onclick="deleteCategory('${c}')" class="text-red-500 text-xs"><i class="fas fa-trash"></i></button>
+                        </div>
+                    `).join('')}
+                </div>
+                <h3 class="text-sm font-bold text-white mb-2">Items</h3>
+                <div class="space-y-2">
+                    ${currentMenuData.customItems.map((item, idx) => `
+                        <div class="flex justify-between items-center p-2 bg-gray-800 rounded">
+                            <div class="flex items-center gap-2">
+                                ${item.image ? `<img src="${item.image}" class="item-thumb">` : ''}
+                                <div>
+                                    <p class="text-white text-sm font-bold">${item.name}</p>
+                                    <p class="text-xs text-gray-400">${item.category} - ₹${item.price}</p>
+                                </div>
                             </div>
+                            <button onclick="deleteItem(${idx})" class="text-red-500 text-xs"><i class="fas fa-trash"></i></button>
                         </div>
-                        <div class="flex items-center gap-4">
-                            <i onclick="toggleItemAvailability(${idx})" class="${isAvail ? 'fas fa-check-circle text-green-500' : 'far fa-circle text-gray-500'} text-xl cursor-pointer"></i>
-                            <i onclick="deleteItem(${idx})" class="fas fa-trash text-red-500 cursor-pointer"></i>
-                        </div>
-                    </div>`;
-                }).join('');
-            } else { container.innerHTML = "<p class='text-gray-500 text-center text-xs'>No items. Add some.</p>"; }
+                    `).join('')}
+                </div>
+            `;
         }
-        
-        function openAddItemModal() { document.getElementById('add-item-modal').classList.add('open'); document.getElementById('new-item-name').value=''; document.getElementById('new-item-price').value=''; document.getElementById('new-item-stock').value=''; document.getElementById('new-item-img').value=''; const catSelect = document.getElementById('new-item-cat'); catSelect.innerHTML = currentMenuData.categories.map(c => `<option value="${c}">${c}</option>`).join(''); }
-        function openCategoryModal() { document.getElementById('category-modal').classList.add('open'); document.getElementById('new-cat-name').value = ''; }
-        function saveNewCategory() { const newCat = document.getElementById('new-cat-name').value.trim(); if(newCat && !currentMenuData.categories.includes(newCat)) { currentMenuData.categories.push(newCat); saveMenuStatus(); openAddItemModal(); document.getElementById('category-modal').classList.remove('open'); showToast("Category Added"); } }
-        function saveNewItem() { const n=document.getElementById('new-item-name').value, p=parseInt(document.getElementById('new-item-price').value), s=parseInt(document.getElementById('new-item-stock').value), c=document.getElementById('new-item-cat').value, img=document.getElementById('new-item-img').value; if(n&&p){ if(!currentMenuData.customItems) currentMenuData.customItems=[]; currentMenuData.customItems.push({id:Date.now(), name:n, price:p, category:c, available:true, stock:s||999, image:img}); saveMenuStatus(); document.getElementById('add-item-modal').classList.remove('open'); } else showToast("Fill details"); }
-        
-        function toggleItemAvailability(idx) { 
-            // OPTIMISTIC UPDATE: Update local state and UI immediately
-            if (currentMenuData.customItems[idx].available === undefined) currentMenuData.customItems[idx].available = true; 
-            currentMenuData.customItems[idx].available = !currentMenuData.customItems[idx].available; 
-            renderInventory(); // Re-render instantly
-            saveMenuStatus(); // Save in background
+
+        function addCategory() {
+            const cat = document.getElementById('cat-add-input').value.trim();
+            if (cat && !currentMenuData.categories.includes(cat)) {
+                currentMenuData.categories.push(cat);
+                db.collection('settings').doc('menu_data').set(currentMenuData, {merge: true});
+                document.getElementById('cat-add-input').value = '';
+                showToast("Category Added");
+            }
+        }
+
+        function deleteCategory(cat) {
+            currentMenuData.categories = currentMenuData.categories.filter(c => c !== cat);
+            db.collection('settings').doc('menu_data').set(currentMenuData, {merge: true});
+            showToast("Category Deleted");
+        }
+
+        function addItem() {
+            const name = document.getElementById('item-name').value.trim();
+            const price = parseInt(document.getElementById('item-price').value);
+            const image = document.getElementById('item-image').value.trim();
+            const category = document.getElementById('item-cat').value;
+
+            if (name && price && category) {
+                currentMenuData.customItems.push({name, price, image, category});
+                db.collection('settings').doc('menu_data').set(currentMenuData, {merge: true});
+                document.getElementById('item-name').value = '';
+                document.getElementById('item-price').value = '';
+                document.getElementById('item-image').value = '';
+                showToast("Item Added");
+            } else {
+                showToast("Fill all fields");
+            }
         }
 
         function deleteItem(idx) {
-            document.getElementById('confirm-title').innerText = 'Delete Item?'; 
-            document.getElementById('custom-confirm').classList.add('open'); 
-            pendingAction = () => {
-                currentMenuData.customItems.splice(idx,1);
-                renderInventory(); // Instant update
-                saveMenuStatus();
-            }
+            currentMenuData.customItems.splice(idx, 1);
+            db.collection('settings').doc('menu_data').set(currentMenuData, {merge: true});
+            showToast("Item Deleted");
         }
 
-        function saveMenuStatus() { db.collection('settings').doc('menu_data').set({ customItems: currentMenuData.customItems, categories: currentMenuData.categories }, {merge: true}).then(() => { showToast("Saved"); }); }
-
-        // --- PROMPTS & CONFIRM ---
-        let promptCallback = null;
-        function openPrompt(title, placeholder, cb) { document.getElementById('prompt-title').innerText = title; document.getElementById('prompt-input').placeholder = placeholder; document.getElementById('prompt-input').value = ''; document.getElementById('custom-prompt').classList.add('open'); promptCallback = cb; }
-        document.getElementById('prompt-confirm-btn').onclick = () => { const val = document.getElementById('prompt-input').value; if(promptCallback) promptCallback(val); document.getElementById('custom-prompt').classList.remove('open'); };
-        function closeConfirm(y){ document.getElementById('custom-confirm').classList.remove('open'); if (y && pendingAction) pendingAction(); pendingAction = null; }
-
-        // --- UTILS ---
-        function showQRCode() { document.getElementById('qr-modal').classList.remove('hidden'); }
-        function renderUdhaar() { const l = document.getElementById('udhaar-list'); const q = document.getElementById('search-udhaar').value.toLowerCase(); let h = ''; for (let p in udhaarMap) { const u = udhaarMap[p], d = u.debit - u.credit, lim = limitsMap[p] || 0, perc = lim > 0 ? Math.min((d/lim)*100, 100) : 0; if (d > 0 && (u.name.toLowerCase().includes(q) || p.includes(q))) h += `<div class="aesthetic-card p-3 mb-2"><div class="flex justify-between items-start mb-2"><div><div class="flex gap-2 items-center"><p class="font-bold text-white">${u.name}</p><i class="fas fa-lock text-gray-500 cursor-pointer text-xs hover:text-white" onclick="openLimitModal('${p}','${u.name}')"></i></div><p class="text-xs opacity-50">${p}</p></div><div class="text-right"><p class="font-bold ${d > lim && lim > 0 ? 'text-red-500' : 'text-red-400'}">₹${d} ${lim > 0 ? `<span class="text-gray-500 text-[10px]">/ ${lim}</span>` : ''}</p><button onclick="openSettle('${p}','${u.name}',${d})" class="bg-blue-600 px-3 py-1 rounded text-xs text-white mt-1 font-bold">SETTLE</button></div></div>${lim > 0 ? `<div class="limit-bar-bg"><div class="limit-bar-fill ${d > lim ? 'bg-red-500' : 'bg-blue-500'}" style="width: ${perc}%"></div></div>` : ''}</div>`; } l.innerHTML = h || "<p class='text-center opacity-50 mt-4'>No Udhaar</p>"; }
-        function renderMessagesList() { const list = document.getElementById('messages-list'); if (chatUsers.length === 0) { list.innerHTML = "<p class='text-center opacity-50'>No messages</p>"; return; } list.innerHTML = chatUsers.map(u => `<div class="aesthetic-card p-3 flex justify-between items-center cursor-pointer hover:bg-gray-800/50 mb-2" onclick="openChat('${u.id}', '${udhaarMap[u.id]?.name || u.id}')"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div><p class="font-bold text-sm">${udhaarMap[u.id]?.name || "Unknown"}</p><p class="text-xs opacity-50">${u.id}</p></div></div><i class="fas fa-chevron-right opacity-30"></i></div>`).join(''); }
-        function openChat(phone, name) { currentChatUser = phone; document.getElementById('chat-user-name').innerText = name; document.getElementById('chat-window').classList.add('open'); db.collection('chats').doc(phone).collection('messages').orderBy('timestamp').onSnapshot(snap => { document.getElementById('chat-messages').innerHTML = snap.docs.map(d => `<div class="chat-bubble ${d.data().sender === 'admin' ? 'chat-admin' : 'chat-user'}">${d.data().text}</div>`).join(''); document.getElementById('chat-messages').scrollTop = 9999; }); }
-        function sendAdminMessage() { const t = document.getElementById('chat-input').value.trim(); if (t && currentChatUser) { db.collection('chats').doc(currentChatUser).collection('messages').add({ text: t, sender: 'admin', timestamp: firebase.firestore.FieldValue.serverTimestamp() }); db.collection('chats').doc(currentChatUser).set({lastMsg: t}, {merge: true}); document.getElementById('chat-input').value = ""; } }
-        function closeChatWindow() { document.getElementById('chat-window').classList.remove('open'); }
+        // --- UTILITY FUNCTIONS ---
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-overlay').classList.toggle('open'); }
         
         function toggleTheme() { 
@@ -1347,17 +1547,17 @@
         
         // --- SOUND SYSTEM ---
         function playAlarm() { 
-            if(soundEnabled && !isRinging) { 
+            if(soundEnabled && !isRinging && audioEl) { 
                 audioEl.src = "https://assets.mixkit.co/active_storage/sfx/2865/2865-preview.mp3"; 
                 audioEl.loop = true; 
-                audioEl.play().catch(e=>console.log(e)); 
+                audioEl.play().catch(e=>console.log("Audio play error:", e)); 
                 isRinging = true;
                 updateSoundUI();
             } 
         }
 
         function stopAlarmInteraction() {
-            if (isRinging) {
+            if (isRinging && audioEl) {
                 audioEl.pause();
                 audioEl.currentTime = 0;
                 isRinging = false;
@@ -1397,10 +1597,8 @@
         function toggleBusyMode() { db.collection('settings').doc('config').get().then(d => { const s = d.exists ? d.data().isBusy : false; db.collection('settings').doc('config').set({isBusy: !s}, {merge:true}); updateBusyUI(!s); }); }
         function updateBusyUI(isBusy) { const b = document.getElementById('sidebar-busy-btn'); if(b) { b.innerText = isBusy ? "ON" : "OFF"; b.className = isBusy ? "px-3 py-1 rounded text-xs font-bold bg-orange-500 text-white shadow" : "px-3 py-1 rounded text-xs font-bold bg-gray-700 text-gray-400 shadow"; } }
         function switchView(v) { 
-            // 1. Save active tab (Ab Riders bhi save hoga)
             if (['live', 'history', 'udhaar', 'riders'].includes(v)) localStorage.setItem('admin_active_tab', v); 
             
-            // 2. Hide ALL views (Users aur Riders dono ko chhupana zaroori hai)
             ['live', 'history', 'udhaar', 'messages', 'users', 'riders'].forEach(x => { 
                 const el = document.getElementById('view-' + x);
                 if(el) el.classList.add('hidden'); 
@@ -1408,21 +1606,18 @@
                 if(tab) tab.classList.remove('tab-active'); 
             }); 
             
-            // 3. Show SELECTED view
             const viewEl = document.getElementById('view-' + v);
             if(viewEl) viewEl.classList.remove('hidden'); 
             
             const tabEl = document.getElementById('tab-' + v);
             if(tabEl) tabEl.classList.add('tab-active'); 
             
-            // 4. Run Logic
             if (v === 'history') renderHistory(); 
             if (v === 'udhaar') renderUdhaar(); 
             if (v === 'messages') renderMessagesList(); 
             if (v === 'users') renderUsers();
-            if (v === 'riders') renderRiders(); // <-- Ye Nayi Line hai
+            if (v === 'riders') renderRiders();
 
-            // 5. Hide Dashboard if not main tabs
             const isMainTab = ['live', 'history', 'udhaar'].includes(v);
             document.getElementById('dashboard-section').style.display = isMainTab ? 'grid' : 'none'; 
             document.getElementById('tabs-section').style.display = isMainTab ? 'flex' : 'none'; 
