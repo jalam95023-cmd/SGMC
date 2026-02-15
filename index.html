@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SGMC Chai</title>
+    <title>SGMC Chai - Enhanced</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f0f0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,732 +15,1670 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
-        /* --- BASE STYLES --- */
-        :root { --bg-color: #050505; --text-color: #ffffff; --text-sub: #9ca3af; --card-bg: rgba(30, 30, 30, 0.6); --border-color: rgba(255, 255, 255, 0.08); --input-bg: #111; }
-        body.light-mode { --bg-color: #f3f4f6; --text-color: #111827; --text-sub: #4b5563; --card-bg: rgba(255, 255, 255, 0.9); --border-color: #e5e7eb; --input-bg: #ffffff; }
-        body { background-color: var(--bg-color); color: var(--text-color); font-family: 'Segoe UI', sans-serif; -webkit-tap-highlight-color: transparent; padding-bottom: 140px; transition: background 0.3s, color 0.3s; }
+        /* Enhanced Base Styles */
+        :root { 
+            --bg-color: #050505; 
+            --text-color: #ffffff; 
+            --text-sub: #9ca3af; 
+            --card-bg: rgba(30, 30, 30, 0.6); 
+            --border-color: rgba(255, 255, 255, 0.08); 
+            --input-bg: #111; 
+            --accent: #F97316;
+        }
+        
+        body.light-mode { 
+            --bg-color: #f3f4f6; 
+            --text-color: #111827; 
+            --text-sub: #4b5563; 
+            --card-bg: rgba(255, 255, 255, 0.9); 
+            --border-color: #e5e7eb; 
+            --input-bg: #ffffff; 
+        }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            font-family: 'Segoe UI', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            padding-bottom: 140px; 
+            transition: background 0.3s, color 0.3s; 
+        }
         
         canvas { pointer-events: none !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; }
 
-        .glass-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; transition: transform 0.2s; }
+        .glass-card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid var(--border-color); 
+            border-radius: 16px; 
+            overflow: hidden; 
+            transition: transform 0.2s; 
+        }
         .glass-card:active { transform: scale(0.98); }
         
-        input, textarea, select { background-color: var(--input-bg) !important; color: var(--text-color) !important; border-color: var(--border-color) !important; }
+        input, textarea, select { 
+            background-color: var(--input-bg) !important; 
+            color: var(--text-color) !important; 
+            border-color: var(--border-color) !important; 
+            border-radius: 12px;
+            padding: 12px;
+            width: 100%;
+            outline: none;
+        }
         
-        /* SIDEBAR */
-        .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: 280px; background: var(--bg-color); z-index: 200; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: 1px solid var(--border-color); box-shadow: -5px 0 25px rgba(0,0,0,0.2); }
+        /* Sidebar */
+        .sidebar { 
+            position: fixed; 
+            top: 0; 
+            right: 0; 
+            bottom: 0; 
+            width: 280px; 
+            background: var(--bg-color); 
+            z-index: 200; 
+            transform: translateX(100%); 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            border-left: 1px solid var(--border-color); 
+            box-shadow: -5px 0 25px rgba(0,0,0,0.2); 
+        }
         .sidebar.open { transform: translateX(0); }
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s; z-index: 190; backdrop-filter: blur(3px); }
+        .sidebar-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.6); 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: 0.3s; 
+            z-index: 190; 
+            backdrop-filter: blur(3px); 
+        }
         .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
         
-        /* BOTTOM NAV */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 12px; padding-bottom: 24px; z-index: 50; }
-        .nav-item { color: var(--text-sub); text-align: center; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .nav-item.active { color: #F97316; }
+        /* Bottom Navigation */
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            background: var(--card-bg); 
+            backdrop-filter: blur(10px); 
+            border-top: 1px solid var(--border-color); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 12px; 
+            padding-bottom: 24px; 
+            z-index: 50; 
+        }
+        .nav-item { 
+            color: var(--text-sub); 
+            text-align: center; 
+            font-size: 11px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 5px; 
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-item.active { color: var(--accent); }
         
-        /* TICKER */
-        .ticker-wrap { width: 100%; background: linear-gradient(90deg, #F97316, #ec4899); color: white; font-size: 11px; overflow: hidden; height: 24px; line-height: 24px; }
-        .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 15s linear infinite; }
-        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
+        /* Ticker Banner */
+        .ticker-wrap { 
+            width: 100%; 
+            background: linear-gradient(90deg, var(--accent), #ec4899); 
+            color: white; 
+            font-size: 11px; 
+            overflow: hidden; 
+            height: 24px; 
+            line-height: 24px; 
+        }
+        .ticker { 
+            display: inline-block; 
+            white-space: nowrap; 
+            padding-left: 100%; 
+            animation: ticker 15s linear infinite; 
+        }
+        @keyframes ticker { 
+            0% { transform: translate3d(0, 0, 0); } 
+            100% { transform: translate3d(-100%, 0, 0); } 
+        }
         
-        /* ANIMATIONS & MODALS */
-        #cooking-screen { position: fixed; inset: 0; background: #000; z-index: 250; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translateY(100%); transition: 0.4s; }
-        #cooking-screen.active { transform: translateY(0); }
+        /* Modals */
+        .popup-overlay { 
+            position: fixed; 
+            inset: 0; 
+            background: rgba(0,0,0,0.9); 
+            z-index: 150; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            opacity: 0; 
+            transition: opacity 0.3s; 
+        }
+        .popup-overlay.open { 
+            display: flex; 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
         
-        #wheel-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; display: none; flex-direction: column; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        #wheel-modal.open { display: flex; opacity: 1; pointer-events: auto; }
-        
-        .wheel-container { position: relative; width: 320px; height: 320px; margin-bottom: 20px; }
-        .wheel-outer { width: 100%; height: 100%; border-radius: 50%; border: 8px solid #F97316; position: relative; overflow: hidden; box-shadow: 0 0 50px rgba(249, 115, 22, 0.5); background: #111; }
-        .wheel-inner { width: 100%; height: 100%; border-radius: 50%; background: conic-gradient(#F97316 0deg 60deg, #222 60deg 120deg, #F97316 120deg 180deg, #222 180deg 240deg, #F97316 240deg 300deg, #222 300deg 360deg); transition: transform 4s cubic-bezier(0.1, 0.9, 0.2, 1); position: relative; }
-        .wheel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: white; border-radius: 50%; z-index: 5; border: 4px solid #F97316; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
-        .wheel-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #fff; z-index: 20; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
-        
-        #win-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: #1a1a1a; border: 2px solid #F97316; padding: 24px; border-radius: 20px; text-align: center; display: none; opacity: 0; transition: 0.3s; z-index: 400; width: 85%; max-width: 300px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-        #win-card.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
-
-        #cart-bar { position: fixed; bottom: 80px; left: 15px; right: 15px; background: linear-gradient(to right, #ea580c, #ca8a04); color: white; padding: 12px 20px; border-radius: 12px; display: none; justify-content: space-between; align-items: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); z-index: 40; cursor: pointer; animation: slideUp 0.3s; }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 150; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .popup-overlay.open { display: flex; opacity: 1; pointer-events: auto; }
-        #coupon-modal { z-index: 160; }
-        
-        .popup-card { background: #1a1a1a; border: 1px solid #333; padding: 24px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); transform: scale(0.9); transition: 0.3s; pointer-events: auto; }
+        .popup-card { 
+            background: #1a1a1a; 
+            border: 1px solid #333; 
+            padding: 24px; 
+            border-radius: 20px; 
+            width: 85%; 
+            max-width: 320px; 
+            text-align: center; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+            transform: scale(0.9); 
+            transition: 0.3s; 
+            pointer-events: auto; 
+        }
         .popup-overlay.open .popup-card { transform: scale(1); }
 
-        #toast-box { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #222; border: 1px solid #333; padding: 12px 24px; border-radius: 50px; color: white; z-index: 300; transition: 0.3s; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px; font-size: 13px; pointer-events: none; }
+        /* Cart Bar */
+        #cart-bar { 
+            position: fixed; 
+            bottom: 80px; 
+            left: 15px; 
+            right: 15px; 
+            background: linear-gradient(to right, #ea580c, #ca8a04); 
+            color: white; 
+            padding: 12px 20px; 
+            border-radius: 12px; 
+            display: none; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4); 
+            z-index: 40; 
+            cursor: pointer; 
+            animation: slideUp 0.3s; 
+        }
+        @keyframes slideUp { 
+            from { transform: translateY(50px); opacity: 0; } 
+            to { transform: translateY(0); opacity: 1; } 
+        }
+
+        /* Toast Notification */
+        #toast-box { 
+            position: fixed; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%) translateY(-100px); 
+            background: #222; 
+            border: 1px solid #333; 
+            padding: 12px 24px; 
+            border-radius: 50px; 
+            color: white; 
+            z-index: 300; 
+            transition: 0.3s; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-size: 13px; 
+            pointer-events: none; 
+        }
         #toast-box.show { transform: translateX(-50%) translateY(0); }
 
-        .cat-chip { padding: 8px 20px; font-size: 14px; border-radius: 99px; border: 1px solid transparent; }
-        .item-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #222; }
-        .coupon-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 12px; border-radius: 12px; border: 1px dashed #444; margin-bottom: 8px; cursor: pointer; }
-        .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 13px; margin-bottom: 8px; }
-        .chat-user { background: #F97316; color: white; align-self: flex-end; border-bottom-right-radius: 4px; margin-left: auto; }
-        .chat-admin { background: #333; border: 1px solid #444; color: white; align-self: flex-start; border-bottom-left-radius: 4px; margin-right: auto; }
+        /* Item Card */
+        .item-card { 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 16px; 
+            padding: 12px; 
+            margin-bottom: 12px; 
+            transition: transform 0.2s; 
+        }
+        .item-card:active { transform: scale(0.98); }
+        
+        .item-thumb { 
+            width: 60px; 
+            height: 60px; 
+            object-fit: cover; 
+            border-radius: 12px; 
+            background: #222; 
+        }
+
+        /* Category Chips */
+        .cat-chip { 
+            padding: 8px 20px; 
+            font-size: 14px; 
+            border-radius: 99px; 
+            border: 1px solid var(--border-color); 
+            background: var(--card-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .cat-chip.active { 
+            background: var(--accent); 
+            color: white; 
+            border-color: var(--accent);
+        }
+
+        /* Order Status Badge */
+        .status-badge {
+            font-size: 10px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .status-pending { background: rgba(234, 179, 8, 0.2); color: #fbbf24; }
+        .status-cooking { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .status-ready { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .status-out_delivery { background: rgba(147, 51, 234, 0.2); color: #a78bfa; }
+        .status-completed { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .status-cancelled { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        /* Chat Bubbles */
+        .chat-bubble { 
+            max-width: 80%; 
+            padding: 10px 14px; 
+            border-radius: 16px; 
+            font-size: 13px; 
+            margin-bottom: 8px; 
+        }
+        .chat-user { 
+            background: var(--accent); 
+            color: white; 
+            align-self: flex-end; 
+            border-bottom-right-radius: 4px; 
+            margin-left: auto; 
+        }
+        .chat-admin { 
+            background: #333; 
+            border: 1px solid #444; 
+            color: white; 
+            align-self: flex-start; 
+            border-bottom-left-radius: 4px; 
+            margin-right: auto; 
+        }
         #chat-messages { display: flex; flex-direction: column; }
+
+        /* Favorite Heart */
+        .fav-heart {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .fav-heart.active { color: #ef4444; }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--card-bg) 25%, rgba(255,255,255,0.05) 50%, var(--card-bg) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), #facc15);
+            border-radius: 2px;
+            transition: width 0.3s;
+        }
+
+        /* Badge */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
-    <div class="fixed top-0 left-0 right-0 bg-[#050505]/95 backdrop-blur-sm z-40 px-4 py-4 flex justify-between items-center border-b border-white/5" style="background-color: var(--bg-color);">
-        <div>
-            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">SGMC <span class="text-lg font-normal" style="color: var(--text-color);">Chai</span></h1>
-            <p class="text-[10px] text-green-500 font-bold tracking-wide pl-0.5" id="header-status">● LIVE STORE</p>
-        </div>
-        <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-800 bg-[#111] active:scale-95 transition"><i class="fas fa-bars"></i></button>
+    <!-- Toast Notification -->
+    <div id="toast-box">
+        <i class="fas fa-info-circle"></i>
+        <span>Message</span>
     </div>
 
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <div id="sidebar" class="sidebar p-6 flex flex-col h-full">
-        <div class="flex justify-between items-center mb-8"><h2 class="text-xl font-bold text-orange-500">Menu</h2><button onclick="toggleSidebar()" class="text-gray-500 text-xl"><i class="fas fa-times"></i></button></div>
-        <div class="glass-card p-4 mb-4 flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center"><i class="fas fa-user"></i></div><div onclick="openProfileEdit()" class="flex-1 cursor-pointer"><p class="font-bold text-sm" style="color:var(--text-color)" id="sidebar-name">Guest</p><p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p></div></div>
-        <div class="space-y-3 flex-1">
-            <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-adjust text-purple-400 mr-2"></i> Theme</button>
-            <button onclick="openRewardHistory()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-gift text-yellow-500 mr-2"></i> My Rewards</button>
-            <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-share-alt text-green-400 mr-2"></i> Share App</button>
-            <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)"><i class="fas fa-comments text-blue-400 mr-2"></i> Chat Support</button>
+    <!-- Top Header -->
+    <div class="fixed top-0 left-0 right-0 bg-[#050505]/95 backdrop-blur-sm z-40 px-4 py-4 flex justify-between items-center border-b border-white/5" style="background-color: var(--bg-color);">
+        <div>
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-500">
+                SGMC <span class="text-lg font-normal" style="color: var(--text-color);">Chai</span>
+            </h1>
+            <p class="text-[10px] text-green-500 font-bold tracking-wide pl-0.5" id="header-status">● LIVE STORE</p>
         </div>
-        <div class="text-center text-xs text-gray-500 mt-4">v20.0 Final</div>
+        <button onclick="toggleSidebar()" class="w-10 h-10 rounded-full flex items-center justify-center text-orange-500 border border-gray-800 bg-[#111] active:scale-95 transition relative">
+            <i class="fas fa-bars"></i>
+            <span id="cart-badge" class="badge" style="display: none;">0</span>
+        </button>
+    </div>
+
+    <!-- Broadcast Ticker -->
+    <div id="broadcast-bar" class="ticker-wrap" style="display: none; margin-top: 72px;">
+        <div class="ticker" id="broadcast-msg">Special Offer Today!</div>
+    </div>
+
+    <!-- Closed Banner -->
+    <div id="closed-banner" class="hidden fixed top-20 left-0 right-0 bg-red-600 text-white text-center py-2 z-30 text-sm font-bold">
+        🔴 Shop is currently CLOSED
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar p-6 flex flex-col h-full overflow-y-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-xl font-bold text-orange-500">Menu</h2>
+            <button onclick="toggleSidebar()" class="text-gray-500 text-xl">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="glass-card p-4 mb-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center">
+                <i class="fas fa-user"></i>
+            </div>
+            <div onclick="openProfileEdit()" class="flex-1 cursor-pointer">
+                <p class="font-bold text-sm" style="color:var(--text-color)" id="sidebar-name">Guest</p>
+                <p class="text-[10px]" style="color:var(--text-sub)">Tap to Edit Profile</p>
+            </div>
+        </div>
+        
+        <div class="space-y-3 flex-1">
+            <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-adjust text-purple-400 mr-2"></i> Theme
+            </button>
+            <button onclick="openRewardHistory()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-gift text-yellow-500 mr-2"></i> My Rewards
+            </button>
+            <button onclick="openFavorites()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-heart text-red-400 mr-2"></i> Favorites
+            </button>
+            <button onclick="openSavedAddresses()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-map-marker-alt text-blue-400 mr-2"></i> Saved Addresses
+            </button>
+            <button onclick="openChat()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-comment text-green-400 mr-2"></i> Chat with Admin
+            </button>
+            <button onclick="shareApp()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-share-alt text-pink-400 mr-2"></i> Share App
+            </button>
+            <button onclick="openReferral()" class="w-full text-left p-3 rounded-xl glass-card text-sm font-bold" style="color:var(--text-color)">
+                <i class="fas fa-users text-indigo-400 mr-2"></i> Refer & Earn
+            </button>
+        </div>
+        
+        <div class="mt-auto pt-4 border-t border-gray-800">
+            <p class="text-center text-[10px] text-gray-600">SGMC v3.0 Enhanced</p>
+        </div>
     </div>
 
     <div class="h-20"></div>
 
-    <div id="view-menu" class="pb-10">
-        <div id="broadcast-bar" class="hidden ticker-wrap mb-2"><div class="ticker" id="broadcast-msg"></div></div>
-        <div class="sticky top-[60px] z-30 pt-2 pb-1 px-4 border-b border-white/5" style="background-color: var(--bg-color);">
-            <div class="relative mb-4"><i class="fas fa-search absolute left-4 top-3.5 text-gray-500"></i><input type="text" id="search-input" onkeyup="filterMenu()" placeholder="Search items..." class="w-full rounded-xl py-3 pl-12 pr-4 text-sm outline-none border border-[#333] bg-[#111] text-white"></div>
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2" id="category-container">
-                <button onclick="setCategory('All')" class="cat-chip font-bold bg-white text-black" id="cat-All">All</button>
-                <button onclick="setCategory('Chai')" class="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700" id="cat-Chai">Chai</button>
-                <button onclick="setCategory('Snacks')" class="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700" id="cat-Snacks">Snacks</button>
-                <button onclick="setCategory('Sutta')" class="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700" id="cat-Sutta">Sutta</button>
-            </div>
+    <!-- MENU VIEW -->
+    <div id="view-menu" class="px-4 pb-24">
+        <!-- Category Filter -->
+        <div class="flex gap-2 mb-4 overflow-x-auto pb-2" style="scrollbar-width: none;">
+            <button onclick="filterCategory('all')" id="cat-all" class="cat-chip active">All</button>
+            <button onclick="filterCategory('Chai')" id="cat-Chai" class="cat-chip">Chai</button>
+            <button onclick="filterCategory('Snacks')" id="cat-Snacks" class="cat-chip">Snacks</button>
+            <button onclick="filterCategory('Beverages')" id="cat-Beverages" class="cat-chip">Beverages</button>
         </div>
-        <div id="closed-banner" class="hidden mx-4 mt-4 bg-red-900/20 border border-red-500/30 text-red-200 p-4 rounded-2xl text-center"><h3 class="font-bold text-sm">Shop is Closed</h3></div>
-        <div id="menu-container" class="space-y-4 p-4 pt-2"></div>
+        
+        <!-- Menu Items -->
+        <div id="menu-list"></div>
     </div>
 
-    <div id="view-orders" class="hidden p-4"><h2 class="text-xl font-bold mb-4" style="color:var(--text-color)">My Orders</h2><div id="orders-list" class="space-y-3"></div></div>
-    
-    <div id="view-udhaar" class="hidden p-4">
-        <div class="glass-card p-6 text-center mb-6 border-blue-500/20 relative overflow-hidden">
-            <p class="text-gray-400 text-xs uppercase tracking-wider mb-2">Pending Dues</p>
-            <h1 class="text-5xl font-bold text-blue-400 mb-2 font-mono">₹<span id="my-udhaar-amount">0</span></h1>
-            <p id="udhaar-limit-display" class="text-xs text-red-400 hidden">Limit: ₹0</p>
-            <button onclick="payUdhaarViaUPI()" class="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-bold shadow-lg mt-4">Pay Online</button>
+    <!-- ORDERS VIEW -->
+    <div id="view-orders" class="px-4 pb-24 hidden">
+        <div class="flex gap-2 mb-4">
+            <button onclick="filterOrderStatus('all')" id="order-filter-all" class="cat-chip active flex-1">All</button>
+            <button onclick="filterOrderStatus('active')" id="order-filter-active" class="cat-chip flex-1">Active</button>
+            <button onclick="filterOrderStatus('completed')" id="order-filter-completed" class="cat-chip flex-1">History</button>
         </div>
-        <h3 class="font-bold text-sm mb-3 pl-1 text-gray-400">Transaction History</h3>
-        <div id="udhaar-history" class="space-y-2"></div>
+        <div id="orders-list"></div>
     </div>
 
-    <div id="cart-bar" style="display: none;" onclick="openCheckout()">
-        <div class="flex items-center gap-3">
-            <div class="bg-white text-orange-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm" id="cart-count">0</div>
-            <div><p class="text-[10px] uppercase font-bold text-orange-100 opacity-80">Total</p><span class="font-bold text-lg">₹<span id="cart-total">0</span></span></div>
+    <!-- UDHAAR VIEW -->
+    <div id="view-udhaar" class="px-4 pb-24 hidden">
+        <div class="glass-card p-6 mb-6 text-center">
+            <p class="text-sm text-gray-400 mb-2">Total Udhaar Balance</p>
+            <p class="text-4xl font-black text-red-400" id="my-udhaar-amount">₹0</p>
+            <button onclick="payUdhaarViaUPI()" class="mt-4 w-full py-3 bg-green-600 text-white font-bold rounded-xl">
+                <i class="fas fa-rupee-sign mr-2"></i> Pay via UPI
+            </button>
         </div>
-        <span class="font-bold text-sm flex items-center gap-2">Checkout <i class="fas fa-arrow-right"></i></span>
+        <h3 class="font-bold mb-3">Transaction History</h3>
+        <div id="udhaar-history"></div>
     </div>
 
+    <!-- Cart Bar -->
+    <div id="cart-bar" onclick="openCart()">
+        <div>
+            <p class="text-xs opacity-80">Cart</p>
+            <p class="font-bold text-lg"><span id="cart-items-count">0</span> items</p>
+        </div>
+        <div class="text-right">
+            <p class="text-xs opacity-80">Total</p>
+            <p class="font-bold text-lg">₹<span id="cart-total">0</span></p>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('menu')" id="nav-menu"><i class="fas fa-th-large"></i> Menu</div>
-        <div class="nav-item" onclick="switchTab('orders')" id="nav-orders"><i class="fas fa-receipt"></i> Orders</div>
-        <div class="nav-item" onclick="switchTab('udhaar')" id="nav-udhaar"><i class="fas fa-wallet"></i> Udhaar</div>
-    </div>
-
-    <div id="instruction-modal" class="popup-overlay">
-        <div class="popup-card">
-            <h3 class="text-lg font-bold text-white mb-4">Cooking Note</h3>
-            <textarea id="note-popup-input" rows="3" class="w-full bg-[#222] border border-[#444] rounded-xl p-3 text-sm text-white outline-none mb-4" placeholder="e.g. Kam cheeni..."></textarea>
-            <button onclick="saveInstructions()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Done</button>
+        <div class="nav-item active" id="nav-menu" onclick="switchTab('menu')">
+            <i class="fas fa-home text-xl"></i>
+            <span>Menu</span>
+        </div>
+        <div class="nav-item" id="nav-orders" onclick="switchTab('orders')">
+            <i class="fas fa-receipt text-xl"></i>
+            <span>Orders</span>
+        </div>
+        <div class="nav-item" id="nav-udhaar" onclick="switchTab('udhaar')">
+            <i class="fas fa-wallet text-xl"></i>
+            <span>Udhaar</span>
         </div>
     </div>
 
-    <div id="coupon-modal" class="popup-overlay">
-        <div class="popup-card">
-            <h3 class="text-lg font-bold text-white mb-2">Offers & Rewards</h3>
-            <button onclick="removeCoupon()" id="remove-coupon-btn" class="hidden w-full bg-red-900/50 text-red-300 py-2 rounded-xl text-xs font-bold mb-4 border border-red-800">Remove Applied Coupon</button>
-            <div id="coupon-list-content" class="max-h-60 overflow-y-auto mb-4 text-left"></div>
-            <button onclick="document.getElementById('coupon-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Close</button>
-        </div>
-    </div>
-
-    <div id="rewards-history-modal" class="popup-overlay">
-        <div class="popup-card">
-            <h3 class="text-xl font-bold text-white mb-4">My Rewards</h3>
-            <div id="reward-history-list" class="max-h-60 overflow-y-auto mb-4 text-sm text-left space-y-2"></div>
-            <button onclick="document.getElementById('rewards-history-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Close</button>
-        </div>
-    </div>
-
-    <div id="delivery-off-modal" class="popup-overlay">
-        <div class="popup-card">
-            <i class="fas fa-store-slash text-4xl text-gray-500 mb-4"></i>
-            <h3 class="text-xl font-bold text-white mb-2">Delivery Paused</h3>
-            <p class="text-sm text-gray-400 mb-6">Online ordering is currently unavailable.</p>
-            <button onclick="document.getElementById('delivery-off-modal').classList.remove('open')" class="w-full bg-gray-800 text-white py-3 rounded-xl font-bold">Okay</button>
-        </div>
-    </div>
-
-    <div id="cancel-confirm-modal" class="popup-overlay">
-        <div class="popup-card">
-            <i class="fas fa-exclamation-triangle text-3xl text-red-500 mb-4"></i>
-            <h3 class="text-lg font-bold text-white mb-2">Cancel Order?</h3>
-            <p class="text-xs text-gray-400 mb-6">Are you sure? This cannot be undone.</p>
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('cancel-confirm-modal').classList.remove('open')" class="flex-1 py-3 rounded-xl border border-gray-600 text-gray-300 font-bold text-xs">No, Keep</button>
-                <button onclick="confirmCancelOrder()" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-xs">Yes, Cancel</button>
+    <!-- MODALS -->
+    
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="popup-overlay">
+        <div class="popup-card max-w-md w-full max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Your Cart</h3>
+                <button onclick="closeCart()" class="text-gray-400">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
             </div>
-        </div>
-    </div>
-
-    <div id="win-card">
-        <i class="fas fa-trophy text-4xl text-yellow-400 mb-3 animate-bounce"></i>
-        <h3 class="text-2xl font-bold text-white mb-1">Congratulations!</h3>
-        <p class="text-sm text-gray-300 mb-6" id="win-text">You won a prize!</p>
-        <button onclick="closeWheel()" class="w-full bg-gradient-to-r from-orange-600 to-yellow-500 text-white py-3 rounded-xl font-bold shadow-lg" style="pointer-events: auto; position: relative; z-index: 500;">Back to Menu</button>
-    </div>
-
-    <div id="wheel-modal">
-        <div class="flex flex-col items-center">
-            <h2 class="text-white font-bold text-2xl mb-8">Spin & Win!</h2>
-            <div class="wheel-container">
-                <div class="wheel-pointer"></div>
-                <div class="wheel-outer">
-                    <div id="wheel" class="wheel-inner"></div>
-                    <div class="wheel-center">
-                         <i class="fas fa-trophy text-orange-500 text-xl"></i>
-                    </div>
+            <div id="cart-items-list" class="mb-4"></div>
+            <div class="border-t border-gray-700 pt-4 mb-4">
+                <div class="flex justify-between mb-2">
+                    <span>Subtotal</span>
+                    <span class="font-bold">₹<span id="cart-subtotal">0</span></span>
+                </div>
+                <div class="flex justify-between mb-2 text-sm text-gray-400">
+                    <span>Delivery</span>
+                    <span>₹<span id="delivery-charge">0</span></span>
+                </div>
+                <div class="flex justify-between text-lg font-bold">
+                    <span>Total</span>
+                    <span class="text-orange-400">₹<span id="cart-final-total">0</span></span>
                 </div>
             </div>
-            <button onclick="spinTheWheel()" id="spin-btn" class="mt-8 bg-white text-black px-10 py-3 rounded-full font-bold shadow-2xl text-lg active:scale-95 transition">SPIN NOW</button>
+            <button onclick="proceedToCheckout()" class="w-full py-3 bg-gradient-to-r from-orange-600 to-yellow-600 text-white font-bold rounded-xl">
+                Proceed to Checkout
+            </button>
         </div>
     </div>
 
-    <div id="checkout-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 hidden">
-        <div class="bg-[#151515] w-full max-w-md p-6 rounded-t-3xl sm:rounded-2xl border-t border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-bold text-white">Checkout</h2><button onclick="closeCheckout()" class="w-8 h-8 rounded-full bg-[#222] text-gray-400 flex items-center justify-center border border-gray-700"><i class="fas fa-times"></i></button></div>
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="popup-overlay">
+        <div class="popup-card max-w-md w-full max-h-[85vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Checkout</h3>
             
-            <div id="checkout-items" class="space-y-3 mb-6"></div>
-            
-            <div class="flex bg-[#222] p-1 rounded-xl mb-4">
-                <button onclick="toggleOrderType('self')" id="tab-self" class="flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600">Self Order</button>
-                <button onclick="toggleOrderType('others')" id="tab-others" class="flex-1 py-2 rounded-lg text-xs font-bold text-gray-400">Order for Others</button>
-            </div>
-
-            <div class="glass-card p-4 border border-gray-700/50 mb-4">
-                <div id="form-self" class="space-y-3">
-                    <div class="flex items-center justify-between"><p class="text-[10px] uppercase font-bold text-orange-500 tracking-wider">Your Location</p><button onclick="detectLocation('self')" class="text-xs text-blue-400 flex items-center gap-1 font-bold"><i class="fas fa-crosshairs"></i> Detect</button></div>
-                    <div class="flex items-center gap-2 bg-gray-900/50 p-3 rounded border border-gray-700/50"><i class="fas fa-map-marker-alt text-red-500"></i><p class="text-xs truncate text-gray-300 flex-1" id="gps-address-text">Click detect...</p></div>
-                    <div class="grid grid-cols-2 gap-2"><input type="text" id="self-flat" class="w-full bg-[#222] border border-[#333] rounded-lg p-3 text-xs outline-none" placeholder="Flat No *"><input type="text" id="self-landmark" class="w-full bg-[#222] border border-[#333] rounded-lg p-3 text-xs outline-none" placeholder="Landmark"></div>
-                </div>
-                <div id="form-others" class="space-y-3 hidden">
-                    <div class="flex gap-2"><input type="text" id="rec-name" placeholder="Name" class="flex-1 bg-[#222] border border-[#333] rounded-lg p-3 text-xs outline-none"><input type="tel" id="rec-phone" placeholder="Phone" class="w-24 bg-[#222] border border-[#333] rounded-lg p-3 text-xs outline-none"></div>
-                    <div><label class="text-[10px] uppercase font-bold text-orange-500 tracking-wider mb-1 block">Delivery Area</label><div class="flex gap-2"><input type="text" id="search-area" placeholder="Area Name" class="flex-1 bg-[#222] border border-[#333] rounded-lg p-3 text-xs outline-none"><button onclick="verifyArea()" class="bg-[#333] px-3 rounded-lg border border-gray-600 text-xs text-white" id="btn-verify">Check</button></div><p class="text-[10px] text-gray-500 mt-1" id="area-status">Verify area first.</p></div>
-                    <input type="text" id="others-flat" class="w-full bg-[#222] border border-[#333] rounded-lg p-3 text-xs outline-none" placeholder="Full Address">
+            <div class="mb-4">
+                <label class="text-sm text-gray-400 mb-2 block">Delivery Option</label>
+                <div class="flex gap-2">
+                    <button onclick="selectDeliveryMode('pickup')" id="delivery-pickup" class="flex-1 py-2 border border-gray-700 rounded-lg">
+                        <i class="fas fa-shopping-bag mr-2"></i>Self Pickup
+                    </button>
+                    <button onclick="selectDeliveryMode('delivery')" id="delivery-home" class="flex-1 py-2 bg-orange-600 text-white rounded-lg">
+                        <i class="fas fa-motorcycle mr-2"></i>Home Delivery
+                    </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="document.getElementById('instruction-modal').classList.add('open')" class="py-3 rounded-xl border border-dashed border-[#444] text-gray-400 text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-plus"></i> <span id="instr-text">Add Note</span></button>
-                <button onclick="openCouponModal()" class="py-3 rounded-xl border border-dashed border-[#444] text-orange-400 text-xs font-bold flex items-center justify-center gap-2"><i class="fas fa-ticket-alt"></i> <span id="coupon-btn-text">Coupon</span></button>
+            <div id="delivery-address-section" class="mb-4">
+                <label class="text-sm text-gray-400 mb-2 block">Delivery Address</label>
+                <textarea id="delivery-address" rows="2" placeholder="Enter delivery address" class="mb-2"></textarea>
+                <button onclick="detectLocation('self')" class="w-full py-2 bg-gray-800 text-sm rounded-lg">
+                    <i class="fas fa-location-arrow mr-2"></i>Use Current Location
+                </button>
+                <p id="gps-address-text" class="text-xs text-gray-500 mt-1"></p>
             </div>
 
-            <div id="delivery-info-box" class="bg-gray-800/50 p-3 rounded-xl mb-4 border border-gray-700/50 hidden">
-                <div class="flex justify-between text-xs mb-1">
-                    <span class="text-gray-400">Subtotal</span>
-                    <span class="text-white">₹<span id="co-subtotal">0</span></span>
-                </div>
-                <div class="flex justify-between text-xs mb-1">
-                    <span class="text-gray-400">Delivery Fee</span>
-                    <span class="text-orange-400" id="co-delivery-fee">₹0</span>
-                </div>
-                <div class="flex justify-between text-xs mb-1 hidden" id="co-discount-row">
-                    <span class="text-green-400">Discount</span>
-                    <span class="text-green-400">-₹<span id="co-discount">0</span></span>
-                </div>
-                <div class="text-[10px] text-gray-500 mt-1 border-t border-gray-700 pt-1 italic" id="co-delivery-msg"></div>
+            <div class="mb-4">
+                <label class="text-sm text-gray-400 mb-2 block">Payment Method</label>
+                <select id="payment-mode" class="mb-2">
+                    <option value="Cash">Cash on Delivery</option>
+                    <option value="Online">UPI/Online</option>
+                    <option value="Udhaar">Udhaar (Credit)</option>
+                </select>
             </div>
 
-            <div><label class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2 block">Payment</label><div class="grid grid-cols-3 gap-3"><button onclick="setPayment('Cash')" id="pay-cash" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Cash</button><button onclick="setPayment('UPI')" id="pay-upi" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">UPI</button><button onclick="setPayment('Udhaar')" id="pay-udhaar" class="p-3 rounded-xl border border-gray-700 bg-gray-800 text-xs font-bold text-gray-300 payment-opt">Udhaar</button></div></div>
-            
-            <div class="flex justify-between items-center pt-4 border-t border-[#333] mt-4">
-                <div><p class="text-xs text-gray-500">Total</p><span class="text-white font-bold text-xl">₹<span id="checkout-total">0</span></span></div>
-                <button onclick="handlePlaceOrderClick()" class="bg-gradient-to-r from-orange-600 to-orange-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg" id="place-order-btn">Place Order</button>
+            <div class="mb-4">
+                <label class="text-sm text-gray-400 mb-2 block">Special Instructions (Optional)</label>
+                <textarea id="order-notes" rows="2" placeholder="Any special requests..."></textarea>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeCheckout()" class="flex-1 py-3 bg-gray-700 text-white font-bold rounded-xl">
+                    Cancel
+                </button>
+                <button onclick="placeOrder()" class="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl">
+                    <i class="fas fa-check mr-2"></i>Place Order
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="toast-box"><i class="fas fa-info-circle text-orange-500"></i><span id="toast-msg"></span></div>
-    <div id="cooking-screen"><div class="text-center"><i class="fas fa-mug-hot text-6xl text-orange-500 mb-6 block animate-pulse"></i><h2 class="text-2xl font-bold mb-2 text-white">Order Placed!</h2><p class="text-gray-400 text-sm">Preparing your Chai...</p></div></div>
-    <div id="login-modal" class="popup-overlay"><div class="popup-card"><h2 class="text-2xl font-bold text-white mb-4">Profile</h2><input type="text" id="user-name" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-2" placeholder="Name"><input type="tel" id="user-phone" class="w-full bg-gray-900 border border-gray-800 rounded-xl p-3 text-white mb-4" placeholder="Phone"><button onclick="saveProfile()" class="w-full bg-orange-600 text-white py-3 rounded-xl font-bold">Save</button></div></div>
-    <div id="chat-modal" class="fixed inset-0 bg-[#0f0f0f] z-[120] flex flex-col hidden"><div class="p-4 bg-gray-800 border-b border-gray-700 flex justify-between items-center"><h3 class="font-bold text-white">Support</h3><button onclick="closeChat()" class="text-gray-400"><i class="fas fa-times"></i></button></div><div id="chat-messages" class="flex-1 overflow-y-auto p-4"></div><div class="p-3 border-t border-gray-700 flex gap-2"><input type="text" id="chat-input" class="flex-1 rounded-full px-4 py-2 text-sm bg-[#222] text-white border-none" placeholder="Message..."><button onclick="sendMessage()" class="w-10 h-10 bg-orange-600 rounded-full text-white"><i class="fas fa-paper-plane"></i></button></div></div>
-    <div id="order-detail-modal" class="popup-overlay"><div class="bg-[#1f1f1f] w-full max-w-sm p-6 rounded-2xl border border-gray-700 relative"><button onclick="document.getElementById('order-detail-modal').classList.remove('open')" class="absolute top-4 right-4 text-gray-400"><i class="fas fa-times"></i></button><h2 class="text-lg font-bold mb-1 text-white">Details</h2><p id="od-date" class="text-xs text-gray-500 mb-4"></p><div id="od-items" class="bg-gray-900/50 rounded p-2 max-h-40 overflow-y-auto mb-2"></div><div class="pt-2 border-t border-gray-700 font-bold flex justify-between text-white"><span>Total</span><span id="od-total" class="text-orange-500"></span></div></div></div>
+    <!-- Order Detail Modal -->
+    <div id="order-detail-modal" class="popup-overlay">
+        <div class="popup-card max-w-md w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Order Details</h3>
+                <button onclick="closeOrderDetail()" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-xs text-gray-400 mb-1">Order Time</p>
+                <p class="text-sm font-bold" id="od-date"></p>
+            </div>
+
+            <div id="od-rider-info"></div>
+
+            <div class="mb-4">
+                <p class="text-xs text-gray-400 mb-2">Order Status</p>
+                <div id="od-progress" class="space-y-2"></div>
+            </div>
+
+            <div class="border-t border-gray-700 pt-4 mb-4">
+                <p class="text-xs text-gray-400 mb-2">Items</p>
+                <div id="od-items"></div>
+            </div>
+
+            <div class="flex justify-between items-center text-lg font-bold border-t border-gray-700 pt-4">
+                <span>Total</span>
+                <span class="text-orange-400" id="od-total">₹0</span>
+            </div>
+
+            <button id="cancel-order-btn" onclick="cancelOrder()" class="w-full mt-4 py-2 bg-red-900/20 text-red-400 border border-red-900/50 rounded-xl text-sm font-bold">
+                Cancel Order
+            </button>
+        </div>
+    </div>
+
+    <!-- Profile Edit Modal -->
+    <div id="profile-modal" class="popup-overlay">
+        <div class="popup-card">
+            <h3 class="text-xl font-bold mb-4">Edit Profile</h3>
+            <input type="text" id="profile-name" placeholder="Your Name" class="mb-2">
+            <input type="tel" id="profile-phone" placeholder="Phone Number" class="mb-4" maxlength="10">
+            <div class="flex gap-2">
+                <button onclick="closeProfileEdit()" class="flex-1 py-2 bg-gray-700 text-white rounded-xl">Cancel</button>
+                <button onclick="saveProfile()" class="flex-1 py-2 bg-orange-600 text-white rounded-xl">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chat-modal" class="popup-overlay">
+        <div class="popup-card max-w-md w-full h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Chat with Admin</h3>
+                <button onclick="closeChat()" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto mb-4"></div>
+            <div class="flex gap-2">
+                <input type="text" id="chat-input" placeholder="Type message..." class="flex-1" onkeypress="if(event.key==='Enter') sendMessage()">
+                <button onclick="sendMessage()" class="px-4 py-2 bg-orange-600 text-white rounded-xl">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites Modal -->
+    <div id="favorites-modal" class="popup-overlay">
+        <div class="popup-card max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">My Favorites</h3>
+                <button onclick="closeFavorites()" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="favorites-list"></div>
+        </div>
+    </div>
+
+    <!-- Saved Addresses Modal -->
+    <div id="addresses-modal" class="popup-overlay">
+        <div class="popup-card max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">Saved Addresses</h3>
+                <button onclick="closeSavedAddresses()" class="text-gray-400">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <button onclick="addNewAddress()" class="w-full py-2 mb-4 bg-orange-600 text-white rounded-xl text-sm font-bold">
+                <i class="fas fa-plus mr-2"></i>Add New Address
+            </button>
+            <div id="addresses-list"></div>
+        </div>
+    </div>
+
+    <!-- Referral Modal -->
+    <div id="referral-modal" class="popup-overlay">
+        <div class="popup-card">
+            <h3 class="text-xl font-bold mb-4">Refer & Earn</h3>
+            <div class="bg-gray-900 p-4 rounded-xl mb-4 text-center">
+                <p class="text-sm text-gray-400 mb-2">Your Referral Code</p>
+                <p class="text-2xl font-bold text-orange-400" id="referral-code">SGMC123</p>
+                <button onclick="copyReferralCode()" class="mt-2 text-xs text-blue-400">
+                    <i class="fas fa-copy mr-1"></i>Copy Code
+                </button>
+            </div>
+            <p class="text-sm text-gray-400 text-center mb-4">
+                Share your code and earn ₹50 when your friend places their first order!
+            </p>
+            <button onclick="shareReferral()" class="w-full py-3 bg-gradient-to-r from-orange-600 to-pink-600 text-white font-bold rounded-xl">
+                <i class="fas fa-share-alt mr-2"></i>Share Now
+            </button>
+            <button onclick="closeReferral()" class="w-full mt-2 py-2 bg-gray-700 text-white rounded-xl">Close</button>
+        </div>
+    </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyBadYpoNTL0dHkBQO4UddRVtPIfUOlf-bA", authDomain: "sgmc-16568.firebaseapp.com", projectId: "sgmc-16568", storageBucket: "sgmc-16568.firebasestorage.app", messagingSenderId: "339041646158", appId: "1:339041646158:web:85d9a50a3b51b30aae351f", measurementId: "G-4996NPF55N" };
-        firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
+        // Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDCBzw6lAWE_3KlCwNKV2bfFJ6LSbwDZpQ",
+            authDomain: "sgmc-72e84.firebaseapp.com",
+            projectId: "sgmc-72e84",
+            storageBucket: "sgmc-72e84.firebasestorage.app",
+            messagingSenderId: "444717267349",
+            appId: "1:444717267349:web:93d6c2db1b2aee5f9e2b55"
+        };
 
-        let cart={}, userProfile={name:"",phone:""}, selectedPayment='Cash', isShopOpen=true, isDeliveryActive=true, userLocation=null, shopLocation=null, cachedOrders={}, otherOrderCoords=null, cancelId=null;
-        const MAX_DISTANCE_KM=3.0;
-        let displayMenuItems=[], currentCategory='All', searchQuery='';
-        let appliedCoupon = null; // Can be a Coupon Object or a Reward Object
-        let wheelItems = ["Free Sutta", "10% OFF", "Better Luck", "Free Chai", "5% OFF", "Try Again"];
-        let orderNote = "";
-        
-        let deliveryConfig = { minOrder: 0, charge: 0, freeAbove: 0 };
-        let currentUserLimit = 0;
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Global Variables
+        let menuData = [];
+        let cart = [];
+        let userProfile = { name: 'Guest', phone: '' };
+        let myOrders = [];
+        let cachedOrders = {};
         let currentUdhaarBalance = 0;
+        let isShopOpen = true;
+        let currentFilter = 'all';
+        let currentOrderFilter = 'all';
+        let deliveryMode = 'delivery';
+        let userLocation = null;
+        let shopLocation = null;
+        let favorites = [];
+        let savedAddresses = [];
+        let currentViewingOrderId = null;
 
-        function init() { 
-            loadProfile(); loadMenuData(); listenToShopStatus(); listenToBroadcast(); loadCartFromStorage(); fetchRewardsData(); fetchDeliveryConfig();
-            const savedTab = localStorage.getItem('activeTab') || 'menu'; switchTab(savedTab);
-            setTimeout(() => { const s = localStorage.getItem('menuScrollPos'); if(s && savedTab === 'menu') window.scrollTo(0, parseInt(s)); }, 500);
-            window.addEventListener('scroll', () => { if(!document.getElementById('view-menu').classList.contains('hidden')){ localStorage.setItem('menuScrollPos', window.scrollY); } });
-            fetchShopLocation(); 
+        // Init
+        function init() {
+            loadProfile();
+            loadFavorites();
+            loadSavedAddresses();
+            fetchMenu();
+            listenToShopStatus();
+            listenToBroadcast();
+            
+            const savedTab = localStorage.getItem('activeTab') || 'menu';
+            switchTab(savedTab);
+            
+            // Load cart from localStorage
+            const savedCart = localStorage.getItem('cart');
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+                updateCartUI();
+            }
         }
 
-        function showToast(msg) { const b = document.getElementById('toast-box'); document.getElementById('toast-msg').innerText = msg; b.style.opacity = '1'; b.style.transform = 'translate(-50%, 0)'; setTimeout(() => { b.style.opacity = '0'; b.style.transform = 'translate(-50%, -100px)'; }, 3000); }
-
-        function fetchDeliveryConfig() { 
-            db.collection('settings').doc('delivery_config').onSnapshot(d => { 
-                if(d.exists) {
-                    const data = d.data();
-                    isDeliveryActive = data.isActive !== false;
-                    deliveryConfig = { minOrder: data.minOrder || 0, charge: data.charge || 0, freeAbove: data.freeAbove || 99999 };
-                    const badge = document.getElementById('header-status');
-                    if(isDeliveryActive) { badge.innerText = "● LIVE STORE"; badge.className="text-[10px] text-green-500 font-bold tracking-wide pl-0.5"; }
-                    else { badge.innerText = "● DELIVERY PAUSED"; badge.className="text-[10px] text-red-500 font-bold tracking-wide pl-0.5"; }
-                } 
-            }); 
+        // Profile Management
+        function loadProfile() {
+            const saved = localStorage.getItem('userProfile');
+            if (saved) {
+                userProfile = JSON.parse(saved);
+                document.getElementById('sidebar-name').innerText = userProfile.name;
+                if (userProfile.phone) {
+                    listenToUserOrders();
+                    generateReferralCode();
+                }
+            }
         }
-        function fetchRewardsData() { db.collection('settings').doc('rewards_config').onSnapshot(d => { if(d.exists && d.data().wheelItems) wheelItems = d.data().wheelItems; }); }
 
-        function openCheckout(){
-            if(!isDeliveryActive) { document.getElementById('delivery-off-modal').classList.add('open'); return; }
-            document.getElementById('cart-bar').style.display = 'none';
-            renderCartItems(); 
-            document.getElementById('checkout-modal').classList.remove('hidden');
-            setPayment('Cash'); toggleOrderType('self');
-            if(userProfile.phone) fetchUdhaarInfo();
+        function openProfileEdit() {
+            document.getElementById('profile-name').value = userProfile.name;
+            document.getElementById('profile-phone').value = userProfile.phone;
+            document.getElementById('profile-modal').classList.add('open');
+            toggleSidebar();
+        }
+
+        function closeProfileEdit() {
+            document.getElementById('profile-modal').classList.remove('open');
+        }
+
+        function saveProfile() {
+            const name = document.getElementById('profile-name').value.trim();
+            const phone = document.getElementById('profile-phone').value.trim();
+            
+            if (!name || !phone || phone.length !== 10) {
+                showToast('Please enter valid details');
+                return;
+            }
+            
+            userProfile = { name, phone };
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            document.getElementById('sidebar-name').innerText = name;
+            closeProfileEdit();
+            showToast('Profile updated!');
+            listenToUserOrders();
+            generateReferralCode();
+        }
+
+        // Menu Functions
+        function fetchMenu() {
+            db.collection('settings').doc('menu_data').onSnapshot(doc => {
+                if (doc.exists && doc.data().customItems) {
+                    menuData = doc.data().customItems.filter(item => item.available !== false);
+                    renderMenu();
+                }
+            });
+        }
+
+        function renderMenu() {
+            const container = document.getElementById('menu-list');
+            let filtered = menuData;
+            
+            if (currentFilter !== 'all') {
+                filtered = menuData.filter(item => item.category === currentFilter);
+            }
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center mt-10 opacity-50"><p>No items available</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filtered.map((item, idx) => {
+                const isFav = favorites.includes(item.name);
+                return `
+                    <div class="item-card flex gap-3 relative">
+                        <div class="fav-heart ${isFav ? 'active' : ''}" onclick="toggleFavorite('${item.name}')">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <img src="${item.image || 'https://via.placeholder.com/60'}" class="item-thumb" alt="${item.name}">
+                        <div class="flex-1">
+                            <h3 class="font-bold">${item.name}</h3>
+                            <p class="text-sm text-gray-400">${item.category || 'Others'}</p>
+                            <p class="text-lg font-bold text-green-400 mt-1">₹${item.price}</p>
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <button onclick="addToCart(${idx})" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-bold">
+                                <i class="fas fa-plus mr-1"></i>Add
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            ['all', 'Chai', 'Snacks', 'Beverages'].forEach(c => {
+                const btn = document.getElementById('cat-' + c);
+                if (btn) {
+                    if (c === cat) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+            renderMenu();
+        }
+
+        // Cart Functions
+        function addToCart(idx) {
+            const item = menuData[idx];
+            const existing = cart.find(i => i.name === item.name);
+            
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ ...item, qty: 1 });
+            }
+            
+            saveCart();
+            updateCartUI();
+            showToast(`${item.name} added to cart!`);
+        }
+
+        function removeFromCart(name) {
+            cart = cart.filter(item => item.name !== name);
+            saveCart();
+            updateCartUI();
+            renderCartItems();
+        }
+
+        function updateCartQty(name, delta) {
+            const item = cart.find(i => i.name === name);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    removeFromCart(name);
+                } else {
+                    saveCart();
+                    updateCartUI();
+                    renderCartItems();
+                }
+            }
+        }
+
+        function saveCart() {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+
+        function updateCartUI() {
+            const count = cart.reduce((sum, item) => sum + item.qty, 0);
+            const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            
+            document.getElementById('cart-items-count').innerText = count;
+            document.getElementById('cart-total').innerText = total;
+            
+            const badge = document.getElementById('cart-badge');
+            if (count > 0) {
+                badge.innerText = count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            const cartBar = document.getElementById('cart-bar');
+            const activeTab = localStorage.getItem('activeTab');
+            if (count > 0 && activeTab === 'menu' && isShopOpen) {
+                cartBar.style.display = 'flex';
+            } else {
+                cartBar.style.display = 'none';
+            }
+        }
+
+        function openCart() {
+            if (cart.length === 0) {
+                showToast('Cart is empty');
+                return;
+            }
+            document.getElementById('cart-modal').classList.add('open');
+            renderCartItems();
+        }
+
+        function closeCart() {
+            document.getElementById('cart-modal').classList.remove('open');
         }
 
         function renderCartItems() {
-            const c=document.getElementById('checkout-items'); let h='', t=0;
-            for(let k in cart){
-                h+=`<div class="flex justify-between items-center bg-gray-800 p-2 rounded mb-2" style="color:var(--text-color)">
-                    <div class="flex-1"><span class="text-sm font-bold">${cart[k].name}</span><span class="text-xs block text-gray-500">₹${cart[k].price}</span></div>
-                    <div class="flex items-center gap-2"><button onclick="updateCartQty('${k}', -1)" class="w-6 h-6 bg-gray-700 rounded text-white">-</button><span class="text-sm font-bold">${cart[k].qty}</span><button onclick="updateCartQty('${k}', 1)" class="w-6 h-6 bg-orange-600 rounded text-white">+</button></div><span class="text-sm font-bold ml-2">₹${Number(cart[k].qty)*Number(cart[k].price)}</span></div>`;
-                t+=Number(cart[k].qty)*Number(cart[k].price);
-            }
-            c.innerHTML=h; updateCheckoutTotal();
-        }
-
-        function updateCartQty(id, change) {
-            if(cart[id]) {
-                cart[id].qty += change;
-                if(cart[id].qty <= 0) delete cart[id];
-                saveCartToStorage();
-                renderCartItems(); 
-                if(Object.keys(cart).length === 0) closeCheckout();
-            }
-        }
-
-        function openCouponModal() {
-            renderCoupons();
-            document.getElementById('coupon-modal').classList.add('open');
-        }
-
-        function renderCoupons() {
-            const c = document.getElementById('coupon-list-content');
+            const container = document.getElementById('cart-items-list');
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const delivery = deliveryMode === 'delivery' ? 20 : 0;
+            const total = subtotal + delivery;
             
-            // Show/Hide Remove Button
-            const rmBtn = document.getElementById('remove-coupon-btn');
-            if(appliedCoupon) {
-                rmBtn.classList.remove('hidden');
-                rmBtn.innerText = `Remove: ${appliedCoupon.code}`;
-            } else {
-                rmBtn.classList.add('hidden');
-            }
-
-            let html = '';
-
-            // 1. Render Local Rewards (Personal)
-            const myRewards = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
-            if(myRewards.length > 0) {
-                html += `<p class="text-[10px] uppercase font-bold text-yellow-500 mb-2 mt-2">Your Rewards</p>`;
-                html += myRewards.map((r, idx) => `
-                    <div onclick="applyReward('${r.item}')" class="coupon-row border-yellow-600/50 bg-yellow-900/10">
-                        <span class="font-bold text-yellow-500 text-sm"><i class="fas fa-gift mr-2"></i>${r.item}</span>
-                        <span class="text-yellow-200 text-xs font-bold">Tap to Use</span>
+            container.innerHTML = cart.map(item => `
+                <div class="flex items-center gap-3 mb-3 pb-3 border-b border-gray-700">
+                    <img src="${item.image || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-lg object-cover">
+                    <div class="flex-1">
+                        <p class="font-bold text-sm">${item.name}</p>
+                        <p class="text-xs text-gray-400">₹${item.price} each</p>
                     </div>
-                `).join('');
-            }
-
-            // 2. Render Admin Coupons
-            html += `<p class="text-[10px] uppercase font-bold text-gray-500 mb-2 mt-4">Store Coupons</p>`;
-            db.collection('coupons').get().then(snap => {
-                if(snap.empty) html += '<p class="text-xs text-gray-500">No active coupons</p>';
-                else html += snap.docs.map(d => {
-                    const cp = d.data();
-                    return `<div onclick="applyCoupon('${cp.code}', ${cp.discount}, ${cp.newCustomerOnly})" class="coupon-row">
-                        <span class="font-bold text-orange-500 text-sm">${cp.code}</span>
-                        <span class="text-green-400 text-xs font-bold">Save ₹${cp.discount}</span>
-                    </div>`;
-                }).join('');
-                c.innerHTML = html;
-            });
-        }
-
-        async function applyCoupon(code, discount, newOnly) {
-            if(newOnly) { 
-                const history = await db.collection('orders').where('customerPhone','==',userProfile.phone).get(); 
-                if(!history.empty) return showToast("Only for New Users!"); 
-            }
-            appliedCoupon = { code, discount, type: 'coupon' }; 
-            updateCheckoutTotal(); 
-            document.getElementById('coupon-btn-text').innerText = `${code} Applied`;
-            document.getElementById('coupon-btn-text').className = "text-green-400";
-            document.getElementById('coupon-modal').classList.remove('open');
-            showToast("Coupon Applied!");
-        }
-
-        function applyReward(rewardText) {
-            // Apply Reward as a 0-discount coupon (Value is in the item itself)
-            appliedCoupon = { code: `REWARD: ${rewardText}`, discount: 0, type: 'reward', rewardName: rewardText };
-            updateCheckoutTotal();
-            document.getElementById('coupon-btn-text').innerText = "Reward Applied";
-            document.getElementById('coupon-btn-text').className = "text-yellow-400";
-            document.getElementById('coupon-modal').classList.remove('open');
-            showToast("Reward Applied!");
-        }
-
-        function removeCoupon() {
-            appliedCoupon = null;
-            updateCheckoutTotal();
-            document.getElementById('coupon-btn-text').innerText = "Coupon";
-            document.getElementById('coupon-btn-text').className = "text-orange-400";
-            document.getElementById('coupon-modal').classList.remove('open');
-            showToast("Removed");
-        }
-
-        function saveInstructions() {
-            orderNote = document.getElementById('note-popup-input').value;
-            document.getElementById('instr-text').innerText = orderNote ? "Note Added" : "Add Note";
-            document.getElementById('instr-text').className = orderNote ? "text-green-400" : "text-gray-400";
-            document.getElementById('instruction-modal').classList.remove('open');
-        }
-
-        function openRewardHistory() {
-            toggleSidebar();
-            const list = document.getElementById('reward-history-list');
-            const h = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
-            list.innerHTML = h.length ? h.map(x => `<div class="bg-[#222] p-2 rounded mb-1 flex justify-between"><span>${x.item}</span><span class="text-xs text-gray-500">${x.date}</span></div>`).join('') : "<p class='text-gray-500'>No rewards yet.</p>";
-            document.getElementById('rewards-history-modal').classList.add('open');
-        }
-
-        // --- WHEEL LOGIC ---
-        function openWheel() { 
-            document.getElementById('wheel-modal').classList.add('open'); 
-            document.getElementById('wheel').style.transform = 'rotate(0deg)'; 
-            document.getElementById('spin-btn').style.display = 'block'; 
-            document.getElementById('win-card').classList.remove('show'); 
-        }
-        function spinTheWheel() {
-            document.getElementById('spin-btn').style.display = 'none';
-            const deg = Math.floor(3000 + Math.random() * 3000); 
-            document.getElementById('wheel').style.transform = `rotate(${deg}deg)`;
-            setTimeout(() => {
-                const winItem = wheelItems[Math.floor(Math.random() * wheelItems.length)];
-                document.getElementById('win-text').innerText = `You won: ${winItem}`;
-                document.getElementById('wheel-modal').classList.remove('open');
-                document.getElementById('win-card').classList.add('show');
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                
-                // Save Reward if it's a "win"
-                if(winItem.toLowerCase().includes("free") || winItem.includes("OFF")) {
-                    let rewards = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
-                    rewards.push({ item: winItem, date: new Date().toLocaleDateString() });
-                    localStorage.setItem('sgmc_saved_rewards', JSON.stringify(rewards));
-                }
-            }, 4000);
-        }
-        function closeWheel() { 
-            document.getElementById('wheel-modal').classList.remove('open'); 
-            document.getElementById('win-card').classList.remove('show');
-            switchTab('menu'); 
-        }
-
-        // --- CORE FUNCTIONS ---
-        function loadMenuData(){ db.collection('settings').doc('menu_data').onSnapshot(d=>{ if(d.exists){ let D=d.data(), C=D.customItems||[]; let M=C.map(i => ({ ...i, category: i.category || 'Chai', price: Number(i.price) || 0, stock: (typeof i.stock === 'number') ? i.stock : 9999, inStock: i.available !== false, image: i.image || null })); displayMenuItems=M; renderMenu(); } }); }
-        function setCategory(c){currentCategory=c;document.querySelectorAll('.cat-chip').forEach(e=>e.className="cat-chip font-bold bg-gray-800 text-gray-400 border border-gray-700");document.getElementById('cat-'+c).className="cat-chip font-bold bg-white text-black";renderMenu()}
-        function filterMenu(){searchQuery=document.getElementById('search-input').value.toLowerCase();renderMenu()}
-        function renderMenu(){ const c=document.getElementById('menu-container'); const f=displayMenuItems.filter(i=>(currentCategory==='All'||i.category===currentCategory)&&i.name.toLowerCase().includes(searchQuery)&&i.inStock); if(!f.length){c.innerHTML='<p class="text-center text-gray-500 mt-10">No items available.</p>';return} c.innerHTML=f.map(i=>{ const lowStock = i.stock <= 3; const isOOS = i.stock <= 0; return ` <div class="glass-card p-4 flex justify-between items-center mb-3"> <div class="flex gap-3 items-center"> ${i.image ? `<img src="${i.image}" class="item-thumb" onerror="this.style.display='none'">` : `<div class="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center shadow-inner relative"><i class="fas ${i.category==='Sutta'?'fa-smoking':'fa-utensils'} text-gray-500"></i></div>`} <div><h3 class="font-bold text-sm" style="color:var(--text-color)">${i.name}</h3><div class="flex items-center gap-2"><p class="text-orange-400 text-xs font-bold">₹${i.price}</p>${lowStock ? `<span class="text-red-500 text-[9px] animate-pulse">Low Stock</span>` : ''}</div></div> </div> <div class="flex gap-2 bg-black/40 rounded-lg p-1 ${isOOS ? 'opacity-50' : ''}"><button onclick="updateCart('${i.id}',-1)" class="w-7 h-7 bg-gray-700 rounded text-white">-</button><span class="font-bold w-4 text-center text-sm" style="color:var(--text-color)" id="qty-${i.id}">0</span><button onclick="updateCart('${i.id}',1)" class="w-7 h-7 bg-orange-600 rounded text-white ${isOOS?'btn-disabled':''}" ${isOOS?'disabled':''}>+</button></div> </div>` }).join(''); for(let k in cart)if(document.getElementById(`qty-${k}`))document.getElementById(`qty-${k}`).innerText=cart[k].qty }
-        
-        function updateCart(id,c){ if(!isShopOpen)return showToast("Shop is Closed!"); const i=displayMenuItems.find(x=>x.id==id); if(!i)return; if(c>0 && i.stock>0 && cart[id] && cart[id].qty>=i.stock) return showToast("Low Stock!"); if(!cart[id]) cart[id]={id,name:i.name,price:i.price,qty:0}; cart[id].qty+=c; if(cart[id].qty<=0)delete cart[id]; if(document.getElementById(`qty-${id}`))document.getElementById(`qty-${id}`).innerText=cart[id]?cart[id].qty:0; updateCartUI(); }
-        
-        function updateCartUI(){ 
-            const b=document.getElementById('cart-bar'); 
-            let c=0,t=0; for(let k in cart){ c+=cart[k].qty; t+= Number(cart[k].qty) * Number(cart[k].price); } 
-            const isMenuOpen = !document.getElementById('view-menu').classList.contains('hidden');
-            const isCheckoutOpen = !document.getElementById('checkout-modal').classList.contains('hidden');
-            if(c > 0 && isMenuOpen && !isCheckoutOpen){ b.style.display = 'flex'; document.getElementById('cart-count').innerText=c; document.getElementById('cart-total').innerText=t; } else { b.style.display = 'none'; } 
-            saveCartToStorage(); 
-        }
-
-        function updateCheckoutTotal() { 
-            let subtotal=0; 
-            for(let k in cart){ subtotal += Number(cart[k].qty) * Number(cart[k].price); } 
+                    <div class="flex items-center gap-2">
+                        <button onclick="updateCartQty('${item.name}', -1)" class="w-6 h-6 rounded-full bg-gray-700 text-white flex items-center justify-center">
+                            <i class="fas fa-minus text-xs"></i>
+                        </button>
+                        <span class="font-bold w-8 text-center">${item.qty}</span>
+                        <button onclick="updateCartQty('${item.name}', 1)" class="w-6 h-6 rounded-full bg-orange-600 text-white flex items-center justify-center">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                    <p class="font-bold text-orange-400 w-16 text-right">₹${item.price * item.qty}</p>
+                </div>
+            `).join('');
             
-            let deliveryFee = 0;
-            let msg = "";
-            let btn = document.getElementById('place-order-btn');
+            document.getElementById('cart-subtotal').innerText = subtotal;
+            document.getElementById('delivery-charge').innerText = delivery;
+            document.getElementById('cart-final-total').innerText = total;
+        }
 
-            if(subtotal < deliveryConfig.minOrder) {
-                msg = `Min Order is ₹${deliveryConfig.minOrder}`;
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-                btn.innerText = `Min ₹${deliveryConfig.minOrder}`;
-            } else {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                btn.innerText = "Place Order";
-                
-                if(subtotal < deliveryConfig.freeAbove) {
-                    deliveryFee = deliveryConfig.charge;
-                    msg = `Add ₹${deliveryConfig.freeAbove - subtotal} more for Free Delivery`;
-                } else {
-                    msg = "Free Delivery Applied!";
-                    deliveryFee = 0;
-                }
+        function proceedToCheckout() {
+            if (!userProfile.phone) {
+                closeCart();
+                showToast('Please update your profile first');
+                openProfileEdit();
+                return;
             }
-
-            let finalTotal = subtotal + deliveryFee;
             
-            if(appliedCoupon) {
-                finalTotal -= appliedCoupon.discount;
-                document.getElementById('co-discount-row').classList.remove('hidden');
-                document.getElementById('co-discount-row').classList.add('flex');
-                document.getElementById('co-discount').innerText = appliedCoupon.discount;
-            } else {
-                document.getElementById('co-discount-row').classList.add('hidden');
-                document.getElementById('co-discount-row').classList.remove('flex');
+            if (!isShopOpen) {
+                showToast('Shop is currently closed');
+                return;
             }
-
-            if(finalTotal < 0) finalTotal = 0;
-
-            document.getElementById('co-subtotal').innerText = subtotal;
-            document.getElementById('co-delivery-fee').innerText = deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`;
-            document.getElementById('co-delivery-msg').innerText = msg;
-            document.getElementById('checkout-total').innerText = finalTotal; 
             
-            document.getElementById('delivery-info-box').classList.remove('hidden');
+            closeCart();
+            document.getElementById('checkout-modal').classList.add('open');
+            selectDeliveryMode(deliveryMode);
         }
-        
-        function loadCartFromStorage(){const s=localStorage.getItem('sgmc_cart');if(s){cart=JSON.parse(s);updateCartUI()}}
-        function saveCartToStorage(){localStorage.setItem('sgmc_cart',JSON.stringify(cart))}
-        function closeCheckout(){document.getElementById('checkout-modal').classList.add('hidden'); appliedCoupon=null; updateCartUI();}
-        function setPayment(m) { selectedPayment=m; document.querySelectorAll('.payment-opt').forEach(b=>{ b.classList.remove('bg-orange-600','text-white'); b.classList.add('bg-gray-800','text-gray-300'); }); document.getElementById('pay-'+m.toLowerCase()).classList.add('bg-orange-600','text-white'); }
-        function toggleOrderType(t){const s=t==='self';document.getElementById('tab-self').className=s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";document.getElementById('tab-others').className=!s?"flex-1 py-2 rounded-lg text-xs font-bold text-white bg-orange-600":"flex-1 py-2 rounded-lg text-xs font-bold text-gray-400";document.getElementById('form-self').classList.toggle('hidden',!s);document.getElementById('form-others').classList.toggle('hidden',s);}
-        function fetchShopLocation(){db.collection('settings').doc('config').get().then(d=>{if(d.exists&&d.data().location)shopLocation=d.data().location;});}
-        // --- NEW UPDATED PROFILE FUNCTIONS WITH ONLINE STATUS ---
-        
-        function loadProfile() { 
-            const s=localStorage.getItem('sgmc_customer_profile'); 
-            if(s) { 
-                userProfile=JSON.parse(s); 
-                document.getElementById('sidebar-name').innerText=userProfile.name; 
-                fetchUdhaarInfo(); 
-                startHeartbeat(); // Yahan se Online Signal shuru hoga
+
+        function closeCheckout() {
+            document.getElementById('checkout-modal').classList.remove('open');
+        }
+
+        function selectDeliveryMode(mode) {
+            deliveryMode = mode;
+            const pickupBtn = document.getElementById('delivery-pickup');
+            const homeBtn = document.getElementById('delivery-home');
+            const addressSection = document.getElementById('delivery-address-section');
+            
+            if (mode === 'pickup') {
+                pickupBtn.className = 'flex-1 py-2 bg-orange-600 text-white rounded-lg';
+                homeBtn.className = 'flex-1 py-2 border border-gray-700 rounded-lg';
+                addressSection.style.display = 'none';
             } else {
-                setTimeout(()=>document.getElementById('login-modal').classList.add('open'),1000); 
+                pickupBtn.className = 'flex-1 py-2 border border-gray-700 rounded-lg';
+                homeBtn.className = 'flex-1 py-2 bg-orange-600 text-white rounded-lg';
+                addressSection.style.display = 'block';
             }
+            
+            const delivery = mode === 'delivery' ? 20 : 0;
+            document.getElementById('delivery-charge').innerText = delivery;
+            const subtotal = parseInt(document.getElementById('cart-subtotal').innerText);
+            document.getElementById('cart-final-total').innerText = subtotal + delivery;
         }
 
-        function saveProfile() { 
-            const n=document.getElementById('user-name').value, p=document.getElementById('user-phone').value; 
-            if(n&&p.length>9){ 
-                userProfile={name:n,phone:p}; 
-                localStorage.setItem('sgmc_customer_profile',JSON.stringify(userProfile)); 
-                document.getElementById('sidebar-name').innerText=n; 
-                document.getElementById('login-modal').classList.remove('open'); 
-                fetchUdhaarInfo(); 
-                startHeartbeat(); // Login karte hi Online Signal shuru
-            } 
-        }
-
-        function openProfileEdit() { 
-            document.getElementById('user-name').value=userProfile.name||""; 
-            document.getElementById('user-phone').value=userProfile.phone||""; 
-            document.getElementById('login-modal').classList.add('open'); 
-            toggleSidebar(); 
-        }
-
-        // Ye wo naya function hai jo har 2 minute me "I am Online" bolega
-        function startHeartbeat() {
-            if(!userProfile.phone) return;
-            const update = () => {
-                db.collection('users').doc(userProfile.phone).set({
-                    lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-                    name: userProfile.name, // Name bhi update rahega
-                    phone: userProfile.phone
-                }, {merge:true});
+        function placeOrder() {
+            if (cart.length === 0) {
+                showToast('Cart is empty');
+                return;
+            }
+            
+            const address = document.getElementById('delivery-address').value.trim();
+            const paymentMode = document.getElementById('payment-mode').value;
+            const notes = document.getElementById('order-notes').value.trim();
+            
+            if (deliveryMode === 'delivery' && !address) {
+                showToast('Please enter delivery address');
+                return;
+            }
+            
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const delivery = deliveryMode === 'delivery' ? 20 : 0;
+            const total = subtotal + delivery;
+            
+            const orderData = {
+                customerName: userProfile.name,
+                customerPhone: userProfile.phone,
+                items: cart,
+                totalAmount: total,
+                deliveryMode: deliveryMode,
+                deliveryAddress: deliveryMode === 'delivery' ? address : 'Self Pickup',
+                paymentMode: paymentMode,
+                notes: notes,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                location: userLocation
             };
-            update(); // Turant update karein
-            // Har 2 minute (120000ms) me repeat karein
-            if(!window.heartbeatInterval) window.heartbeatInterval = setInterval(update, 120000);
-        }
-        
-        function fetchUdhaarInfo() {
-            if(!userProfile.phone) return;
-            db.collection('user_limits').doc(userProfile.phone).get().then(d => {
-                if(d.exists) { currentUserLimit = d.data().limit || 0; if(currentUserLimit > 0) { document.getElementById('udhaar-limit-display').innerText = `Limit: ₹${currentUserLimit}`; document.getElementById('udhaar-limit-display').classList.remove('hidden'); } }
-            });
-            db.collection('orders').where('customerPhone','==',userProfile.phone).where('paymentMode','==','Udhaar').get().then(s => { 
-                let d=0; s.forEach(doc => { if(doc.data().status!=='cancelled') d+=doc.data().totalAmount; });
-                db.collection('payments').where('phone','==',userProfile.phone).get().then(p => { 
-                    let c=0; p.forEach(doc => { c+=doc.data().amount; }); 
-                    currentUdhaarBalance = d-c; document.getElementById('my-udhaar-amount').innerText = currentUdhaarBalance;
+            
+            db.collection('orders').add(orderData).then(() => {
+                // Clear cart
+                cart = [];
+                saveCart();
+                updateCartUI();
+                
+                closeCheckout();
+                showToast('Order placed successfully! 🎉');
+                
+                // Show confetti
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
                 });
+                
+                // Switch to orders tab
+                setTimeout(() => switchTab('orders'), 1000);
+            }).catch(err => {
+                console.error('Order error:', err);
+                showToast('Error placing order');
             });
         }
 
-        async function handlePlaceOrderClick() { 
-            if(Object.keys(cart).length === 0) return; 
+        // Orders Functions
+        function listenToUserOrders() {
+            if (!userProfile.phone) return;
             
-            let subtotal=0; for(let k in cart){ subtotal += Number(cart[k].qty) * Number(cart[k].price); }
-            if(subtotal < deliveryConfig.minOrder) return showToast(`Min Order ₹${deliveryConfig.minOrder}`);
-
-            if(!userProfile.phone) return openProfileEdit(); 
-            
-            if(selectedPayment === 'Udhaar' && currentUserLimit > 0) {
-                if(currentUdhaarBalance + subtotal > currentUserLimit) {
-                    return showToast(`Udhaar Limit Exceeded! (Limit: ₹${currentUserLimit})`);
-                }
-            }
-
-            const isSelf = !document.getElementById('form-self').classList.contains('hidden'); 
-            let finalAddress="", finalCoords=null, recipient=null; 
-            
-            if(isSelf) { 
-                if(!userLocation && shopLocation) return showToast("Click Detect first."); 
-                const flat = document.getElementById('self-flat').value.trim(); 
-                if(!flat) return showToast("Enter Flat/Room No."); 
-                finalAddress = `${flat}, ${document.getElementById('self-landmark').value||''}`; 
-                finalCoords = userLocation; 
-                if(shopLocation && userLocation) { const d = haversine(shopLocation.lat, shopLocation.lng, userLocation.lat, userLocation.lng); if(d > MAX_DISTANCE_KM) return showToast(`Too far (${d.toFixed(1)}km). Only 3km allowed.`); } 
-            } else { 
-                const name = document.getElementById('rec-name').value; 
-                const phone = document.getElementById('rec-phone').value; 
-                const area = document.getElementById('search-area').value; 
-                const flat = document.getElementById('others-flat').value; 
-                if(!name || !phone || !area || !flat) return showToast("Fill all details"); 
-                if(!otherOrderCoords) return showToast("Click 'Check' to verify area distance."); 
-                recipient = { name, phone }; finalAddress = `${flat}, ${area}`; finalCoords = otherOrderCoords; 
-            } 
-            
-            let deliveryFee = (subtotal < deliveryConfig.freeAbove) ? deliveryConfig.charge : 0;
-            let finalAmount = subtotal + deliveryFee;
-            if(appliedCoupon) finalAmount -= appliedCoupon.discount; 
-            if(finalAmount < 0) finalAmount = 0; 
-            
-            userProfile.lastAddress = finalAddress; 
-            localStorage.setItem('sgmc_customer_profile', JSON.stringify(userProfile)); 
-            
-            // REMOVE REWARD FROM SAVED LIST IF USED
-            if(appliedCoupon && appliedCoupon.type === 'reward') {
-                let rewards = JSON.parse(localStorage.getItem('sgmc_saved_rewards') || "[]");
-                rewards = rewards.filter(r => r.item !== appliedCoupon.rewardName);
-                localStorage.setItem('sgmc_saved_rewards', JSON.stringify(rewards));
-            }
-
-            const shortId = "#" + Date.now().toString().slice(-4); 
-            const orderData = { 
-                items: Object.values(cart), 
-                totalAmount: finalAmount, 
-                subTotal: subtotal,
-                deliveryFee: deliveryFee,
-                coupon: appliedCoupon, 
-                paymentMode: selectedPayment, 
-                paymentVerified: false, 
-                status: 'pending', 
-                customerName: userProfile.name, 
-                customerPhone: userProfile.phone, 
-                customerAddress: finalAddress, 
-                orderNote: orderNote, 
-                customerCoordinates: finalCoords, 
-                recipient: recipient, 
-                shortId: shortId, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-            }; 
-            placeOrderDB(orderData); 
+            db.collection('orders')
+                .where('customerPhone', '==', userProfile.phone)
+                .orderBy('timestamp', 'desc')
+                .limit(50)
+                .onSnapshot(snapshot => {
+                    myOrders = [];
+                    snapshot.forEach(doc => {
+                        const order = { id: doc.id, ...doc.data() };
+                        myOrders.push(order);
+                        cachedOrders[doc.id] = order;
+                    });
+                    renderOrders();
+                });
         }
 
-        function placeOrderDB(data) { document.getElementById('place-order-btn').innerText = "Processing..."; db.collection('orders').add(data).then(() => { cart = {}; orderNote=""; saveCartToStorage(); renderMenu(); updateCartUI(); closeCheckout(); document.getElementById('place-order-btn').innerHTML = `Place Order`; document.getElementById('cooking-screen').classList.add('active'); setTimeout(() => { document.getElementById('cooking-screen').classList.remove('active'); openWheel(); }, 2000); }).catch((err) => { showToast("Failed: " + err.message); document.getElementById('place-order-btn').innerHTML = `Place Order`; }); }
-        
-        function fetchMyHistory() { if(!userProfile.phone) return; const l=document.getElementById('orders-list'); l.innerHTML='<div class="text-center mt-10">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).get().then(snap => { if(snap.empty) { l.innerHTML = '<p class="text-center text-gray-500 mt-10">No orders yet.</p>'; return; } const docs = snap.docs.sort((a,b) => (b.data().timestamp?.seconds||0) - (a.data().timestamp?.seconds||0)); cachedOrders = {...cachedOrders}; docs.forEach(d => cachedOrders[d.id] = d.data()); l.innerHTML = docs.map(doc => { const d = doc.data(); const canCancel = d.status === 'pending'; const date = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleDateString() : ''; return `<div class="glass-card p-4 border-l-4 ${d.status==='completed'?'border-green-500':'border-yellow-500'} mb-3 cursor-pointer" onclick="openOrderDetail('${doc.id}')"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-400 font-bold">${date} ${d.shortId||''}</p><p class="font-bold text-sm mt-1" style="color:var(--text-color)">${d.items.map(i=>`${i.qty} ${i.name}`).join(', ')}</p></div><div class="text-right"><p class="font-bold text-orange-400">₹${d.totalAmount}</p><p class="text-[10px] uppercase font-bold ${d.status==='completed'?'text-green-500':'text-yellow-500'}">${d.status}</p></div></div>${canCancel ? `<button onclick="event.stopPropagation(); cancelOrder('${doc.id}')" class="mt-2 text-red-500 text-xs border border-red-500 px-3 py-1 rounded">Cancel</button>` : ''}</div>`; }).join(''); }); }
-        function cancelOrder(id) { cancelId = id; document.getElementById('cancel-confirm-modal').classList.add('open'); }
-        function confirmCancelOrder() { if(cancelId) db.collection('orders').doc(cancelId).update({status:'cancelled'}).then(()=>{ document.getElementById('cancel-confirm-modal').classList.remove('open'); fetchMyHistory(); showToast("Order Cancelled"); }); }
-        function fetchMyUdhaar() { if(!userProfile.phone) return; const l=document.getElementById('udhaar-history'); l.innerHTML='<div class="text-center mt-4">Loading...</div>'; db.collection('orders').where('customerPhone','==',userProfile.phone).where('paymentMode','==','Udhaar').get().then(s => { let d=0, h=[]; s.forEach(doc => { const x=doc.data(); if(x.status!=='cancelled'){ d+=x.totalAmount; h.push({type:'buy',...x, id:doc.id}); cachedOrders[doc.id]=x; } }); db.collection('payments').where('phone','==',userProfile.phone).get().then(p => { let c=0; p.forEach(doc => { const x=doc.data(); c+=x.amount; h.push({type:'pay',...x}); }); currentUdhaarBalance = d-c; document.getElementById('my-udhaar-amount').innerText = currentUdhaarBalance; h.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0)); l.innerHTML = h.map(x => { const dt = x.timestamp ? new Date(x.timestamp.toDate()).toLocaleDateString() : ''; if(x.type === 'buy') return `<div class="glass-card p-3 mb-2 flex justify-between cursor-pointer" onclick="openOrderDetail('${x.id}')"><div><p class="text-xs text-gray-500">${dt}</p><p class="text-sm font-bold">Purchase</p></div><span class="text-red-400 font-bold">-₹${x.totalAmount}</span></div>`; else return `<div class="glass-card p-3 mb-2 flex justify-between"><div><p class="text-xs text-gray-500">${dt}</p><p class="text-sm font-bold">Paid</p></div><span class="text-green-500 font-bold">+₹${x.amount}</span></div>`; }).join(''); }); }); }
-        function payUdhaarViaUPI(){const a=document.getElementById('my-udhaar-amount').innerText;window.location.href=`upi://pay?pa=7065821697@ybl&pn=SGMC&am=${a}&cu=INR`}
-        function detectLocation(mode) { if(mode==='self'){const t=document.getElementById('gps-address-text'); t.innerText="Detecting..."; if(!navigator.geolocation) return showToast("No Geo"); navigator.geolocation.getCurrentPosition(async p=>{ userLocation={lat:p.coords.latitude,lng:p.coords.longitude}; t.innerText="Lat: "+p.coords.latitude.toFixed(4); try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`);const d=await r.json();if(d&&d.display_name)t.innerText=d.display_name.split(',').slice(0,3).join(',');}catch(e){} },()=>{showToast("Denied");t.innerText="Retry";},{enableHighAccuracy:true}); } }
-        async function verifyArea() { const t=document.getElementById('search-area').value; const b=document.getElementById('btn-verify'); const s=document.getElementById('area-status'); if(t.length<3)return showToast("Enter Area"); b.innerText="..."; try{const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(t)}&limit=1`);const d=await r.json(); b.innerText="Check"; if(d.length>0){const la=parseFloat(d[0].lat),lo=parseFloat(d[0].lon); otherOrderCoords={lat:la,lng:lo}; if(shopLocation){const dist=haversine(shopLocation.lat,shopLocation.lng,la,lo); if(dist<=MAX_DISTANCE_KM){s.innerText=`✅ OK (${dist.toFixed(1)}km)`;s.className="text-[10px] text-green-500 mt-1 block";}else{s.innerText=`❌ Too Far (${dist.toFixed(1)}km)`;s.className="text-[10px] text-red-500 mt-1 block";otherOrderCoords=null;}}}else{s.innerText="Not Found";}}catch(e){b.innerText="Check";showToast("Error");} }
-        function haversine(a,b,c,d){const R=6371,x=(c-a)*Math.PI/180,y=(d-b)*Math.PI/180;const z=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(y/2)*Math.sin(y/2);return R*2*Math.atan2(Math.sqrt(z),Math.sqrt(1-z));}
-        function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');}
-        function toggleTheme(){document.body.classList.toggle('light-mode');}
-        function openChat(){if(!userProfile.phone)return showToast("Login first");document.getElementById('chat-modal').classList.remove('hidden');setTimeout(()=>document.getElementById('chat-modal').classList.add('open'),10);toggleSidebar();loadMessages();}
-        function closeChat(){document.getElementById('chat-modal').classList.remove('open');setTimeout(()=>document.getElementById('chat-modal').classList.add('hidden'),300);}
-        function sendMessage(){const t=document.getElementById('chat-input').value.trim();if(t){db.collection('chats').doc(userProfile.phone).collection('messages').add({text:t,sender:'user',timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('chat-input').value="";}}
-        function loadMessages(){db.collection('chats').doc(userProfile.phone).collection('messages').orderBy('timestamp').onSnapshot(s=>{document.getElementById('chat-messages').innerHTML=s.docs.map(d=>`<div class="chat-bubble ${d.data().sender==='user'?'chat-user':'chat-admin'}">${d.data().text}</div>`).join('');});}
-        function listenToShopStatus(){db.collection('settings').doc('status').onSnapshot(d=>{isShopOpen=d.exists?d.data().isOpen:true;document.getElementById('closed-banner').classList.toggle('hidden',isShopOpen);updateCartUI();});}
-        function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
-        
-        function switchTab(t){ 
-            localStorage.setItem('activeTab',t); 
-            if(t !== 'menu') {
-                document.getElementById('cart-bar').style.display = 'none';
+        function renderOrders() {
+            const container = document.getElementById('orders-list');
+            let filtered = myOrders;
+            
+            if (currentOrderFilter === 'active') {
+                filtered = myOrders.filter(o => ['pending', 'cooking', 'ready', 'out_delivery'].includes(o.status));
+            } else if (currentOrderFilter === 'completed') {
+                filtered = myOrders.filter(o => ['completed', 'cancelled'].includes(o.status));
             }
-            ['menu','orders','udhaar'].forEach(x=>{document.getElementById('view-'+x).classList.add('hidden');document.getElementById('nav-'+x).classList.remove('active')}); 
-            document.getElementById('view-'+t).classList.remove('hidden'); 
-            document.getElementById('nav-'+t).classList.add('active'); 
-            updateCartUI(); 
-            if(t==='orders')fetchMyHistory(); 
-            if(t==='udhaar')fetchMyUdhaar(); 
-        }
-
-        function openOrderDetail(id){
-            const d = cachedOrders[id];
-            if(!d) return;
             
-            document.getElementById('od-date').innerText = d.timestamp ? new Date(d.timestamp.toDate()).toLocaleString() : '';
-            document.getElementById('od-total').innerText = '₹' + d.totalAmount;
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center mt-10 opacity-50"><p>No orders found</p></div>';
+                return;
+            }
             
-            // --- NEW: RIDER INFO CARD (Agar Rider Assign ho gaya hai) ---
-            let riderHtml = '';
-            if(d.riderName && (d.status === 'out_delivery' || d.status === 'completed')) {
-                riderHtml = `
-                <div class="bg-gray-800 p-3 rounded-xl mb-4 border border-gray-700 flex justify-between items-center">
-                    <div>
-                        <p class="text-[10px] text-gray-400 uppercase font-bold">Delivery Partner</p>
-                        <p class="text-sm font-bold text-white">${d.riderName}</p>
+            container.innerHTML = filtered.map(order => {
+                const statusText = order.status.replace('_', ' ').toUpperCase();
+                const statusClass = `status-${order.status}`;
+                const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleString() : '';
+                
+                return `
+                    <div class="glass-card p-4 mb-3 cursor-pointer" onclick="openOrderDetail('${order.id}')">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-xs text-gray-400">Order #${order.id.slice(0, 8)}</p>
+                                <p class="text-xs text-gray-500">${date}</p>
+                            </div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="text-sm opacity-80 mb-2">
+                            ${order.items.map(i => `${i.name} x${i.qty}`).join(', ')}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-400">${order.paymentMode}</span>
+                            <span class="font-bold text-lg text-orange-400">₹${order.totalAmount}</span>
+                        </div>
                     </div>
-                    <a href="tel:${d.riderPhone}" class="bg-green-600/20 text-green-500 border border-green-500/50 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2">
-                        <i class="fas fa-phone-alt"></i> Call
-                    </a>
-                </div>`;
-            }
-            // -----------------------------------------------------------
+                `;
+            }).join('');
+        }
 
-            document.getElementById('od-items').innerHTML = riderHtml + d.items.map(i => 
-                `<div class="flex justify-between mb-2 text-sm" style="color:var(--text-color)">
-                    <span>${i.name} <span class="text-gray-500">x${i.qty}</span></span>
-                    <span>₹${i.qty*i.price}</span>
-                </div>`
-            ).join('');
+        function filterOrderStatus(filter) {
+            currentOrderFilter = filter;
+            ['all', 'active', 'completed'].forEach(f => {
+                const btn = document.getElementById('order-filter-' + f);
+                if (btn) {
+                    if (f === filter) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+            renderOrders();
+        }
+
+        function openOrderDetail(orderId) {
+            currentViewingOrderId = orderId;
+            const order = cachedOrders[orderId];
+            if (!order) return;
+            
+            const date = order.timestamp ? new Date(order.timestamp.toDate()).toLocaleString() : '';
+            document.getElementById('od-date').innerText = date;
+            document.getElementById('od-total').innerText = '₹' + order.totalAmount;
+            
+            // Rider info
+            let riderHtml = '';
+            if (order.riderName) {
+                riderHtml = `
+                    <div class="mb-4 p-3 bg-purple-900/20 rounded-xl border border-purple-900/30">
+                        <p class="text-xs text-gray-400 mb-1">Delivery Partner</p>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="font-bold">${order.riderName}</p>
+                                <p class="text-xs text-gray-400">${order.riderPhone}</p>
+                            </div>
+                            <a href="tel:${order.riderPhone}" class="px-3 py-1 bg-green-600 text-white rounded-lg text-xs">
+                                <i class="fas fa-phone mr-1"></i>Call
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('od-rider-info').innerHTML = riderHtml;
+            
+            // Progress
+            const statuses = ['pending', 'cooking', 'ready', 'out_delivery', 'completed'];
+            const currentIdx = statuses.indexOf(order.status);
+            let progressHtml = '';
+            
+            statuses.forEach((status, idx) => {
+                const isActive = idx <= currentIdx;
+                const icon = status === 'pending' ? 'clock' : 
+                            status === 'cooking' ? 'fire' : 
+                            status === 'ready' ? 'check' : 
+                            status === 'out_delivery' ? 'motorcycle' : 'check-double';
+                const label = status.replace('_', ' ');
+                
+                progressHtml += `
+                    <div class="flex items-center gap-3 ${isActive ? 'opacity-100' : 'opacity-30'}">
+                        <div class="w-8 h-8 rounded-full ${isActive ? 'bg-green-600' : 'bg-gray-700'} flex items-center justify-center">
+                            <i class="fas fa-${icon} text-sm"></i>
+                        </div>
+                        <span class="text-sm capitalize">${label}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('od-progress').innerHTML = progressHtml;
+            
+            // Items
+            const itemsHtml = order.items.map(item => `
+                <div class="flex justify-between mb-2">
+                    <span>${item.name} x${item.qty}</span>
+                    <span class="font-bold">₹${item.price * item.qty}</span>
+                </div>
+            `).join('');
+            document.getElementById('od-items').innerHTML = itemsHtml;
+            
+            // Cancel button
+            const cancelBtn = document.getElementById('cancel-order-btn');
+            if (order.status === 'pending' || order.status === 'cooking') {
+                cancelBtn.style.display = 'block';
+            } else {
+                cancelBtn.style.display = 'none';
+            }
             
             document.getElementById('order-detail-modal').classList.add('open');
         }
-        function shareApp(){ const url = window.location.href; if(navigator.share){ navigator.share({title: 'SGMC Chai', text: 'Order Chai & Snacks Online!', url: url}); } else { showToast("Link copied!"); } }
+
+        function closeOrderDetail() {
+            document.getElementById('order-detail-modal').classList.remove('open');
+            currentViewingOrderId = null;
+        }
+
+        function cancelOrder() {
+            if (!currentViewingOrderId) return;
+            
+            if (confirm('Are you sure you want to cancel this order?')) {
+                db.collection('orders').doc(currentViewingOrderId).update({
+                    status: 'cancelled',
+                    cancelTime: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    closeOrderDetail();
+                    showToast('Order cancelled');
+                });
+            }
+        }
+
+        // Udhaar Functions
+        function fetchMyUdhaar() {
+            if (!userProfile.phone) return;
+            
+            const list = document.getElementById('udhaar-history');
+            list.innerHTML = '<div class="text-center mt-4">Loading...</div>';
+            
+            db.collection('orders')
+                .where('customerPhone', '==', userProfile.phone)
+                .where('paymentMode', '==', 'Udhaar')
+                .get()
+                .then(snapshot => {
+                    let totalDue = 0;
+                    let history = [];
+                    
+                    snapshot.forEach(doc => {
+                        const order = doc.data();
+                        if (order.status !== 'cancelled') {
+                            totalDue += order.totalAmount;
+                            history.push({ type: 'buy', ...order, id: doc.id });
+                            cachedOrders[doc.id] = order;
+                        }
+                    });
+                    
+                    db.collection('payments')
+                        .where('phone', '==', userProfile.phone)
+                        .get()
+                        .then(paymentsSnap => {
+                            let totalPaid = 0;
+                            paymentsSnap.forEach(doc => {
+                                const payment = doc.data();
+                                totalPaid += payment.amount;
+                                history.push({ type: 'pay', ...payment });
+                            });
+                            
+                            currentUdhaarBalance = totalDue - totalPaid;
+                            document.getElementById('my-udhaar-amount').innerText = '₹' + currentUdhaarBalance;
+                            
+                            history.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                            
+                            list.innerHTML = history.map(h => {
+                                const date = h.timestamp ? new Date(h.timestamp.toDate()).toLocaleDateString() : '';
+                                if (h.type === 'buy') {
+                                    return `
+                                        <div class="glass-card p-3 mb-2 flex justify-between cursor-pointer" onclick="openOrderDetail('${h.id}')">
+                                            <div>
+                                                <p class="text-xs text-gray-500">${date}</p>
+                                                <p class="text-sm font-bold">Purchase</p>
+                                            </div>
+                                            <span class="text-red-400 font-bold">-₹${h.totalAmount}</span>
+                                        </div>
+                                    `;
+                                } else {
+                                    return `
+                                        <div class="glass-card p-3 mb-2 flex justify-between">
+                                            <div>
+                                                <p class="text-xs text-gray-500">${date}</p>
+                                                <p class="text-sm font-bold">Payment</p>
+                                            </div>
+                                            <span class="text-green-500 font-bold">+₹${h.amount}</span>
+                                        </div>
+                                    `;
+                                }
+                            }).join('');
+                        });
+                });
+        }
+
+        function payUdhaarViaUPI() {
+            const amount = currentUdhaarBalance;
+            if (amount <= 0) {
+                showToast('No pending balance');
+                return;
+            }
+            window.location.href = `upi://pay?pa=7065821697@ybl&pn=SGMC&am=${amount}&cu=INR`;
+        }
+
+        // Favorites
+        function loadFavorites() {
+            const saved = localStorage.getItem('favorites');
+            if (saved) {
+                favorites = JSON.parse(saved);
+            }
+        }
+
+        function toggleFavorite(itemName) {
+            const idx = favorites.indexOf(itemName);
+            if (idx > -1) {
+                favorites.splice(idx, 1);
+                showToast('Removed from favorites');
+            } else {
+                favorites.push(itemName);
+                showToast('Added to favorites!');
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            renderMenu();
+        }
+
+        function openFavorites() {
+            document.getElementById('favorites-modal').classList.add('open');
+            toggleSidebar();
+            renderFavoritesList();
+        }
+
+        function closeFavorites() {
+            document.getElementById('favorites-modal').classList.remove('open');
+        }
+
+        function renderFavoritesList() {
+            const container = document.getElementById('favorites-list');
+            const favItems = menuData.filter(item => favorites.includes(item.name));
+            
+            if (favItems.length === 0) {
+                container.innerHTML = '<div class="text-center mt-4 opacity-50"><p>No favorites yet</p></div>';
+                return;
+            }
+            
+            container.innerHTML = favItems.map((item, idx) => `
+                <div class="item-card flex gap-3 mb-3">
+                    <img src="${item.image || 'https://via.placeholder.com/60'}" class="item-thumb" alt="${item.name}">
+                    <div class="flex-1">
+                        <h3 class="font-bold">${item.name}</h3>
+                        <p class="text-sm text-gray-400">${item.category}</p>
+                        <p class="text-lg font-bold text-green-400 mt-1">₹${item.price}</p>
+                    </div>
+                    <button onclick="addToCart(${menuData.indexOf(item)}); closeFavorites();" class="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-bold self-center">
+                        Add
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Saved Addresses
+        function loadSavedAddresses() {
+            const saved = localStorage.getItem('savedAddresses');
+            if (saved) {
+                savedAddresses = JSON.parse(saved);
+            }
+        }
+
+        function openSavedAddresses() {
+            document.getElementById('addresses-modal').classList.add('open');
+            toggleSidebar();
+            renderAddressesList();
+        }
+
+        function closeSavedAddresses() {
+            document.getElementById('addresses-modal').classList.remove('open');
+        }
+
+        function renderAddressesList() {
+            const container = document.getElementById('addresses-list');
+            
+            if (savedAddresses.length === 0) {
+                container.innerHTML = '<div class="text-center mt-4 opacity-50"><p>No saved addresses</p></div>';
+                return;
+            }
+            
+            container.innerHTML = savedAddresses.map((addr, idx) => `
+                <div class="glass-card p-3 mb-2">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <p class="font-bold text-sm">${addr.label}</p>
+                            <p class="text-xs text-gray-400 mt-1">${addr.address}</p>
+                        </div>
+                        <button onclick="deleteAddress(${idx})" class="text-red-400 text-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <button onclick="useAddress(${idx})" class="w-full py-2 bg-gray-800 text-xs rounded-lg">
+                        Use This Address
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addNewAddress() {
+            const label = prompt('Address Label (e.g., Home, Office):');
+            if (!label) return;
+            
+            const address = prompt('Enter full address:');
+            if (!address) return;
+            
+            savedAddresses.push({ label, address });
+            localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
+            renderAddressesList();
+            showToast('Address saved!');
+        }
+
+        function deleteAddress(idx) {
+            if (confirm('Delete this address?')) {
+                savedAddresses.splice(idx, 1);
+                localStorage.setItem('savedAddresses', JSON.stringify(savedAddresses));
+                renderAddressesList();
+                showToast('Address deleted');
+            }
+        }
+
+        function useAddress(idx) {
+            const addr = savedAddresses[idx];
+            document.getElementById('delivery-address').value = addr.address;
+            closeSavedAddresses();
+            showToast('Address selected');
+        }
+
+        // Referral System
+        function generateReferralCode() {
+            const phone = userProfile.phone;
+            if (phone) {
+                const code = 'SGMC' + phone.slice(-4);
+                document.getElementById('referral-code').innerText = code;
+            }
+        }
+
+        function openReferral() {
+            document.getElementById('referral-modal').classList.add('open');
+            toggleSidebar();
+        }
+
+        function closeReferral() {
+            document.getElementById('referral-modal').classList.remove('open');
+        }
+
+        function copyReferralCode() {
+            const code = document.getElementById('referral-code').innerText;
+            navigator.clipboard.writeText(code);
+            showToast('Code copied!');
+        }
+
+        function shareReferral() {
+            const code = document.getElementById('referral-code').innerText;
+            const text = `Join SGMC Chai and get amazing deals! Use my code ${code} and we both get ₹50 off!`;
+            
+            if (navigator.share) {
+                navigator.share({ text, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(text);
+                showToast('Link copied!');
+            }
+        }
+
+        // Chat
+        function openChat() {
+            if (!userProfile.phone) {
+                showToast('Please login first');
+                return;
+            }
+            document.getElementById('chat-modal').classList.add('open');
+            toggleSidebar();
+            loadMessages();
+        }
+
+        function closeChat() {
+            document.getElementById('chat-modal').classList.remove('open');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            
+            if (text && userProfile.phone) {
+                db.collection('chats')
+                    .doc(userProfile.phone)
+                    .collection('messages')
+                    .add({
+                        text,
+                        sender: 'user',
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                input.value = '';
+            }
+        }
+
+        function loadMessages() {
+            db.collection('chats')
+                .doc(userProfile.phone)
+                .collection('messages')
+                .orderBy('timestamp')
+                .onSnapshot(snapshot => {
+                    const container = document.getElementById('chat-messages');
+                    container.innerHTML = snapshot.docs.map(doc => {
+                        const msg = doc.data();
+                        const className = msg.sender === 'user' ? 'chat-user' : 'chat-admin';
+                        return `<div class="chat-bubble ${className}">${msg.text}</div>`;
+                    }).join('');
+                    container.scrollTop = container.scrollHeight;
+                });
+        }
+
+        // Location
+        function detectLocation(mode) {
+            if (mode === 'self') {
+                const textEl = document.getElementById('gps-address-text');
+                textEl.innerText = 'Detecting...';
+                
+                if (!navigator.geolocation) {
+                    showToast('Geolocation not supported');
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    async pos => {
+                        userLocation = {
+                            lat: pos.coords.latitude,
+                            lng: pos.coords.longitude
+                        };
+                        textEl.innerText = 'Location detected!';
+                        
+                        // Reverse geocode
+                        try {
+                            const response = await fetch(
+                                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}`
+                            );
+                            const data = await response.json();
+                            if (data && data.display_name) {
+                                const addr = data.display_name.split(',').slice(0, 3).join(', ');
+                                document.getElementById('delivery-address').value = addr;
+                                textEl.innerText = addr;
+                            }
+                        } catch (err) {
+                            console.error('Geocode error:', err);
+                        }
+                    },
+                    () => {
+                        showToast('Location permission denied');
+                        textEl.innerText = 'Failed';
+                    },
+                    { enableHighAccuracy: true }
+                );
+            }
+        }
+
+        // Listeners
+        function listenToShopStatus() {
+            db.collection('settings').doc('status').onSnapshot(doc => {
+                if (doc.exists) {
+                    isShopOpen = doc.data().isOpen;
+                    const banner = document.getElementById('closed-banner');
+                    const headerStatus = document.getElementById('header-status');
+                    
+                    if (isShopOpen) {
+                        banner.classList.add('hidden');
+                        headerStatus.innerText = '● LIVE STORE';
+                        headerStatus.className = 'text-[10px] text-green-500 font-bold tracking-wide pl-0.5';
+                    } else {
+                        banner.classList.remove('hidden');
+                        headerStatus.innerText = '● CLOSED';
+                        headerStatus.className = 'text-[10px] text-red-500 font-bold tracking-wide pl-0.5';
+                    }
+                    updateCartUI();
+                }
+            });
+        }
+
+        function listenToBroadcast() {
+            db.collection('settings').doc('config').onSnapshot(doc => {
+                if (doc.exists && doc.data().broadcastMessage) {
+                    document.getElementById('broadcast-msg').innerText = doc.data().broadcastMessage;
+                    document.getElementById('broadcast-bar').style.display = 'block';
+                } else {
+                    document.getElementById('broadcast-bar').style.display = 'none';
+                }
+            });
+        }
+
+        // Utilities
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('open');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            showToast(isLight ? 'Light mode activated' : 'Dark mode activated');
+        }
+
+        function switchTab(tab) {
+            localStorage.setItem('activeTab', tab);
+            
+            ['menu', 'orders', 'udhaar'].forEach(t => {
+                const view = document.getElementById('view-' + t);
+                const nav = document.getElementById('nav-' + t);
+                
+                if (t === tab) {
+                    view.classList.remove('hidden');
+                    nav.classList.add('active');
+                } else {
+                    view.classList.add('hidden');
+                    nav.classList.remove('active');
+                }
+            });
+            
+            updateCartUI();
+            
+            if (tab === 'orders') fetchMyOrders();
+            if (tab === 'udhaar') fetchMyUdhaar();
+        }
+
+        function fetchMyOrders() {
+            // Orders are already listening via listenToUserOrders
+            renderOrders();
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast-box');
+            toast.querySelector('span').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function shareApp() {
+            const url = window.location.href;
+            if (navigator.share) {
+                navigator.share({
+                    title: 'SGMC Chai',
+                    text: 'Order Chai & Snacks Online!',
+                    url: url
+                });
+            } else {
+                navigator.clipboard.writeText(url);
+                showToast('Link copied!');
+            }
+        }
+
+        function openRewardHistory() {
+            showToast('Rewards feature coming soon!');
+            toggleSidebar();
+        }
+
+        // Load theme on startup
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+        }
 
         init();
     </script>
