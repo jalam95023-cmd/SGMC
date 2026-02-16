@@ -408,48 +408,6 @@
     </div>
     <div id="limit-modal" class="hidden fixed inset-0 bg-black/90 z-[160] flex items-center justify-center p-4"><div class="aesthetic-card w-full max-w-sm"><h3 class="font-bold mb-4">Set Limit</h3><p id="limit-name" class="mb-2 text-gray-400"></p><input id="limit-input" type="number" placeholder="Amount"><button onclick="saveLimit()" class="w-full bg-purple-600 p-3 rounded font-bold text-white mt-4">Save</button><button onclick="document.getElementById('limit-modal').classList.add('hidden')" class="w-full mt-2 text-gray-500">Cancel</button></div></div>
 
-    <div id="rider-details-modal" class="fs-modal p-0 bg-black">
-        <div class="sticky top-0 z-20 bg-gray-900/90 backdrop-blur-md p-4 border-b border-gray-800 flex justify-between items-center">
-            <h3 class="font-bold text-lg text-white">Rider Profile</h3>
-            <button onclick="document.getElementById('rider-details-modal').classList.remove('open')" class="w-8 h-8 rounded-full bg-gray-800 text-white"><i class="fas fa-times"></i></button>
-        </div>
-        
-        <div class="p-4 space-y-4">
-            <div class="text-center">
-                <div class="w-20 h-20 rounded-full bg-gray-800 border-2 border-orange-500 mx-auto flex items-center justify-center text-3xl font-bold text-white mb-2" id="rd-avatar">R</div>
-                <h2 class="text-2xl font-bold text-white" id="rd-name">Rider Name</h2>
-                <p class="text-gray-400 font-mono text-sm" id="rd-phone">Phone</p>
-                <div class="flex justify-center gap-2 mt-2">
-                    <span id="rd-status" class="px-3 py-1 rounded-full text-xs font-bold bg-green-900 text-green-400 border border-green-500/30">ONLINE</span>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-yellow-900 text-yellow-400 border border-yellow-500/30">⭐ 4.8 Rating</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <a id="rd-call-btn" href="#" class="py-3 bg-gray-800 rounded-xl text-center text-white font-bold border border-gray-700"><i class="fas fa-phone mr-2"></i> Call</a>
-                <a id="rd-track-btn" href="#" target="_blank" class="py-3 bg-blue-900/20 rounded-xl text-center text-blue-400 font-bold border border-blue-500/30"><i class="fas fa-map-marker-alt mr-2"></i> Live Track</a>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
-                    <p class="text-[10px] text-gray-500 uppercase">Cash in Hand</p>
-                    <p class="text-xl font-bold text-red-400">₹<span id="rd-cash">0</span></p>
-                    <button onclick="settleCurrentRider()" class="mt-2 w-full py-1 bg-green-600 text-white text-[10px] font-bold rounded">COLLECT CASH</button>
-                </div>
-                <div class="p-4 bg-gray-800 rounded-xl border border-gray-700">
-                    <p class="text-[10px] text-gray-500 uppercase">Total Deliveries</p>
-                    <p class="text-xl font-bold text-orange-500" id="rd-total">0</p>
-                    <p class="text-[10px] text-gray-500 mt-1">Life Time</p>
-                </div>
-            </div>
-
-            <div>
-                <h4 class="text-sm font-bold text-gray-400 mb-3 uppercase">Recent Deliveries</h4>
-                <div id="rd-history-list" class="space-y-2"></div>
-            </div>
-        </div>
-    </div>
-    
     <div id="toast-container"></div>
     <audio id="order-sound"></audio>
 
@@ -682,150 +640,35 @@
             openSettle(currentProfilePhone, name, due);
         }
 // --- RIDER MANAGEMENT LOGIC ---
-         function renderRiders() {
+        function renderRiders() {
             const list = document.getElementById('riders-list-container');
-            list.innerHTML = '<div class="text-center mt-10"><i class="fas fa-circle-notch fa-spin text-orange-500"></i></div>';
+            list.innerHTML = '<p class="text-center text-gray-500">Loading...</p>';
             
             db.collection('riders').onSnapshot(snap => {
-                if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500 mt-10 opacity-50">No riders added yet.</p>'; return; }
+                if(snap.empty) { list.innerHTML = '<p class="text-center text-gray-500">No riders yet.</p>'; return; }
                 
                 list.innerHTML = snap.docs.map(doc => {
                     const r = doc.data();
                     const cash = r.cashInHand || 0;
-                    const isOnline = r.isOnline || false;
-                    
-                    // Note: 'onclick' now opens the profile
                     return `
-                    <div onclick="openRiderDetails('${r.phone}')" class="aesthetic-card p-4 flex justify-between items-center border-l-4 ${isOnline ? 'border-green-500' : 'border-gray-700'} cursor-pointer hover:bg-gray-800/50 transition">
+                    <div class="aesthetic-card p-4 flex justify-between items-center">
                         <div>
                             <div class="flex items-center gap-2">
                                 <h3 class="font-bold text-lg text-white">${r.name}</h3>
-                                ${isOnline ? '<span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>' : ''}
+                                <span class="text-[10px] bg-gray-800 px-2 rounded text-gray-400">${r.phone}</span>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1"><i class="fas fa-phone mr-1"></i> ${r.phone}</p>
+                            <p class="text-xs text-gray-500 mt-1">Status: <span class="${r.isOnline?'text-green-500':'text-red-500'} font-bold">${r.isOnline?'ONLINE':'OFFLINE'}</span></p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] text-gray-400 uppercase font-bold">Cash Held</p>
-                            <p class="text-xl font-black ${cash>0 ? 'text-red-400' : 'text-green-500'}">₹${cash}</p>
+                            <p class="text-[10px] text-gray-400 uppercase">Cash Collected</p>
+                            <p class="text-xl font-bold ${cash>0?'text-red-400':'text-green-500'}">₹${cash}</p>
+                            ${cash > 0 ? `<button onclick="settleRiderCash('${doc.id}', ${cash})" class="mt-2 bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold shadow">COLLECT CASH</button>` : ''}
                         </div>
                     </div>`;
                 }).join('');
             });
         }
-        // --- NEW RIDER FEATURES ---
-        
-        let currentRiderPhone = null;
 
-        function openRiderDetails(phone) {
-            currentRiderPhone = phone;
-            db.collection('riders').doc(phone).get().then(d => {
-                if(!d.exists) return;
-                const r = d.data();
-                
-                // Fill Basic Info
-                document.getElementById('rd-name').innerText = r.name;
-                document.getElementById('rd-phone').innerText = r.phone;
-                document.getElementById('rd-avatar').innerText = r.name.charAt(0);
-                document.getElementById('rd-cash').innerText = r.cashInHand || 0;
-                
-                // Status & Tracking
-                const isOnline = r.isOnline || false;
-                const statusEl = document.getElementById('rd-status');
-                statusEl.innerText = isOnline ? "ONLINE" : "OFFLINE";
-                statusEl.className = isOnline ? "px-3 py-1 rounded-full text-xs font-bold bg-green-900 text-green-400 border border-green-500/30" : "px-3 py-1 rounded-full text-xs font-bold bg-gray-800 text-gray-500 border border-gray-600";
-                
-                // Live Map Link
-                const trackBtn = document.getElementById('rd-track-btn');
-                if(r.location) {
-                    trackBtn.href = `http://googleusercontent.com/maps.google.com/3{r.location.lat},${r.location.lng}`;
-                    trackBtn.classList.remove('opacity-50', 'pointer-events-none');
-                    trackBtn.innerHTML = '<i class="fas fa-map-marker-alt mr-2"></i> Live Location';
-                } else {
-                    trackBtn.href = "#";
-                    trackBtn.classList.add('opacity-50', 'pointer-events-none');
-                    trackBtn.innerHTML = '<i class="fas fa-eye-slash mr-2"></i> No Location';
-                }
-                document.getElementById('rd-call-btn').href = `tel:${r.phone}`;
-
-                // Calculate Stats (Deliveries)
-                const completed = allOrders.filter(o => o.riderPhone === phone && o.status === 'completed').length;
-                document.getElementById('rd-total').innerText = completed;
-
-                // Load History List
-                const historyList = document.getElementById('rd-history-list');
-                const recent = allOrders.filter(o => o.riderPhone === phone).slice(0, 5); // Last 5
-                
-                historyList.innerHTML = recent.map(o => `
-                    <div class="flex justify-between items-center p-2 bg-gray-900/50 rounded border border-gray-800">
-                        <div>
-                            <p class="text-xs text-white font-bold">Ord #${o.shortId || 'ID'}</p>
-                            <p class="text-[10px] text-gray-500">${o.status.toUpperCase()}</p>
-                        </div>
-                        <span class="text-xs font-bold text-orange-500">₹${o.totalAmount}</span>
-                    </div>
-                `).join('') || '<p class="text-center text-xs text-gray-500">No deliveries yet</p>';
-
-                document.getElementById('rider-details-modal').classList.add('open');
-            });
-        }
-
-        function settleCurrentRider() {
-            const amount = document.getElementById('rd-cash').innerText;
-            const name = document.getElementById('rd-name').innerText;
-            if(amount > 0 && confirm(`Collect ₹${amount} from ${name}?`)) {
-                 db.collection('payments').add({
-                    type: 'rider_settlement', riderPhone: currentRiderPhone, riderName: name, amount: parseInt(amount), timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                db.collection('riders').doc(currentRiderPhone).update({ cashInHand: 0 }).then(() => {
-                    document.getElementById('rd-cash').innerText = '0';
-                    showToast("Cash Settled ✅");
-                });
-            }
-        }
-
-        // --- ASSIGN LOGIC IN ORDER MODAL ---
-        function showAssignOption(orderId) {
-            const container = document.getElementById('fm-controls');
-            
-            // Only show if order is Ready or Cooking
-            db.collection('riders').where('isOnline', '==', true).get().then(snap => {
-                let options = snap.docs.map(d => `<option value="${d.id}">${d.data().name} (${d.data().isOnline?'🟢':'⚫'})</option>`).join('');
-                
-                if(snap.empty) options = '<option disabled>No Riders Online</option>';
-                
-                const html = `
-                <div class="mt-4 p-3 bg-gray-800 rounded-xl border border-gray-700">
-                    <label class="text-xs text-orange-400 uppercase font-bold mb-2 block"><i class="fas fa-motorcycle mr-1"></i> Assign Delivery Partner</label>
-                    <div class="flex gap-2">
-                        <select id="rider-assign-select" class="flex-1 bg-gray-900 text-white text-sm p-2 rounded-lg border border-gray-600 outline-none">
-                            <option value="">Select Rider...</option>
-                            ${options}
-                        </select>
-                        <button onclick="dispatchOrder('${orderId}')" class="bg-green-600 text-white font-bold px-4 rounded-lg text-sm">GO</button>
-                    </div>
-                </div>`;
-                
-                container.innerHTML += html;
-            });
-        }
-
-        function dispatchOrder(orderId) {
-            const select = document.getElementById('rider-assign-select');
-            const phone = select.value;
-            if(!phone) return showToast("Select a rider first");
-            
-            const name = select.options[select.selectedIndex].text.split(' (')[0];
-            
-            db.collection('orders').doc(orderId).update({
-                status: 'out_delivery', // This updates status to On Way
-                riderPhone: phone,
-                riderName: name,
-                pickupTime: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                closeFullModal();
-                showToast(`Order Assigned to ${name} 🚀`);
-            });
-        }
         function addNewRider() {
             const name = document.getElementById('new-rider-name').value;
             const phone = document.getElementById('new-rider-phone').value;
@@ -1174,50 +1017,21 @@
             document.getElementById('fm-btn-wa').href = `https://wa.me/${callPh.replace(/\D/g, '')}`; 
             document.getElementById('fm-btn-map').href = d.customerCoordinates ? `https://www.google.com/maps/dir/?api=1&destination=${d.customerCoordinates.lat},${d.customerCoordinates.lng}` : "#";
             
-            // REPLACE "ELSE" BLOCK IN openFullModal
+            renderFullModalItems(isHistorical);
+
             const c = document.getElementById('fm-controls');
-            
-            if (isHistorical) { 
-                c.innerHTML = ""; 
-            } else {
-                // 1. Status Buttons
-                let controlsHtml = `
-                <div class="grid grid-cols-4 gap-2 mb-3">
-                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='pending'?'ring-2 ring-orange-500':''}">Pending</button>
-                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='cooking'?'ring-2 ring-orange-500':''}">Cooking</button>
-                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold ${d.status==='ready'?'ring-2 ring-orange-500':''}">Ready</button>
+            if (isHistorical) { c.innerHTML = ""; } else {
+                c.innerHTML = `
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="updateStatus('pending')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Pending</button>
+                    <button onclick="updateStatus('cooking')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Cooking</button>
+                    <button onclick="updateStatus('ready')" class="p-2 rounded bg-gray-700 text-white text-[10px] font-bold">Ready</button>
                     <button onclick="updateStatus('completed')" class="p-2 rounded bg-green-600 text-white text-[10px] font-bold">Done</button>
-                </div>`;
-                
-                // 2. Rider Tracking UI (If Assigned/On Way)
-                if (d.status === 'out_delivery' && d.riderPhone) {
-                    // Fetch Rider Location logic here requires async, so we use a simple link for now
-                    // In a real app, we'd fetch db.collection('riders').doc(d.riderPhone)
-                    controlsHtml += `
-                    <div class="p-3 bg-blue-900/20 border border-blue-500/30 rounded-xl mb-3 animate-pulse">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <p class="text-xs text-blue-400 font-bold uppercase">Order on Way</p>
-                                <p class="text-sm font-bold text-white"><i class="fas fa-motorcycle mr-1"></i> ${d.riderName}</p>
-                            </div>
-                            <div class="flex gap-2">
-                                <a href="tel:${d.riderPhone}" class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white"><i class="fas fa-phone"></i></a>
-                                <button onclick="openRiderDetails('${d.riderPhone}')" class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white"><i class="fas fa-map-marker-alt"></i></button>
-                            </div>
-                        </div>
-                    </div>`;
-                }
-
-                // 3. Delete Button
-                controlsHtml += `<button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
-                
-                c.innerHTML = controlsHtml;
-
-                // 4. Inject Assign Option (Async) if Ready/Cooking AND not assigned yet
-                if ((d.status === 'ready' || d.status === 'cooking') && d.status !== 'out_delivery') {
-                    showAssignOption(currentOpenOrder.id);
-                }
+                </div>
+                <button onclick="deleteOrder()" class="w-full py-3 text-red-500 text-xs font-bold mt-4 border border-red-900/30 rounded-xl hover:bg-red-900/10"><i class="fas fa-trash mr-1"></i> DELETE ORDER</button>`;
             }
+            document.getElementById('order-full-modal').classList.add('open');
+        }
 
         function renderFullModalItems(isHistorical) {
             const l = document.getElementById('fm-items-list'); let t = 0;
