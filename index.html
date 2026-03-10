@@ -649,7 +649,26 @@
         function sendMessage(){const t=document.getElementById('chat-input').value.trim();if(t){db.collection('chats').doc(userProfile.phone).collection('messages').add({text:t,sender:'user',timestamp:firebase.firestore.FieldValue.serverTimestamp()});document.getElementById('chat-input').value="";}}
         function loadMessages(){db.collection('chats').doc(userProfile.phone).collection('messages').orderBy('timestamp').onSnapshot(s=>{document.getElementById('chat-messages').innerHTML=s.docs.map(d=>`<div class="chat-bubble ${d.data().sender==='user'?'chat-user':'chat-admin'}">${d.data().text}</div>`).join('');});}
         function listenToShopStatus(){db.collection('settings').doc('status').onSnapshot(d=>{isShopOpen=d.exists?d.data().isOpen:true;document.getElementById('closed-banner').classList.toggle('hidden',isShopOpen);updateCartUI();});}
-        function listenToBroadcast(){db.collection('settings').doc('config').onSnapshot(d=>{if(d.exists&&d.data().broadcastMessage){document.getElementById('broadcast-msg').innerText=d.data().broadcastMessage;document.getElementById('broadcast-bar').classList.remove('hidden');}else document.getElementById('broadcast-bar').classList.add('hidden');});}
+         function listenToBroadcast() {
+    db.collection('settings').doc('config').onSnapshot(d => {
+        if (d.exists) {
+            const data = d.data();
+            
+            // 1. Real-time Shop Name Update
+            if (data.shopName) {
+                document.getElementById('shop-name-display').innerText = data.shopName;
+            }
+
+            // 2. Broadcast Message Update
+            if (data.broadcastMessage) {
+                document.getElementById('broadcast-msg').innerText = data.broadcastMessage;
+                document.getElementById('broadcast-bar').classList.remove('hidden');
+            } else {
+                document.getElementById('broadcast-bar').classList.add('hidden');
+            }
+        }
+    });
+}
         
         function switchTab(t){ 
             localStorage.setItem('activeTab',t); 
