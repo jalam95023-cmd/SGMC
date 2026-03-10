@@ -1157,6 +1157,15 @@
         function setShopLocation() { showToast("Detecting...", "info"); navigator.geolocation.getCurrentPosition(p => { db.collection('settings').doc('config').set({location: {lat: p.coords.latitude, lng: p.coords.longitude}}, {merge: true}).then(() => showToast("Location Updated!")); }, e => showToast("Error: " + e.message)); }
         function toggleShop() { db.collection('settings').doc('status').set({isOpen: !isShopOpen}); }
         function openBroadcastModal(){ document.getElementById('broadcast-modal').classList.remove('hidden'); }
+        // --- SHOP NAME CHANGE FUNCTION ---
+function changeShopName() {
+    openPrompt('Change Shop Name', 'Enter new name (e.g. Nearby Bazar)', (val) => {
+        if (val) {
+            db.collection('settings').doc('config').set({ shopName: val }, { merge: true })
+            .then(() => showToast("Shop Name Updated!"));
+        }
+    });
+}
         function saveBroadcast(m){ db.collection('settings').doc('config').set({broadcastMessage: m}, {merge: true}); document.getElementById('broadcast-modal').classList.add('hidden'); showToast("Sent"); }
         function openLimitModal(p, n){ currentLimitPhone = p; document.getElementById('limit-name').innerText = n; document.getElementById('limit-input').value = ''; document.getElementById('limit-modal').classList.remove('hidden'); }
         function saveLimit(){ db.collection('user_limits').doc(currentLimitPhone).set({limit: parseInt(document.getElementById('limit-input').value)}, {merge: true}); document.getElementById('limit-modal').classList.add('hidden'); showToast("Saved"); }
